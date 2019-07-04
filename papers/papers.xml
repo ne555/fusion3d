@@ -1,698 +1,698 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE tellico PUBLIC '-//Robby Stephenson/DTD Tellico V11.0//EN' 'http://periapsis.org/tellico/dtd/v11/tellico.dtd'>
 <tellico xmlns="http://periapsis.org/tellico/" syntaxVersion="11">
- <collection title="Bibliography" type="5">
-  <fields>
-   <field name="title" format="1" category="General" title="Title" flags="8" type="1">
-    <prop name="bibtex">title</prop>
-   </field>
-   <field name="entry-type" format="4" category="General" description="These entry types are specific to bibtex. See the bibtex documentation." allowed="article;book;booklet;inbook;incollection;inproceedings;manual;mastersthesis;misc;phdthesis;proceedings;techreport;unpublished;periodical;conference" title="Entry Type" flags="10" type="3">
-    <prop name="bibtex">entry-type</prop>
-   </field>
-   <field name="author" format="2" category="General" title="Author" flags="7" type="1">
-    <prop name="bibtex">author</prop>
-   </field>
-   <field name="bibtex-key" format="4" category="General" title="Bibtex Key" flags="8" type="1">
-    <prop name="bibtex">key</prop>
-   </field>
-   <field name="booktitle" format="1" category="General" title="Book Title" flags="0" type="1">
-    <prop name="bibtex">booktitle</prop>
-   </field>
-   <field name="editor" format="2" category="General" title="Editor" flags="7" type="1">
-    <prop name="bibtex">editor</prop>
-   </field>
-   <field name="organization" format="0" category="General" title="Organization" flags="6" type="1">
-    <prop name="bibtex">organization</prop>
-   </field>
-   <field name="publisher" format="0" category="Publishing" title="Publisher" flags="6" type="1">
-    <prop name="bibtex">publisher</prop>
-   </field>
-   <field name="address" format="4" category="Publishing" title="Address" flags="6" type="1">
-    <prop name="bibtex">address</prop>
-   </field>
-   <field name="edition" format="4" category="Publishing" title="Edition" flags="4" type="1">
-    <prop name="bibtex">edition</prop>
-   </field>
-   <field name="pages" format="4" category="Publishing" title="Pages" flags="0" type="1">
-    <prop name="bibtex">pages</prop>
-   </field>
-   <field name="year" format="4" category="Publishing" title="Year" flags="2" type="6">
-    <prop name="bibtex">year</prop>
-   </field>
-   <field name="isbn" format="4" category="Publishing" description="International Standard Book Number" title="ISBN#" flags="0" type="1">
-    <prop name="bibtex">isbn</prop>
-   </field>
-   <field name="journal" format="0" category="Publishing" title="Journal" flags="6" type="1">
-    <prop name="bibtex">journal</prop>
-   </field>
-   <field name="doi" format="4" category="Publishing" description="Digital Object Identifier" title="DOI" flags="0" type="1">
-    <prop name="bibtex">doi</prop>
-   </field>
-   <field name="month" format="4" category="Publishing" title="Month" flags="4" type="1">
-    <prop name="bibtex">month</prop>
-   </field>
-   <field name="number" format="4" category="Publishing" title="Number" flags="0" type="6">
-    <prop name="bibtex">number</prop>
-   </field>
-   <field name="howpublished" format="4" category="Publishing" title="How Published" flags="0" type="1">
-    <prop name="bibtex">howpublished</prop>
-   </field>
-   <field name="chapter" format="4" category="Miscellaneous" title="Chapter" flags="0" type="6">
-    <prop name="bibtex">chapter</prop>
-   </field>
-   <field name="series" format="1" category="Miscellaneous" title="Series" flags="6" type="1">
-    <prop name="bibtex">series</prop>
-   </field>
-   <field name="volume" format="4" category="Miscellaneous" title="Volume" flags="0" type="6">
-    <prop name="bibtex">volume</prop>
-   </field>
-   <field name="crossref" format="4" category="Miscellaneous" title="Cross-Reference" flags="0" type="1">
-    <prop name="bibtex">crossref</prop>
-   </field>
-   <field name="keyword" format="4" category="Miscellaneous" title="Keywords" flags="7" type="1">
-    <prop name="bibtex">keywords</prop>
-   </field>
-   <field name="url" format="4" category="Miscellaneous" title="URL" flags="0" type="7">
-    <prop name="bibtex">url</prop>
-   </field>
-   <field name="abstract" format="4" category="Abstract" title="Abstract" flags="0" type="2">
-    <prop name="bibtex">abstract</prop>
-   </field>
-   <field name="note" format="4" category="Notes" title="Notes" flags="0" type="2">
-    <prop name="bibtex">note</prop>
-   </field>
-   <field name="id" format="4" category="Miscellaneous" title="ID" flags="32" type="6">
-    <prop name="template">%{@id}</prop>
-   </field>
-   <field name="cdate" format="3" category="Miscellaneous" title="Date Created" flags="16" type="12"/>
-   <field name="mdate" format="3" category="Miscellaneous" title="Date Modified" flags="16" type="12"/>
-  </fields>
-<entry id="1">
-<title>A Unified Approach for Single and Multi-view 3D Object Reconstruction</title>
-<authors>
-<author>Christopher B. Choy</author>
-<author>Danfei Xu</author>
-<author>JunYoung Gwak</author>
-<author>Kevin Chen</author>
-<author>Silvio Savarese</author>
-</authors>
-<pages>18</pages>
-<year>2016</year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/3d-r2n2_a_unified_approach_for_single_and_multi-vi.pdf</url>
-	<id>1</id>
-</entry>
-<entry id="2">
-<title>3D is here: Point cloud library (PCL)</title>
-<authors>
-<author>Radu Bogdan Rusu</author>
-<author>Steve Cousins</author>
-</authors>
-<pages>5</pages>
-<year>2011</year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/3d_is_here_point_cloud_library_pcl.pdf</url>
-	<id>2</id>
-</entry>
-<entry id="3">
-<title>A Comparison and Evaluation of Multi-View Stereo Reconstruction Algorithms</title>
-<authors>
-<author>Steven M. Seitz</author>
-<author>Brian Curless</author>
-</authors>
-<pages>8</pages>
-<year>2006</year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/a_comparison_and_evalutation_of_multi-view_stereo_reconstruction_algorithms.pdf</url>
-	<id>3</id>
-</entry>
-<entry id="4">
-<title>A Hierarchical Method for Aligning Warped Meshes</title>
-<authors>
-<author>Leslie Ikemoto</author>
-<author>Natasha Gelfand</author>
-<author>Marc Levoy</author>
-</authors>
-<pages>8</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/a_hierarchical_method_for_aligning_warped_meshes.pdf</url>
-	<id>4</id>
-</entry>
-<entry id="5">
-<title>A Large Dataset of Object Scans</title>
-<authors>
-	<author>Sungjoon Choi</author>
-	<author>Qian-Yi Zhou</author>
-	<author>Stephen Miller</author>
-	<author>Vladlen Koltun</author>
-</authors>
-<pages>7</pages>
-<year>2016</year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/a_large_dataset_of_object_scans.pdf</url>
-	<id>5</id>
-</entry>
-<entry id="6">
-<title>A Method for Registration of 3-D Shapes</title>
-<authors>
-	<author>Paul J. Besl</author>
-	<author>Neil D. McKay</author>
-</authors>
-<pages>18</pages>
-<year>1992</year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/a_method_for_registration_of_3d_shapes.pdf</url>
-	<id>6</id>
-</entry>
-<entry id="7">
-<title>A Volumetric Method for Building Complex Models from Range Images</title>
-<authors>
-	<author>Brian Curless</author>
-	<author>Marc Levoy</author>
-</authors>
-<pages>10</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/a_volumetric_method_for_building_complex_models_from_range_images.pdf</url>
-	<id>7</id>
-</entry>
-<entry id="8">
-<title>Accurate, Dense, and Robust Multi-View Stereopsis</title>
-<authors>
-	<author>Yasutaka Furukawa</author>
-	<author>J. Ponce</author>
-</authors>
-<pages>9</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/accurate_dense_and_robust_multi-view_stereopsis.pdf</url>
-	<id>8</id>
-</entry>
-<entry id="9">
-<title>ADAM: A Method for Stochastic Optimization</title>
-<authors>
-	<author>Diederik P. Kingma</author>
-	<author>Jimmy Lei Ba</author>
-</authors>
-<pages>15</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/adam_a_method_for_sstochastic_optimization.pdf</url>
-	<id>9</id>
-</entry>
-<entry id="10">
-<title>Combined Depth and Outlier Estimation in Multi-View Stereo</title>
-<authors>
-	<author>Christoph Strecha</author>
-	<author>Rik Fransens</author>
-	<author>Luc Van Gool</author>
-</authors>
-<pages>9</pages>
-<year>2006</year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/combined_depth_and_outlier_estimation_in_multi-view_stereo.pdf</url>
-	<id>10</id>
-</entry>
-<entry id="11">
-<title>Detailed Real-Time Urban 3D Reconstruction from Video</title>
-<authors>
-	<author>M. Pollefeys</author>
-	<author>D. Nistér</author>
-	<author>J. M. Frahm</author>
-	<author>A. Akbarzadeh</author>
-	<author>P. Mordohai</author>
-	<author>B. Clipp</author>
-	<author>C. Engels</author>
-	<author>D. Gallup</author>
-	<author>S. J. Kim</author>
-	<author>P. Merrell</author>
-	<author>C. Salmi</author>
-	<author>S. Sinha</author>
-	<author>B. Talton</author>
-	<author>L. Wang</author>
-	<author>Q. Yang</author>
-	<author>H. Stewénius</author>
-	<author>R. Yang</author>
-	<author>G. Welch</author>
-	<author>H. Towles</author>
-</authors>
-<pages>25</pages>
-<year>2007</year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/detailed_real-time_urban_3d_reconstruction_from_video.pdf</url>
-	<id>11</id>
-</entry>
-<entry id="12">
-<title>DTAM: Dense Tracking and Mapping in Real-Time</title>
-<authors>
-	<author>Richard A. Newcombe</author>
-	<author>Steven J. Lovegrove</author>
-	<author>Andrew J. Davison</author>
-</authors>
-<pages>8</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/dtam_dense_tracking_and_mapping_in_real-time.pdf</url>
-	<id>12</id>
-</entry>
-<entry id="13">
-<title>Efficient estimation of 3D Euclidean distance ﬁelds from 2D range images.</title>
-<authors>
-	<author>Sarah F. Frisken</author>
-	<author>Ronald N. Perry</author>
-</authors>
-<pages>9</pages>
-<year>2002</year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/efficient_estimation_of_3d_euclidean_distance_fiel.pdf</url>
-	<id>13</id>
-</entry>
-<entry id="14">
-<title>Elastic Fragments for Dense Scene Reconstruction</title>
-<authors>
-	<author>Qian-Yi Zhou1</author>
-	<author>Stephen Miller1</author>
-	<author>Vladlen Koltun</author>
-</authors>
-<pages>8</pages>
-<year>2013</year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/elastic_fragments_for_dense_scene_reconstruction.pdf</url>
-	<id>14</id>
-</entry>
-<entry id="15">
-<title>Filling Holes in Complex Surfaces using Volumetric Diffusion</title>
-<authors>
-<author>James Davis</author>
-<author>Stephen R. Marschner</author>
-<author>Matt Garr</author>
-<author>Marc Levoy</author>
-</authors>
-<pages>11</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/filling_holes_in_comple_surfaces_using_volumetric_diffusion.pdf</url>
-	<id>15</id>
-</entry>
-<entry id="16">
-<title>Generalized-ICP</title>
-<authors>
-	<author>Aleksandr V. Segal</author>
-	<author>Dirk Haehnel</author>
-	<author>Sebastian Thrun</author>
-</authors>
-<pages>8</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/generalized_icp.pdf</url>
-	<id>16</id>
-</entry>
-<entry id="17">
-<title>Generating 3D Meshes from Range Data</title>
-<authors>
-	<author>Robert Kalnins</author>
-	<author>Robert Osada</author>
-</authors>
-<pages>59</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/generating_3d_meshes_fom_range_data.pdf</url>
-	<id>17</id>
-</entry>
-<entry id="18">
-<title>Geometrically Stable Sampling for the ICP Algorithm</title>
-<authors>
-	<author>Natasha Gelfand</author>
-	<author>Szymon Rusinkiewicz</author>
-</authors>
-<pages>8</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/geometrically_stable_sampling_for_the_icp_algorithm.pdf</url>
-	<id>18</id>
-</entry>
-<entry id="19">
-<title>In-hand Scanning with Online Loop Closure</title>
-<authors>
-	<author>Thibaut Weise</author>
-	<author>Thomas Wismer</author>
-	<author>Bastian Leibe</author>
-</authors>
-<pages>8</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/in-hand_scanning_with_online_loop_closure.pdf</url>
-	<id>19</id>
-</entry>
-<entry id="20">
-<title>Iterative Point Matching for Registration of Free-Form Curves</title>
-<authors>
-	<author>Zhengyou Zhang</author>
-</authors>
-<pages>46</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/iterative_point_matching_for_registration_of_free-form_curves.pdf</url>
-	<id>20</id>
-</entry>
-<entry id="21">
-<title>KinectFusion: Real-time 3D Reconstruction and Interaction Using a Moving Depth Camera</title>
-<authors>
-	<author>Shahram Izadi</author>
-	<author>David Kim</author>
-	<author>Otmar Hilliges</author>
-	<author>David Molyneaux</author>
-	<author>Richard Newcombe</author>
-	<author>Pushmeet Kohli</author>
-	<author>Jamie Shotton</author>
-	<author>Steve Hodges</author>
-	<author>Dustin Freeman</author>
-	<author>Andrew Davison</author>
-	<author>Andrew Fitzgibbon</author>
-</authors>
-<pages>10</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/kinectfusion_real-time_3d_reconstruction_and_interaction_using_a_moving_depth_camera.pdf</url>
-	<id>21</id>
-</entry>
-<entry id="22">
-<title>Implementing a 3D scanner with PCL</title>
-<authors>
-<author>Michele Pirovano</author>
-</authors>
-<pages>20</pages>
-<year>2011</year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/kinfu_an_open_source_implementation_of_kinect_fusion.pdf</url>
-	<id>22</id>
-</entry>
-<entry id="23">
-<title>Large-Scale Multi-Resolution Surface Reconstruction from RGB-D Sequences</title>
-<authors>
-	<author>Frank Steinbrücker</author>
-	<author>Christian Kerl</author>
-	<author>Jürgen Sturm</author>
-	<author>Daniel Cremers</author>
-</authors>
-<pages>8</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/large-scale_multi-resolution_surface_reconstruction_from_rgb-d_sequences.pdf</url>
-	<id>23</id>
-</entry>
-<entry id="24">
-<title>Learning 6D Object Pose Estimation using 3D Object Coordinates</title>
-<authors>
-	<author>Eric Brachmann</author>
-	<author>Alexander Krull</author>
-	<author>Frank Michel</author>
-	<author>Stefan Gumhold</author>
-	<author>Jamie Shotton</author>
-	<author>Carsten Rother</author>
-</authors>
-<pages>16</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/learning_6d_object_pose_estimation_using_3d_object_coordinates.pdf</url>
-	<id>24</id>
-</entry>
-<entry id="25">
-<title>Lucas-Kanade 20 Years On: A Unifying Framework</title>
-<authors>
-	<author>Simon Baker </author>
-	<author>Iain Matthews</author>
-</authors>
-<pages>35</pages>
-<year>2002</year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/lucas-kanade_20_years_on_a_unifying_framework.pdf</url>
-	<id>25</id>
-</entry>
-<entry id="26">
-<title>Multi-Stereo 3D Object Reconstruction</title>
-<authors>
-	<author>Carlos Hernández Esteban</author>
-	<author>Francis Schmitt</author>
-<author></author>
-</authors>
-<pages>8</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/multi-stereo_3d_object_reconstruction.pdf</url>
-	<id>26</id>
-</entry>
-<entry id="27">
-<title>Multiview Registration for Large Data Sets</title>
-<authors>
-<author>Kari Pulli</author>
-</authors>
-<pages>9</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/multiview_registration_for_large_data_sets.pdf</url>
-	<id>27</id>
-</entry>
-<entry id="28">
-<title>Object Modeling by Registration of Multiple Range Images</title>
-<authors>
-	<author>Yang Chen</author>
-	<author>Gérard G. Medioni</author>
-</authors>
-<pages>7</pages>
-<year>1992</year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/obect_modeling_by_registration_of_multiple_range_images.pdf</url>
-	<id>28</id>
-</entry>
-<entry id="29">
-<title>Patches, Planes and Probabilities: A Non-local Prior for Volumetric 3D Reconstruction</title>
-<authors>
-	<author>Ali Osman Ulusoy</author>
-	<author>Michael J. Black</author>
-	<author>Andreas Geiger</author>
-</authors>
-<pages>10</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/patches_planes_and_probabilites_a_non-local_prior_for_volumetric_3d_reconstruction.pdf</url>
-	<id>29</id>
-</entry>
-<entry id="30">
-<title>Photometric Bundle Adjustment for Dense Multi-View 3D Modeling</title>
-<authors>
-	<author>Amaël Delaunoy</author>
-	<author>Marc Pollefeys</author>
-</authors>
-<pages>9</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/photometric_bundle_adjustment_for_dense_multi-view_3d_modeling.pdf</url>
-	<id>30</id>
-</entry>
-<entry id="31">
-<title>Photorealistic Scene Reconstruction by Voxel Coloring</title>
-<authors>
-	<author>Steven M. Seitz</author>
-	<author>Charles R. Dyer</author>
-</authors>
-<pages>32</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/photorealistic_scene_reconstruction_by_voxel_coloring.pdf</url>
-	<id>31</id>
-</entry>
-<entry id="32">
-<title>Probabilistic visibility for multi-view stereo</title>
-<authors>
-	<author>Carlos Hernández</author>
-	<author>George Vogiatzis</author>
-	<author>Roberto Cipolla</author>
-</authors>
-<pages>8</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/probabilistic_visibility_for_multi-view_stereo.pdf</url>
-	<id>32</id>
-</entry>
-<entry id="33">
-<title>Real-Time 3D Model Acquisition</title>
-<authors>
-	<author>Szymon Rusinkiewicz</author>
-	<author>Olaf Hall-Holt</author>
-	<author>Marc Levoy</author>
-</authors>
-<pages>9</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/real-time_3d_model_adquisition.pdf</url>
-	<id>33</id>
-</entry>
-<entry id="34">
-<title>Real-Time Dense Geometry from a Handheld Camera</title>
-<authors>
-	<author>Jan Stühmer1</author>
-	<author>Stefan Gumhold</author>
-	<author>Daniel Cremers1</author>
-</authors>
-<pages>10</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/real-time_dense_geometry_form_a_handheld_camera.pdf</url>
-	<id>34</id>
-</entry>
-<entry id="35">
-<title>Real-time Monocular SLAM: Why Filter?</title>
-<authors>
-	<author>Hauke Strasdat</author>
-	<author>J. M. M. Montiel</author>
-	<author>Andrew J. Davison</author>
-</authors>
-<pages>8</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/real-time_monocular_slam_why_filter.pdf</url>
-	<id>35</id>
-</entry>
-<entry id="36">
-<title>Real-time rendering and dynamic updating of 3-d volumetric data</title>
-<authors>
-	<author>Andrew Miller</author>
-	<author>Vishal Jain</author>
-	<author>Joseph L. Mundy</author>
-</authors>
-<pages>9</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/real-time_rendering_and_dynamic_updating_of_3-d_volumetric_data.pdf</url>
-	<id>36</id>
-</entry>
-<entry id="37">
-<title>Real-Time Video-Based Reconstruction of Urban Environments</title>
-<authors>
-	<author>P. Mordohai</author>
-	<author>J. M. Frahm</author>
-	<author>A. Akbarzadeh</author>
-	<author>B. Clipp</author>
-	<author>C. Engels</author>
-	<author>D. Gallup</author>
-	<author>P. Merrell</author>
-	<author>C. Salmi</author>
-	<author>S. Sinha</author>
-	<author>B. Talton</author>
-	<author>L. Wang</author>
-	<author>Q. Yang</author>
-	<author>H. Stewénius</author>
-	<author>H. Towles</author>
-	<author>G. Welch</author>
-	<author>R. Yang</author>
-	<author>M. Pollefeys</author>
-	<author>D. Nistér</author>
-</authors>
-<pages>8</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/real-time_video-based_reconstruction_of_urban_environments.pdf</url>
-	<id>37</id>
-</entry>
-<entry id="38">
-<title>Real-Time Visibility-Based Fusion of Depth Maps</title>
-<authors>
-	<author>Paul Merrell</author>
-	<author>Amir Akbarzadeh</author>
-	<author>Liang Wang</author>
-	<author>Philippos Mordohai</author>
-	<author>Jan-Michael Frahm</author>
-	<author>Ruigang Yang</author>
-	<author>David Nistér</author>
-	<author>Marc Pollefeys</author>
-</authors>
-<pages>9</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/real-time_visibility-based_fusion_of_depth_maps.pdf</url>
-	<id>38</id>
-</entry>
-<entry id="39">
-<title>Reconstruction of Solid Models from Oriented Point Sets</title>
-<authors>
-<author>Michael Kazhdan†</author>
-</authors>
-<pages>11</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/reconstruction_of_solid_models_from_oriented_point_sets.pdf</url>
-	<id>39</id>
-</entry>
-<entry id="40">
-<title>Reliable surface reconstruction from multiple range images</title>
-<authors>
-<author>Adrian Hilton</author>
-</authors>
-<pages>26</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/reliable_surface_reconstruction_from_multiple_range_images.pdf</url>
-	<id>40</id>
-</entry>
-<entry id="41">
-<title>RGB-D Mapping: Using Depth Cameras for Dense 3D Modeling of Indoor Environments</title>
-<authors>
-	<author>Peter Henry</author>
-	<author>Michael Krainin</author>
-	<author>Evan Herbst</author>
-	<author>Xiaofeng Ren</author>
-	<author>Dieter Fox</author>
-</authors>
-<pages>15</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/rgb-d_mapping_using_depth_cameras_for_dense_3d_modeling_of_indoor_environments.pdf</url>
-	<id>41</id>
-</entry>
-<entry id="42">
-<title>Robust Point Cloud Based Reconstruction of Large-Scale Outdoor Scenes</title>
-<authors>
-	<author>Ziquan Lan</author>
-	<author>Zi Jian Yew</author>
-	<author>Gim Hee Lee</author>
-</authors>
-<pages>9</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/robust_point_cloud_based_reconstruction_of_lage-sccale_outdoor_scenes.pdf</url>
-	<id>42</id>
-</entry>
-<entry id="43">
-<title>Robust Reconstruction of Indoor Scenes</title>
-<authors>
-	<author>Sungjoon Choi</author>
-	<author>Qian-Yi Zhou</author>
-	<author>Vladlen Koltun‡</author>
-</authors>
-<pages>10</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/robust_reconstruction_of_indoor_scenens.pdf</url>
-	<id>43</id>
-</entry>
-<entry id="44">
-<title>ScanNet: Richly-annotated 3D Reconstructions of Indoor Scenes</title>
-<authors>
-	<author>Angela Dai</author>
-	<author>Angel X. Chang</author>
-	<author>Manolis Savva</author>
-	<author>Maciej Halber</author>
-	<author>Thomas Funkhouser</author>
-	<author>Matthias Nießner</author>
-</authors>
-<pages>22</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/scannet_richly-annotated_3d_reconstrucctions_of_indoor_scenes.pdf</url>
-	<id>44</id>
-</entry>
-<entry id="45">
-<title>ShapeNet: An Information-Rich 3D Model Repository</title>
-<authors>
-	<author>Angel X. Chang</author>
-	<author>Thomas Funkhouser</author>
-	<author>Leonidas Guibas</author>
-	<author>Pat Hanrahan</author>
-	<author>Qixing Huang</author>
-	<author>Zimo Li</author>
-	<author>Silvio Savarese</author>
-	<author>Manolis Savva∗</author>
-	<author>Shuran Song</author>
-	<author>Hao Su</author>
-	<author>Jianxiong Xiao</author>
-	<author>Li Yi</author>
-	<author>and Fisher Yu</author>
-</authors>
-<pages>12</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/shapenet_an_information-rich_3d_model_repository.pdf</url>
-	<id>45</id>
-</entry>
-<entry id="46">
-<title>Stochastic Surface Mesh Reconstruction</title>
-<authors>
-	<author>Mustafa Ozendi</author>
-	<author>Devrim Akca</author>
-	<author>Hüseyin Topan</author>
-</authors>
-<pages>8</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/stochastic_surface_mesh_reconstruction.pdf</url>
-	<id>46</id>
-</entry>
-<entry id="47">
-<title>Zippered Polygon Meshes from Range Images</title>
-<authors>
-	<author>Greg Turk</author>
-	<author>Marc Levoy</author>
-</authors>
-<pages>8</pages>
-<year></year>
-	<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/zippered_polygon_meshes_from_range_images.pdf</url>
-	<id>47</id>
-</entry>
- </collection>
+	<collection title="Bibliography" type="5">
+		<fields>
+			<field name="title" format="1" category="General" title="Title" flags="8" type="1">
+				<prop name="bibtex">title</prop>
+			</field>
+			<field name="entry-type" format="4" category="General" description="These entry types are specific to bibtex. See the bibtex documentation." allowed="article;book;booklet;inbook;incollection;inproceedings;manual;mastersthesis;misc;phdthesis;proceedings;techreport;unpublished;periodical;conference" title="Entry Type" flags="10" type="3">
+				<prop name="bibtex">entry-type</prop>
+			</field>
+			<field name="author" format="2" category="General" title="Author" flags="7" type="1">
+				<prop name="bibtex">author</prop>
+			</field>
+			<field name="bibtex-key" format="4" category="General" title="Bibtex Key" flags="8" type="1">
+				<prop name="bibtex">key</prop>
+			</field>
+			<field name="booktitle" format="1" category="General" title="Book Title" flags="0" type="1">
+				<prop name="bibtex">booktitle</prop>
+			</field>
+			<field name="editor" format="2" category="General" title="Editor" flags="7" type="1">
+				<prop name="bibtex">editor</prop>
+			</field>
+			<field name="organization" format="0" category="General" title="Organization" flags="6" type="1">
+				<prop name="bibtex">organization</prop>
+			</field>
+			<field name="publisher" format="0" category="Publishing" title="Publisher" flags="6" type="1">
+				<prop name="bibtex">publisher</prop>
+			</field>
+			<field name="address" format="4" category="Publishing" title="Address" flags="6" type="1">
+				<prop name="bibtex">address</prop>
+			</field>
+			<field name="edition" format="4" category="Publishing" title="Edition" flags="4" type="1">
+				<prop name="bibtex">edition</prop>
+			</field>
+			<field name="pages" format="4" category="Publishing" title="Pages" flags="0" type="1">
+				<prop name="bibtex">pages</prop>
+			</field>
+			<field name="year" format="4" category="Publishing" title="Year" flags="2" type="6">
+				<prop name="bibtex">year</prop>
+			</field>
+			<field name="isbn" format="4" category="Publishing" description="International Standard Book Number" title="ISBN#" flags="0" type="1">
+				<prop name="bibtex">isbn</prop>
+			</field>
+			<field name="journal" format="0" category="Publishing" title="Journal" flags="6" type="1">
+				<prop name="bibtex">journal</prop>
+			</field>
+			<field name="doi" format="4" category="Publishing" description="Digital Object Identifier" title="DOI" flags="0" type="1">
+				<prop name="bibtex">doi</prop>
+			</field>
+			<field name="month" format="4" category="Publishing" title="Month" flags="4" type="1">
+				<prop name="bibtex">month</prop>
+			</field>
+			<field name="number" format="4" category="Publishing" title="Number" flags="0" type="6">
+				<prop name="bibtex">number</prop>
+			</field>
+			<field name="howpublished" format="4" category="Publishing" title="How Published" flags="0" type="1">
+				<prop name="bibtex">howpublished</prop>
+			</field>
+			<field name="chapter" format="4" category="Miscellaneous" title="Chapter" flags="0" type="6">
+				<prop name="bibtex">chapter</prop>
+			</field>
+			<field name="series" format="1" category="Miscellaneous" title="Series" flags="6" type="1">
+				<prop name="bibtex">series</prop>
+			</field>
+			<field name="volume" format="4" category="Miscellaneous" title="Volume" flags="0" type="6">
+				<prop name="bibtex">volume</prop>
+			</field>
+			<field name="crossref" format="4" category="Miscellaneous" title="Cross-Reference" flags="0" type="1">
+				<prop name="bibtex">crossref</prop>
+			</field>
+			<field name="keyword" format="4" category="Miscellaneous" title="Keywords" flags="7" type="1">
+				<prop name="bibtex">keywords</prop>
+			</field>
+			<field name="url" format="4" category="Miscellaneous" title="URL" flags="0" type="7">
+				<prop name="bibtex">url</prop>
+			</field>
+			<field name="abstract" format="4" category="Abstract" title="Abstract" flags="0" type="2">
+				<prop name="bibtex">abstract</prop>
+			</field>
+			<field name="note" format="4" category="Notes" title="Notes" flags="0" type="2">
+				<prop name="bibtex">note</prop>
+			</field>
+			<field name="id" format="4" category="Miscellaneous" title="ID" flags="32" type="6">
+				<prop name="template">%{@id}</prop>
+			</field>
+			<field name="cdate" format="3" category="Miscellaneous" title="Date Created" flags="16" type="12"/>
+			<field name="mdate" format="3" category="Miscellaneous" title="Date Modified" flags="16" type="12"/>
+		</fields>
+		<entry id="1">
+			<title>A Unified Approach for Single and Multi-view 3D Object Reconstruction</title>
+			<authors>
+				<author>Christopher B. Choy</author>
+				<author>Danfei Xu</author>
+				<author>JunYoung Gwak</author>
+				<author>Kevin Chen</author>
+				<author>Silvio Savarese</author>
+			</authors>
+			<pages>18</pages>
+			<year>2016</year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/3d-r2n2_a_unified_approach_for_single_and_multi-vi.txt</url>
+			<id>1</id>
+		</entry>
+		<entry id="2">
+			<title>3D is here: Point cloud library (PCL)</title>
+			<authors>
+				<author>Radu Bogdan Rusu</author>
+				<author>Steve Cousins</author>
+			</authors>
+			<pages>5</pages>
+			<year>2011</year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/3d_is_here_point_cloud_library_pcl.txt</url>
+			<id>2</id>
+		</entry>
+		<entry id="3">
+			<title>A Comparison and Evaluation of Multi-View Stereo Reconstruction Algorithms</title>
+			<authors>
+				<author>Steven M. Seitz</author>
+				<author>Brian Curless</author>
+			</authors>
+			<pages>8</pages>
+			<year>2006</year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/a_comparison_and_evalutation_of_multi-view_stereo_reconstruction_algorithms.txt</url>
+			<id>3</id>
+		</entry>
+		<entry id="4">
+			<title>A Hierarchical Method for Aligning Warped Meshes</title>
+			<authors>
+				<author>Leslie Ikemoto</author>
+				<author>Natasha Gelfand</author>
+				<author>Marc Levoy</author>
+			</authors>
+			<pages>8</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/a_hierarchical_method_for_aligning_warped_meshes.txt</url>
+			<id>4</id>
+		</entry>
+		<entry id="5">
+			<title>A Large Dataset of Object Scans</title>
+			<authors>
+				<author>Sungjoon Choi</author>
+				<author>Qian-Yi Zhou</author>
+				<author>Stephen Miller</author>
+				<author>Vladlen Koltun</author>
+			</authors>
+			<pages>7</pages>
+			<year>2016</year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/a_large_dataset_of_object_scans.txt</url>
+			<id>5</id>
+		</entry>
+		<entry id="6">
+			<title>A Method for Registration of 3-D Shapes</title>
+			<authors>
+				<author>Paul J. Besl</author>
+				<author>Neil D. McKay</author>
+			</authors>
+			<pages>18</pages>
+			<year>1992</year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/a_method_for_registration_of_3d_shapes.txt</url>
+			<id>6</id>
+		</entry>
+		<entry id="7">
+			<title>A Volumetric Method for Building Complex Models from Range Images</title>
+			<authors>
+				<author>Brian Curless</author>
+				<author>Marc Levoy</author>
+			</authors>
+			<pages>10</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/a_volumetric_method_for_building_complex_models_from_range_images.txt</url>
+			<id>7</id>
+		</entry>
+		<entry id="8">
+			<title>Accurate, Dense, and Robust Multi-View Stereopsis</title>
+			<authors>
+				<author>Yasutaka Furukawa</author>
+				<author>J. Ponce</author>
+			</authors>
+			<pages>9</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/accurate_dense_and_robust_multi-view_stereopsis.txt</url>
+			<id>8</id>
+		</entry>
+		<entry id="9">
+			<title>ADAM: A Method for Stochastic Optimization</title>
+			<authors>
+				<author>Diederik P. Kingma</author>
+				<author>Jimmy Lei Ba</author>
+			</authors>
+			<pages>15</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/adam_a_method_for_sstochastic_optimization.txt</url>
+			<id>9</id>
+		</entry>
+		<entry id="10">
+			<title>Combined Depth and Outlier Estimation in Multi-View Stereo</title>
+			<authors>
+				<author>Christoph Strecha</author>
+				<author>Rik Fransens</author>
+				<author>Luc Van Gool</author>
+			</authors>
+			<pages>9</pages>
+			<year>2006</year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/combined_depth_and_outlier_estimation_in_multi-view_stereo.txt</url>
+			<id>10</id>
+		</entry>
+		<entry id="11">
+			<title>Detailed Real-Time Urban 3D Reconstruction from Video</title>
+			<authors>
+				<author>M. Pollefeys</author>
+				<author>D. Nistér</author>
+				<author>J. M. Frahm</author>
+				<author>A. Akbarzadeh</author>
+				<author>P. Mordohai</author>
+				<author>B. Clipp</author>
+				<author>C. Engels</author>
+				<author>D. Gallup</author>
+				<author>S. J. Kim</author>
+				<author>P. Merrell</author>
+				<author>C. Salmi</author>
+				<author>S. Sinha</author>
+				<author>B. Talton</author>
+				<author>L. Wang</author>
+				<author>Q. Yang</author>
+				<author>H. Stewénius</author>
+				<author>R. Yang</author>
+				<author>G. Welch</author>
+				<author>H. Towles</author>
+			</authors>
+			<pages>25</pages>
+			<year>2007</year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/detailed_real-time_urban_3d_reconstruction_from_video.txt</url>
+			<id>11</id>
+		</entry>
+		<entry id="12">
+			<title>DTAM: Dense Tracking and Mapping in Real-Time</title>
+			<authors>
+				<author>Richard A. Newcombe</author>
+				<author>Steven J. Lovegrove</author>
+				<author>Andrew J. Davison</author>
+			</authors>
+			<pages>8</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/dtam_dense_tracking_and_mapping_in_real-time.txt</url>
+			<id>12</id>
+		</entry>
+		<entry id="13">
+			<title>Efficient estimation of 3D Euclidean distance ﬁelds from 2D range images.</title>
+			<authors>
+				<author>Sarah F. Frisken</author>
+				<author>Ronald N. Perry</author>
+			</authors>
+			<pages>9</pages>
+			<year>2002</year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/efficient_estimation_of_3d_euclidean_distance_fiel.txt</url>
+			<id>13</id>
+		</entry>
+		<entry id="14">
+			<title>Elastic Fragments for Dense Scene Reconstruction</title>
+			<authors>
+				<author>Qian-Yi Zhou1</author>
+				<author>Stephen Miller1</author>
+				<author>Vladlen Koltun</author>
+			</authors>
+			<pages>8</pages>
+			<year>2013</year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/elastic_fragments_for_dense_scene_reconstruction.txt</url>
+			<id>14</id>
+		</entry>
+		<entry id="15">
+			<title>Filling Holes in Complex Surfaces using Volumetric Diffusion</title>
+			<authors>
+				<author>James Davis</author>
+				<author>Stephen R. Marschner</author>
+				<author>Matt Garr</author>
+				<author>Marc Levoy</author>
+			</authors>
+			<pages>11</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/filling_holes_in_comple_surfaces_using_volumetric_diffusion.txt</url>
+			<id>15</id>
+		</entry>
+		<entry id="16">
+			<title>Generalized-ICP</title>
+			<authors>
+				<author>Aleksandr V. Segal</author>
+				<author>Dirk Haehnel</author>
+				<author>Sebastian Thrun</author>
+			</authors>
+			<pages>8</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/generalized_icp.txt</url>
+			<id>16</id>
+		</entry>
+		<entry id="17">
+			<title>Generating 3D Meshes from Range Data</title>
+			<authors>
+				<author>Robert Kalnins</author>
+				<author>Robert Osada</author>
+			</authors>
+			<pages>59</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/generating_3d_meshes_fom_range_data.txt</url>
+			<id>17</id>
+		</entry>
+		<entry id="18">
+			<title>Geometrically Stable Sampling for the ICP Algorithm</title>
+			<authors>
+				<author>Natasha Gelfand</author>
+				<author>Szymon Rusinkiewicz</author>
+			</authors>
+			<pages>8</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/geometrically_stable_sampling_for_the_icp_algorithm.txt</url>
+			<id>18</id>
+		</entry>
+		<entry id="19">
+			<title>In-hand Scanning with Online Loop Closure</title>
+			<authors>
+				<author>Thibaut Weise</author>
+				<author>Thomas Wismer</author>
+				<author>Bastian Leibe</author>
+			</authors>
+			<pages>8</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/in-hand_scanning_with_online_loop_closure.txt</url>
+			<id>19</id>
+		</entry>
+		<entry id="20">
+			<title>Iterative Point Matching for Registration of Free-Form Curves</title>
+			<authors>
+				<author>Zhengyou Zhang</author>
+			</authors>
+			<pages>46</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/iterative_point_matching_for_registration_of_free-form_curves.txt</url>
+			<id>20</id>
+		</entry>
+		<entry id="21">
+			<title>KinectFusion: Real-time 3D Reconstruction and Interaction Using a Moving Depth Camera</title>
+			<authors>
+				<author>Shahram Izadi</author>
+				<author>David Kim</author>
+				<author>Otmar Hilliges</author>
+				<author>David Molyneaux</author>
+				<author>Richard Newcombe</author>
+				<author>Pushmeet Kohli</author>
+				<author>Jamie Shotton</author>
+				<author>Steve Hodges</author>
+				<author>Dustin Freeman</author>
+				<author>Andrew Davison</author>
+				<author>Andrew Fitzgibbon</author>
+			</authors>
+			<pages>10</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/kinectfusion_real-time_3d_reconstruction_and_interaction_using_a_moving_depth_camera.txt</url>
+			<id>21</id>
+		</entry>
+		<entry id="22">
+			<title>Implementing a 3D scanner with PCL</title>
+			<authors>
+				<author>Michele Pirovano</author>
+			</authors>
+			<pages>20</pages>
+			<year>2011</year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/kinfu_an_open_source_implementation_of_kinect_fusion.txt</url>
+			<id>22</id>
+		</entry>
+		<entry id="23">
+			<title>Large-Scale Multi-Resolution Surface Reconstruction from RGB-D Sequences</title>
+			<authors>
+				<author>Frank Steinbrücker</author>
+				<author>Christian Kerl</author>
+				<author>Jürgen Sturm</author>
+				<author>Daniel Cremers</author>
+			</authors>
+			<pages>8</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/large-scale_multi-resolution_surface_reconstruction_from_rgb-d_sequences.txt</url>
+			<id>23</id>
+		</entry>
+		<entry id="24">
+			<title>Learning 6D Object Pose Estimation using 3D Object Coordinates</title>
+			<authors>
+				<author>Eric Brachmann</author>
+				<author>Alexander Krull</author>
+				<author>Frank Michel</author>
+				<author>Stefan Gumhold</author>
+				<author>Jamie Shotton</author>
+				<author>Carsten Rother</author>
+			</authors>
+			<pages>16</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/learning_6d_object_pose_estimation_using_3d_object_coordinates.txt</url>
+			<id>24</id>
+		</entry>
+		<entry id="25">
+			<title>Lucas-Kanade 20 Years On: A Unifying Framework</title>
+			<authors>
+				<author>Simon Baker </author>
+				<author>Iain Matthews</author>
+			</authors>
+			<pages>35</pages>
+			<year>2002</year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/lucas-kanade_20_years_on_a_unifying_framework.txt</url>
+			<id>25</id>
+		</entry>
+		<entry id="26">
+			<title>Multi-Stereo 3D Object Reconstruction</title>
+			<authors>
+				<author>Carlos Hernández Esteban</author>
+				<author>Francis Schmitt</author>
+				<author></author>
+			</authors>
+			<pages>8</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/multi-stereo_3d_object_reconstruction.txt</url>
+			<id>26</id>
+		</entry>
+		<entry id="27">
+			<title>Multiview Registration for Large Data Sets</title>
+			<authors>
+				<author>Kari Pulli</author>
+			</authors>
+			<pages>9</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/multiview_registration_for_large_data_sets.txt</url>
+			<id>27</id>
+		</entry>
+		<entry id="28">
+			<title>Object Modeling by Registration of Multiple Range Images</title>
+			<authors>
+				<author>Yang Chen</author>
+				<author>Gérard G. Medioni</author>
+			</authors>
+			<pages>7</pages>
+			<year>1992</year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/obect_modeling_by_registration_of_multiple_range_images.txt</url>
+			<id>28</id>
+		</entry>
+		<entry id="29">
+			<title>Patches, Planes and Probabilities: A Non-local Prior for Volumetric 3D Reconstruction</title>
+			<authors>
+				<author>Ali Osman Ulusoy</author>
+				<author>Michael J. Black</author>
+				<author>Andreas Geiger</author>
+			</authors>
+			<pages>10</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/patches_planes_and_probabilites_a_non-local_prior_for_volumetric_3d_reconstruction.txt</url>
+			<id>29</id>
+		</entry>
+		<entry id="30">
+			<title>Photometric Bundle Adjustment for Dense Multi-View 3D Modeling</title>
+			<authors>
+				<author>Amaël Delaunoy</author>
+				<author>Marc Pollefeys</author>
+			</authors>
+			<pages>9</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/photometric_bundle_adjustment_for_dense_multi-view_3d_modeling.txt</url>
+			<id>30</id>
+		</entry>
+		<entry id="31">
+			<title>Photorealistic Scene Reconstruction by Voxel Coloring</title>
+			<authors>
+				<author>Steven M. Seitz</author>
+				<author>Charles R. Dyer</author>
+			</authors>
+			<pages>32</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/photorealistic_scene_reconstruction_by_voxel_coloring.txt</url>
+			<id>31</id>
+		</entry>
+		<entry id="32">
+			<title>Probabilistic visibility for multi-view stereo</title>
+			<authors>
+				<author>Carlos Hernández</author>
+				<author>George Vogiatzis</author>
+				<author>Roberto Cipolla</author>
+			</authors>
+			<pages>8</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/probabilistic_visibility_for_multi-view_stereo.txt</url>
+			<id>32</id>
+		</entry>
+		<entry id="33">
+			<title>Real-Time 3D Model Acquisition</title>
+			<authors>
+				<author>Szymon Rusinkiewicz</author>
+				<author>Olaf Hall-Holt</author>
+				<author>Marc Levoy</author>
+			</authors>
+			<pages>9</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/real-time_3d_model_adquisition.txt</url>
+			<id>33</id>
+		</entry>
+		<entry id="34">
+			<title>Real-Time Dense Geometry from a Handheld Camera</title>
+			<authors>
+				<author>Jan Stühmer1</author>
+				<author>Stefan Gumhold</author>
+				<author>Daniel Cremers1</author>
+			</authors>
+			<pages>10</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/real-time_dense_geometry_form_a_handheld_camera.txt</url>
+			<id>34</id>
+		</entry>
+		<entry id="35">
+			<title>Real-time Monocular SLAM: Why Filter?</title>
+			<authors>
+				<author>Hauke Strasdat</author>
+				<author>J. M. M. Montiel</author>
+				<author>Andrew J. Davison</author>
+			</authors>
+			<pages>8</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/real-time_monocular_slam_why_filter.txt</url>
+			<id>35</id>
+		</entry>
+		<entry id="36">
+			<title>Real-time rendering and dynamic updating of 3-d volumetric data</title>
+			<authors>
+				<author>Andrew Miller</author>
+				<author>Vishal Jain</author>
+				<author>Joseph L. Mundy</author>
+			</authors>
+			<pages>9</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/real-time_rendering_and_dynamic_updating_of_3-d_volumetric_data.txt</url>
+			<id>36</id>
+		</entry>
+		<entry id="37">
+			<title>Real-Time Video-Based Reconstruction of Urban Environments</title>
+			<authors>
+				<author>P. Mordohai</author>
+				<author>J. M. Frahm</author>
+				<author>A. Akbarzadeh</author>
+				<author>B. Clipp</author>
+				<author>C. Engels</author>
+				<author>D. Gallup</author>
+				<author>P. Merrell</author>
+				<author>C. Salmi</author>
+				<author>S. Sinha</author>
+				<author>B. Talton</author>
+				<author>L. Wang</author>
+				<author>Q. Yang</author>
+				<author>H. Stewénius</author>
+				<author>H. Towles</author>
+				<author>G. Welch</author>
+				<author>R. Yang</author>
+				<author>M. Pollefeys</author>
+				<author>D. Nistér</author>
+			</authors>
+			<pages>8</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/real-time_video-based_reconstruction_of_urban_environments.txt</url>
+			<id>37</id>
+		</entry>
+		<entry id="38">
+			<title>Real-Time Visibility-Based Fusion of Depth Maps</title>
+			<authors>
+				<author>Paul Merrell</author>
+				<author>Amir Akbarzadeh</author>
+				<author>Liang Wang</author>
+				<author>Philippos Mordohai</author>
+				<author>Jan-Michael Frahm</author>
+				<author>Ruigang Yang</author>
+				<author>David Nistér</author>
+				<author>Marc Pollefeys</author>
+			</authors>
+			<pages>9</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/real-time_visibility-based_fusion_of_depth_maps.txt</url>
+			<id>38</id>
+		</entry>
+		<entry id="39">
+			<title>Reconstruction of Solid Models from Oriented Point Sets</title>
+			<authors>
+				<author>Michael Kazhdan†</author>
+			</authors>
+			<pages>11</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/reconstruction_of_solid_models_from_oriented_point_sets.txt</url>
+			<id>39</id>
+		</entry>
+		<entry id="40">
+			<title>Reliable surface reconstruction from multiple range images</title>
+			<authors>
+				<author>Adrian Hilton</author>
+			</authors>
+			<pages>26</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/reliable_surface_reconstruction_from_multiple_range_images.txt</url>
+			<id>40</id>
+		</entry>
+		<entry id="41">
+			<title>RGB-D Mapping: Using Depth Cameras for Dense 3D Modeling of Indoor Environments</title>
+			<authors>
+				<author>Peter Henry</author>
+				<author>Michael Krainin</author>
+				<author>Evan Herbst</author>
+				<author>Xiaofeng Ren</author>
+				<author>Dieter Fox</author>
+			</authors>
+			<pages>15</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/rgb-d_mapping_using_depth_cameras_for_dense_3d_modeling_of_indoor_environments.txt</url>
+			<id>41</id>
+		</entry>
+		<entry id="42">
+			<title>Robust Point Cloud Based Reconstruction of Large-Scale Outdoor Scenes</title>
+			<authors>
+				<author>Ziquan Lan</author>
+				<author>Zi Jian Yew</author>
+				<author>Gim Hee Lee</author>
+			</authors>
+			<pages>9</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/robust_point_cloud_based_reconstruction_of_lage-sccale_outdoor_scenes.txt</url>
+			<id>42</id>
+		</entry>
+		<entry id="43">
+			<title>Robust Reconstruction of Indoor Scenes</title>
+			<authors>
+				<author>Sungjoon Choi</author>
+				<author>Qian-Yi Zhou</author>
+				<author>Vladlen Koltun‡</author>
+			</authors>
+			<pages>10</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/robust_reconstruction_of_indoor_scenens.txt</url>
+			<id>43</id>
+		</entry>
+		<entry id="44">
+			<title>ScanNet: Richly-annotated 3D Reconstructions of Indoor Scenes</title>
+			<authors>
+				<author>Angela Dai</author>
+				<author>Angel X. Chang</author>
+				<author>Manolis Savva</author>
+				<author>Maciej Halber</author>
+				<author>Thomas Funkhouser</author>
+				<author>Matthias Nießner</author>
+			</authors>
+			<pages>22</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/scannet_richly-annotated_3d_reconstrucctions_of_indoor_scenes.txt</url>
+			<id>44</id>
+		</entry>
+		<entry id="45">
+			<title>ShapeNet: An Information-Rich 3D Model Repository</title>
+			<authors>
+				<author>Angel X. Chang</author>
+				<author>Thomas Funkhouser</author>
+				<author>Leonidas Guibas</author>
+				<author>Pat Hanrahan</author>
+				<author>Qixing Huang</author>
+				<author>Zimo Li</author>
+				<author>Silvio Savarese</author>
+				<author>Manolis Savva∗</author>
+				<author>Shuran Song</author>
+				<author>Hao Su</author>
+				<author>Jianxiong Xiao</author>
+				<author>Li Yi</author>
+				<author>and Fisher Yu</author>
+			</authors>
+			<pages>12</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/shapenet_an_information-rich_3d_model_repository.txt</url>
+			<id>45</id>
+		</entry>
+		<entry id="46">
+			<title>Stochastic Surface Mesh Reconstruction</title>
+			<authors>
+				<author>Mustafa Ozendi</author>
+				<author>Devrim Akca</author>
+				<author>Hüseyin Topan</author>
+			</authors>
+			<pages>8</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/stochastic_surface_mesh_reconstruction.txt</url>
+			<id>46</id>
+		</entry>
+		<entry id="47">
+			<title>Zippered Polygon Meshes from Range Images</title>
+			<authors>
+				<author>Greg Turk</author>
+				<author>Marc Levoy</author>
+			</authors>
+			<pages>8</pages>
+			<year></year>
+			<url>file:/datos/ne555/documentos/informatica/test/fusion_3d/papers/zippered_polygon_meshes_from_range_images.txt</url>
+			<id>47</id>
+		</entry>
+	</collection>
 </tellico>
