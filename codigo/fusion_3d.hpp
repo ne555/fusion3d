@@ -14,8 +14,13 @@ namespace nih {
 	typedef Eigen::Transform<float, 3, Eigen::Affine> transformation;
 	typedef Eigen::Vector3f vector;
 
-	inline point vec2point(vector v);
+	inline point v2p(vector v);
+	inline vector p2v(point p);
 	inline cloud::Ptr load_cloud_ply(std::string filename);
+
+	//operations element to element
+	inline vector prod(vector a, const vector &b);
+	inline vector div(vector a, const vector &b);
 } // namespace nih
 
 // implementation
@@ -31,8 +36,21 @@ namespace nih {
 		return cloud;
 	}
 
-	point vec2point(vector v) {
+	point v2p(vector v) {
 		return point(v[0], v[1], v[2]);
+	}
+	vector p2v(point p) {
+		return vector(p.data);
+	}
+	vector prod(vector a, const vector &b) {
+		for(int K = 0; K < 3; ++K)
+			a[K] *= b[K];
+		return a;
+	}
+	vector div(vector a, const vector &b) {
+		for(int K = 0; K < 3; ++K)
+			a[K] /= b[K];
+		return a;
 	}
 } // namespace nih
 
