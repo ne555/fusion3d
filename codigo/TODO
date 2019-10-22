@@ -14,6 +14,7 @@ submuestreo de la entrada
 
 features
 	fpfh
+	usar diferencia respecto a la media para elegir sobresalientes
 
 alineación
 	icp
