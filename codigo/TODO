@@ -1,0 +1,24 @@
+colorear error en la malla
+generar un histograma del error
+
+submuestreo de la entrada
+	detecctión de keypoints
+		iss: puntos distribuídos, no agrupa en la oreja
+		brisk_2d: keypoints empty
+		sift: empty
+		trajkovic: devuelve contorno
+		narf: requiere range-image
+		MultiscaleFeaturePersistence of fpfh to find keypoints
+
+	subdivisión de la malla
+
+features
+	fpfh
+
+alineación
+	icp
+	SampleConsensusInitialAlignment
+	Levenberg-Marquardt
+
+leer .ply con estructura
+escribir .ply con estructura
