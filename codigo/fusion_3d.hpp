@@ -8,8 +8,15 @@
 #include <pcl/io/vtk_lib_io.h>
 #include <pcl/point_cloud.h>
 
+#include <pcl/filters/filter.h>
+
+#include <vector>
+#include <string>
+#include <fstream>
+
 namespace nih {
 	typedef pcl::PointCloud<pcl::PointXYZ> cloud;
+	typedef pcl::PointCloud<pcl::Normal> normal;
 	typedef pcl::PointXYZ point;
 	typedef Eigen::Transform<float, 3, Eigen::Affine> transformation;
 	typedef Eigen::Vector3f vector;
@@ -21,19 +28,38 @@ namespace nih {
 	//operations element to element
 	inline vector prod(vector a, const vector &b);
 	inline vector div(vector a, const vector &b);
+
+	transformation get_transformation(std::ifstream &input);
+	//bounding box
+	//getMinMax3d()
+	//CropBox
+
+	//filters work with indices too
 } // namespace nih
 
 // implementation
 namespace nih {
 	cloud::Ptr load_cloud_ply(std::string filename) {
-		// reading the transformation
-		cloud::Ptr cloud(new nih::cloud);
+#if 0
+		pcl::PLYReader reader;
+		cloud::Ptr nube(new cloud);
+		reader.read(filename, *nube);
+		/*
+		nube->is_dense = false;
+		std::vector<int> indices;
+		pcl::removeNaNFromPointCloud(*nube, *nube, indices);
+		*/
 
+		return nube; //organized, full of NaN (icp dies with nan, kdtree dies with nan)
+#else
+
+		cloud::Ptr nube(new cloud);
 		pcl::PolygonMesh mesh;
 		pcl::io::loadPolygonFilePLY(filename, mesh);
-		pcl::fromPCLPointCloud2(mesh.cloud, *cloud);
+		pcl::fromPCLPointCloud2(mesh.cloud, *nube);
 
-		return cloud;
+		return nube; //unorganized, no nan
+#endif
 	}
 
 	point v2p(vector v) {
@@ -51,6 +77,23 @@ namespace nih {
 		for(int K = 0; K < 3; ++K)
 			a[K] /= b[K];
 		return a;
+	}
+
+	transformation get_transformation(std::ifstream &input) {
+		// reading the transformation
+		float t[3];
+		float q[4];
+		for(int K = 0; K < 3; ++K)
+			input >> t[K];
+		for(int K = 0; K < 4; ++K)
+			input >> q[K];
+		Eigen::Quaternion<float> rotation(q);
+		Eigen::Translation<float, 3> translation(t[0], t[1], t[2]);
+
+		nih::transformation transformation;
+		transformation = translation * rotation.inverse();
+
+		return transformation;
 	}
 } // namespace nih
 
