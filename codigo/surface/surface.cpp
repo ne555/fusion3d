@@ -11,7 +11,9 @@ namespace nih {
 }
 
 nih::cloudnormal::Ptr load_cloud_normal(std::string filename);
-void visualise(const std::vector<nih::cloudnormal::Ptr> &nubes);
+void visualise(const std::vector<nih::cloudnormal::Ptr> &nubes, nih::cloudnormal::Ptr result);
+
+nih::cloudnormal::Ptr fusionar(std::vector<nih::cloudnormal::Ptr> &nubes);
 
 int main(int argc, char **argv) {
 	if(argc < 3) {
@@ -27,7 +29,9 @@ int main(int argc, char **argv) {
 	while(input >> filename)
 		nubes.push_back(load_cloud_normal(directory+filename) );
 
-	visualise(nubes);
+	auto fusionada = fusionar(nubes);
+
+	visualise(nubes, fusionada);
 
 	return 0;
 }
@@ -51,7 +55,14 @@ void keyboardEvent(const pcl::visualization::KeyboardEvent &event, void *data) {
 		++index;
 }
 
-void visualise(const std::vector<nih::cloudnormal::Ptr> &nubes) {
+nih::cloudnormal::Ptr fusionar(std::vector<nih::cloudnormal::Ptr> &nubes){
+	auto result = boost::make_shared<nih::cloudnormal>();
+	for (auto cloud : nubes)
+		*result += *cloud;
+	return result;
+}
+
+void visualise(const std::vector<nih::cloudnormal::Ptr> &nubes, nih::cloudnormal::Ptr result){
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("surface");
 
@@ -71,6 +82,7 @@ void visualise(const std::vector<nih::cloudnormal::Ptr> &nubes) {
 		view->addPointCloud<pcl::PointNormal>(
 		    nubes[K], cloud_color, std::to_string(K), v1);
 	}
+	view->addPointCloud<pcl::PointNormal>(result, "result", v2);
 
 	while(!view->wasStopped()) {
 		view->spinOnce(100);
