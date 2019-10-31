@@ -28,11 +28,11 @@ struct camera {
 };
 
 class pairwise_alignment {
-private:
+public:
 	nih::cloud::Ptr source, target;
 	nih::cloud::Ptr result;
 	nih::normal::Ptr source_normal, target_normal;
-	nih::transformation current, previous;
+	nih::transformation current, previous, gt_transformation;
 	camera ground_truth, aligned, initial;
 
 	nih::cloud::Ptr iss_keypoints(nih::cloud::Ptr input, double resolution) const;
@@ -79,6 +79,7 @@ nih::transformation get_cam_pos(std::ifstream &input) {
 }
 
 int main(int argc, char **argv) {
+	std::cerr << "Start...\n";
 	if(argc < 3) {
 		usage(argv[0]);
 		return 1;
@@ -97,6 +98,8 @@ int main(int argc, char **argv) {
 	input >> filename;
 	alineacion.set_source_cloud(nih::load_cloud_ply(directory + filename));
 	alineacion.set_ground_truth(nih::get_transformation(input));
+	//TODO: arreglar acceso a variable privada
+	alineacion.current = alineacion.gt_transformation;
 	alineacion.next_iteration(); // la primera vez no se registra
 
 	int K = 0;
@@ -155,7 +158,8 @@ pairwise_alignment::pairwise_alignment(nih::transformation initial_cam) {
 
 void pairwise_alignment::set_ground_truth(nih::transformation gt) {
 	ground_truth = transform(initial, gt);
-	current = gt;
+	gt_transformation = gt;
+	//current = gt;
 }
 
 void pairwise_alignment::set_source_cloud(nih::cloud::Ptr cloud) {
@@ -355,6 +359,7 @@ nih::cloud::Ptr pairwise_alignment::align() {
 	// done in 0 position transform the whole cloud
 	pcl::transformPointCloud(*this->source, *result, previous * sc_ia_transf * icp_transf);
 	aligned = transform(initial, previous * sc_ia_transf * icp_transf);
+	current = previous * sc_ia_transf * icp_transf;
 #endif
 
 	this->result = result;
@@ -365,7 +370,7 @@ void pairwise_alignment::next_iteration() {
 	target = source;
 	target_normal = source_normal;
 	previous = current;
-	aligned = ground_truth;
+	//aligned = ground_truth;
 }
 
 void pairwise_alignment::error_report() const {
