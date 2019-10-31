@@ -45,19 +45,49 @@ nih::cloudnormal::Ptr load_cloud_normal(std::string filename) {
 	return nube;
 }
 
+void keyboardEvent(const pcl::visualization::KeyboardEvent &event, void *data) {
+	int &index = *reinterpret_cast<int *>(data);
+	if(event.getKeySym() == "space" && event.keyDown())
+		++index;
+}
+
 void visualise(const std::vector<nih::cloudnormal::Ptr> &nubes) {
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("surface");
 
+	int index = 0;
 	view->setBackgroundColor(0, 0, 0);
-	//for(auto &cloud : nubes) {
-	for(size_t K=0; K<nubes.size(); ++K){
-		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointNormal> cloud_color(cloud, 255, 0, 0);
+	view->registerKeyboardCallback(&keyboardEvent, (void *)&index);
 
-		//view->addPointCloudNormals<pcl::PointNormal>(cloud);
-		view->addPointCloud<pcl::PointNormal>(nubes[K], std::to_string(K));
+	for(size_t K = 0; K < nubes.size(); ++K) {
+		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointNormal>
+		    cloud_color(nubes[K], 255, 255, 255);
+
+		view->addPointCloud<pcl::PointNormal>(
+		    nubes[K], cloud_color, std::to_string(K));
 	}
 
-	while(!view->wasStopped())
+	while(!view->wasStopped()) {
 		view->spinOnce(100);
+		// remove current and previous
+		// change their color
+		// add them again
+		int current = index % nubes.size(),
+		    previous = (index + nubes.size() - 1) % nubes.size();
+		view->removePointCloud(std::to_string(current));
+		view->removePointCloud(std::to_string(previous));
+		{
+			pcl::visualization::PointCloudColorHandlerCustom<pcl::PointNormal>
+			    cloud_color(nubes[current], 255, 0, 0);
+			view->addPointCloud<pcl::PointNormal>(
+			    nubes[current], cloud_color, std::to_string(current));
+		}
+		{
+			pcl::visualization::PointCloudColorHandlerCustom<pcl::PointNormal>
+			    cloud_color(nubes[previous], 255, 255, 255);
+			view->addPointCloud<pcl::PointNormal>(
+			    nubes[previous], cloud_color, std::to_string(previous));
+		}
+		std::cerr << "Cloud: " << current << '\n';
+	}
 }
