@@ -59,12 +59,17 @@ void visualise(const std::vector<nih::cloudnormal::Ptr> &nubes) {
 	view->setBackgroundColor(0, 0, 0);
 	view->registerKeyboardCallback(&keyboardEvent, (void *)&index);
 
+	int v1;
+	int v2;
+	view->createViewPort(0.0, 0.0, 0.5, 1.0, v1);
+	view->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
+
 	for(size_t K = 0; K < nubes.size(); ++K) {
 		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointNormal>
 		    cloud_color(nubes[K], 255, 255, 255);
 
 		view->addPointCloud<pcl::PointNormal>(
-		    nubes[K], cloud_color, std::to_string(K));
+		    nubes[K], cloud_color, std::to_string(K), v1);
 	}
 
 	while(!view->wasStopped()) {
@@ -80,13 +85,13 @@ void visualise(const std::vector<nih::cloudnormal::Ptr> &nubes) {
 			pcl::visualization::PointCloudColorHandlerCustom<pcl::PointNormal>
 			    cloud_color(nubes[current], 255, 0, 0);
 			view->addPointCloud<pcl::PointNormal>(
-			    nubes[current], cloud_color, std::to_string(current));
+			    nubes[current], cloud_color, std::to_string(current), v1);
 		}
 		{
 			pcl::visualization::PointCloudColorHandlerCustom<pcl::PointNormal>
 			    cloud_color(nubes[previous], 255, 255, 255);
 			view->addPointCloud<pcl::PointNormal>(
-			    nubes[previous], cloud_color, std::to_string(previous));
+			    nubes[previous], cloud_color, std::to_string(previous), v1);
 		}
 		std::cerr << "Cloud: " << current << '\n';
 	}
