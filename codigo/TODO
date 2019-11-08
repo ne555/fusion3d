@@ -7,7 +7,7 @@ submuestreo de la entrada
 		brisk_2d: keypoints empty
 		sift: empty
 		trajkovic: devuelve contorno
-		narf: requiere range-image
+		narf: requiere range-image (¿qué es eso?)
 		MultiscaleFeaturePersistence of fpfh to find keypoints
 
 	subdivisión de la malla
@@ -15,6 +15,7 @@ submuestreo de la entrada
 features
 	fpfh
 	usar diferencia respecto a la media para elegir sobresalientes
+	agrupar regiones de "saliencia" similar (todo un grupo debería definirse por un punto)
 
 alineación
 	icp
