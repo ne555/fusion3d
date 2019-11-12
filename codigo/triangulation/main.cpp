@@ -18,6 +18,8 @@ void usage(const char *program) {
 	std::cerr << program << " cloud.ply\n";
 }
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr project(pcl::PointCloud<pcl::PointXYZ>::Ptr nube);
+
 int main(int argc, char **argv) {
 	if(argc < 2) {
 		usage(argv[0]);
@@ -25,7 +27,8 @@ int main(int argc, char **argv) {
 	}
 
 	auto nube = load_cloud(argv[1]);
-	auto proyectada = nube->makeShared();
+	auto proyectada = project(nube->makeShared());
+
 
 	//visualization
 	auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("triangulation");
@@ -46,5 +49,14 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr load_cloud(std::string filename) {
 	pcl::PLYReader reader;
 	auto nube = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
 	reader.read(filename, *nube);
+	return nube;
+}
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr project(pcl::PointCloud<pcl::PointXYZ>::Ptr nube){
+	//z = 0 
+	//proyección ortogonal
+	
+	for(int K=0; K<nube->points.size(); ++K)
+		nube->points[K].z = 0;
 	return nube;
 }
