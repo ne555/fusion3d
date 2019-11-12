@@ -1,6 +1,19 @@
 colorear error en la malla
 generar un histograma del error
 
+triangulación de la entrada
+	proyectar a z=0
+	triangular por cercanía
+	eliminar aristas demasiado grandes
+
+Intervalo de confianza:
+	eliminar bordes
+	eliminar normales cuasi ortogonales
+	eliminar cercano al borde
+		del centro de la captura
+	eliminar cercanos a eliminados
+
+
 submuestreo de la entrada
 	detecctión de keypoints
 		iss: puntos distribuídos, no agrupa en la oreja
@@ -9,6 +22,8 @@ submuestreo de la entrada
 		trajkovic: devuelve contorno
 		narf: requiere range-image (¿qué es eso?)
 		MultiscaleFeaturePersistence of fpfh to find keypoints
+			** revisar esto **
+		** No considerar puntos de borde **
 
 	subdivisión de la malla
 
