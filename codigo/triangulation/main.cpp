@@ -9,6 +9,7 @@
 #include <pcl/point_cloud.h>
 
 #include <pcl/geometry/triangle_mesh.h>
+#include <pcl/filters/filter.h>
 #include <delaunator.hpp>
 
 #include <pcl/visualization/pcl_visualizer.h>
@@ -55,6 +56,25 @@ int main(int argc, char **argv) {
 	view->addPointCloud(nube, orig_color, "orig");
 	view->addPointCloud(proyectada, proj_color, "proj");
 
+	//pintar puntos del contorno
+	int contorno=0;
+	pcl::PointXYZ p1;
+	bool first_found = false;
+	for(int K=0; K<proyectada->size(); ++K){
+		if(triangle_mesh->isBoundary(pcl::geometry::VertexIndex(K))){
+			++contorno;
+			if(not first_found){
+				first_found = true;
+				p1 = (*proyectada)[K];
+				continue;
+			}
+			view->addLine(p1, (*proyectada)[K], 0, 255, 0, std::to_string(K));
+			p1 = (*proyectada)[K];
+		}
+	}
+	std::cout << "Total de puntos: " << proyectada->size() << '\n';
+	std::cout << "Puntos del contorno: " << contorno << '\n';
+
 	while(!view->wasStopped())
 		view->spinOnce(100);
 	return 0;
@@ -96,6 +116,12 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr load_cloud(std::string filename) {
 	pcl::PLYReader reader;
 	auto nube = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
 	reader.read(filename, *nube);
+
+	//remove NaN
+	nube->is_dense = false;
+	std::vector<int> indices;
+	pcl::removeNaNFromPointCloud(*nube, *nube, indices);
+
 	return nube;
 }
 
