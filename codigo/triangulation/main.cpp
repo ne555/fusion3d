@@ -39,7 +39,9 @@ namespace nih{
 nih::TMesh triangulate(pcl::PointCloud<pcl::PointXYZ>::Ptr nube);
 pcl::PolygonMesh::Ptr triangulate2(pcl::PointCloud<pcl::PointXYZ>::Ptr nube);
 
-void delete_big_edges(nih::TMesh mesh, nih::cloud::Ptr nube, double threshold);
+//devuelve una lista con vértices aislados
+std::vector<int>
+delete_big_edges(nih::TMesh mesh, nih::cloud::Ptr nube, double threshold);
 
 int main(int argc, char **argv) {
 	if(argc < 2) {
@@ -75,9 +77,12 @@ int main(int argc, char **argv) {
 
 	//contorno
 	auto tmesh = triangulate(nube);
-	delete_big_edges(tmesh, nube, 8*model_resolution);
+	auto isolated = delete_big_edges(tmesh, nube, 8*model_resolution);
 
 	auto contorno = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+	for(int v: isolated)
+		contorno->push_back( (*nube)[v] );
+
 	for(int K = 0; K < tmesh->sizeVertices(); ++K) {
 		pcl::geometry::VertexIndex v(K);
 		if(not tmesh->isValid(v) or tmesh->isBoundary(v)) {
@@ -118,10 +123,10 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-void delete_big_edges(nih::TMesh mesh, nih::cloud::Ptr nube, double threshold){
-	//traverse all edges
-	//if e.length() > threshold
-	//delete e
+std::vector<int> delete_big_edges(nih::TMesh mesh, nih::cloud::Ptr nube, double threshold){
+	// for e in edges
+	//    if e.length() > threshold
+	//      delete e
 	for(int K=0; K<mesh->sizeHalfEdges(); K+=2){
 		pcl::geometry::HalfEdgeIndex e(K);
 		pcl::geometry::VertexIndex
@@ -138,7 +143,18 @@ void delete_big_edges(nih::TMesh mesh, nih::cloud::Ptr nube, double threshold){
 			mesh->deleteEdge(e);
 	}
 
+	//capturar vértices aislados
+	std::vector<int> isolated;
+	for(int K=0; K<mesh->sizeVertices(); ++K){
+		pcl::geometry::VertexIndex v(K);
+		if(mesh->isIsolated(v)){
+			auto &data = mesh->getVertexDataCloud();
+			isolated.push_back( data[v.get()].id );
+		}
+	}
+
 	mesh->cleanUp();
+	return isolated;
 }
 
 pcl::PolygonMesh::Ptr triangulate2(pcl::PointCloud<pcl::PointXYZ>::Ptr nube) {
