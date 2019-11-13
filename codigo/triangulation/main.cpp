@@ -39,6 +39,8 @@ namespace nih{
 nih::TMesh triangulate(pcl::PointCloud<pcl::PointXYZ>::Ptr nube);
 pcl::PolygonMesh::Ptr triangulate2(pcl::PointCloud<pcl::PointXYZ>::Ptr nube);
 
+void delete_big_edges(nih::TMesh mesh, nih::cloud::Ptr nube, double threshold);
+
 int main(int argc, char **argv) {
 	if(argc < 2) {
 		usage(argv[0]);
@@ -55,14 +57,12 @@ int main(int argc, char **argv) {
 	double model_resolution = diff[0] / sqrt(nube->size());
 
 	// submuestreo
-	int n;
-	std::cin >> n;
 	pcl::VoxelGrid<pcl::PointXYZ> muestreo;
 	muestreo.setInputCloud(nube);
 	muestreo.setLeafSize(
-		model_resolution*n,
-		model_resolution*n,
-		model_resolution*n
+		model_resolution*1,
+		model_resolution*1,
+		model_resolution*1
 	);
 	muestreo.filter(*nube);
 
@@ -72,6 +72,22 @@ int main(int argc, char **argv) {
 	auto triangle_mesh = triangulate2(nube);
 
 
+
+	//contorno
+	auto tmesh = triangulate(nube);
+	delete_big_edges(tmesh, nube, 8*model_resolution);
+
+	auto contorno = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+	for(int K = 0; K < tmesh->sizeVertices(); ++K) {
+		pcl::geometry::VertexIndex v(K);
+		if(not tmesh->isValid(v) or tmesh->isBoundary(v)) {
+			auto &data = tmesh->getVertexDataCloud();
+			// contorno->push_back((*nube)[K]);
+			contorno->push_back((*nube)[data[v.get()].id]);
+		}
+	}
+
+#if 1
 	//visualization
 	auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("triangulation");
 	view->setBackgroundColor(0, 0, 0);
@@ -82,17 +98,8 @@ int main(int argc, char **argv) {
 	view->addPointCloud(nube, orig_color, "orig");
 	view->addPointCloud(proyectada, proj_color, "proj");
 
-	view->addPolygonMesh(*triangle_mesh, "tmesh");
-
-	//contorno
-	auto tmesh = triangulate(nube);
-	auto contorno = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-	for(int K = 0; K < nube->size(); ++K) {
-		if(tmesh->isBoundary(pcl::geometry::VertexIndex(K))) {
-			contorno->push_back((*nube)[K]);
-		}
-	}
-
+	//view->addPolygonMesh(*triangle_mesh, "tmesh");
+	view->addPolylineFromPolygonMesh(*triangle_mesh, "tmesh");
 	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
 	    boundary_color(contorno, 0, 255, 0);
 	view->addPointCloud(contorno, boundary_color, "boundary");
@@ -100,14 +107,38 @@ int main(int argc, char **argv) {
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "boundary");
 
 	std::cout << "Total de puntos: " << proyectada->size() << '\n';
-	std::cout << "Puntos del contorno: " << contorno->size() << '\n';
+	std::cout << "Puntos invalidos: " << contorno->size() << '\n';
 	std::cout << "Total de puntos: " << tmesh->sizeVertices() << '\n';
 	std::cout << "Total de triángulos: "<< tmesh->sizeFaces() << '\n';
 	std::cout << "Total de aristas: "<< tmesh->sizeEdges() << '\n';
 
 	while(!view->wasStopped())
 		view->spinOnce(100);
+#endif
 	return 0;
+}
+
+void delete_big_edges(nih::TMesh mesh, nih::cloud::Ptr nube, double threshold){
+	//traverse all edges
+	//if e.length() > threshold
+	//delete e
+	for(int K=0; K<mesh->sizeHalfEdges(); K+=2){
+		pcl::geometry::HalfEdgeIndex e(K);
+		pcl::geometry::VertexIndex
+			begin = mesh->getOriginatingVertexIndex(e),
+			end = mesh->getTerminatingVertexIndex(e);
+
+		nih::point a, b;
+		auto &data = mesh->getVertexDataCloud();
+		a = (*nube)[data[begin.get()].id];
+		b = (*nube)[data[end.get()].id];
+
+		using nih::p2v;
+		if ( (p2v(a) - p2v(b)).norm() > threshold )
+			mesh->deleteEdge(e);
+	}
+
+	mesh->cleanUp();
 }
 
 pcl::PolygonMesh::Ptr triangulate2(pcl::PointCloud<pcl::PointXYZ>::Ptr nube) {
