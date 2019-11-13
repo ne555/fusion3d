@@ -12,6 +12,7 @@
 #include <delaunator.hpp>
 #include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/extract_indices.h>
 #include <pcl/geometry/triangle_mesh.h>
 
 #include <pcl/PolygonMesh.h>
@@ -71,22 +72,27 @@ int main(int argc, char **argv) {
 
 	auto triangle_mesh = triangulate2(nube);
 
-	// contorno
+	// puntos del contorno
 	auto tmesh = triangulate(nube);
-	auto isolated = delete_big_edges(tmesh, nube, 8 * model_resolution);
+	auto puntos_malos = boost::make_shared<std::vector<int>>(); //¡¿?!
 
-	auto contorno = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-	for(int v : isolated)
-		contorno->push_back((*nube)[v]);
+	*puntos_malos = delete_big_edges(tmesh, nube, 8 * model_resolution);
 
 	for(int K = 0; K < tmesh->sizeVertices(); ++K) {
 		pcl::geometry::VertexIndex v(K);
 		if(not tmesh->isValid(v) or tmesh->isBoundary(v)) {
 			auto &data = tmesh->getVertexDataCloud();
-			// contorno->push_back((*nube)[K]);
-			contorno->push_back((*nube)[data[v.get()].id]);
+			puntos_malos->push_back(data[v.get()].id);
 		}
 	}
+
+	//ver puntos malos
+	nih::cloud::Ptr bad_points = boost::make_shared<nih::cloud>();
+	pcl::ExtractIndices<nih::point> filtro;
+	filtro.setInputCloud(nube);
+	filtro.setIndices(puntos_malos);
+	//filtro.setNegative(true);
+	filtro.filter(*bad_points);
 
 #if 1
 	// visualization
@@ -98,18 +104,17 @@ int main(int argc, char **argv) {
 	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> proj_color(
 	    proyectada, 0, 0, 255);
 	view->addPointCloud(nube, orig_color, "orig");
-	view->addPointCloud(proyectada, proj_color, "proj");
+	//view->addPointCloud(proyectada, proj_color, "proj");
 
 	// view->addPolygonMesh(*triangle_mesh, "tmesh");
 	view->addPolylineFromPolygonMesh(*triangle_mesh, "tmesh");
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
-	    boundary_color(contorno, 0, 255, 0);
-	view->addPointCloud(contorno, boundary_color, "boundary");
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> bad_color(bad_points, 0, 255, 0);
+	view->addPointCloud(bad_points, bad_color, "boundary");
 	view->setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "boundary");
 
 	std::cout << "Total de puntos: " << proyectada->size() << '\n';
-	std::cout << "Puntos invalidos: " << contorno->size() << '\n';
+	std::cout << "Puntos invalidos: " << puntos_malos->size() << '\n';
 	std::cout << "Total de puntos: " << tmesh->sizeVertices() << '\n';
 	std::cout << "Total de triángulos: " << tmesh->sizeFaces() << '\n';
 	std::cout << "Total de aristas: " << tmesh->sizeEdges() << '\n';
