@@ -14,6 +14,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/geometry/triangle_mesh.h>
+#include <pcl/kdtree/kdtree_flann.h>
 
 #include <pcl/PolygonMesh.h>
 #include <pcl/visualization/pcl_visualizer.h>
@@ -46,6 +47,9 @@ pcl::PolygonMesh::Ptr triangulate2(pcl::PointCloud<pcl::PointXYZ>::Ptr nube);
 std::vector<int>
 delete_big_edges(nih::TMesh mesh, nih::cloud::Ptr nube, double threshold);
 
+// devuelve una lista con vértices a eliminar
+std::vector<int> kill_near(const std::vector<int> &puntos_malos, nih::cloud::Ptr nube, double distance);
+
 int main(int argc, char **argv) {
 	if(argc < 2) {
 		usage(argv[0]);
@@ -72,18 +76,27 @@ int main(int argc, char **argv) {
 
 	auto triangle_mesh = triangulate2(nube);
 
-	// puntos del contorno
+	// puntos a eliminar
 	auto tmesh = triangulate(nube);
 	auto puntos_malos = boost::make_shared<std::vector<int>>(); //¡¿?!
 
+	//puntos aislados
 	*puntos_malos = delete_big_edges(tmesh, nube, 8 * model_resolution);
-
+	//contorno
 	for(int K = 0; K < tmesh->sizeVertices(); ++K) {
 		pcl::geometry::VertexIndex v(K);
 		if(not tmesh->isValid(v) or tmesh->isBoundary(v)) {
 			auto &data = tmesh->getVertexDataCloud();
 			puntos_malos->push_back(data[v.get()].id);
 		}
+	}
+
+	//puntos cercanos a muertos
+	{
+		auto aux = kill_near(*puntos_malos, nube, 4*model_resolution);
+		puntos_malos->insert(puntos_malos->end(), aux.begin(), aux.end());
+		std::sort(puntos_malos->begin(), puntos_malos->end());
+		puntos_malos->erase(std::unique(puntos_malos->begin(), puntos_malos->end()), puntos_malos->end());
 	}
 
 	//ver puntos malos
@@ -113,9 +126,9 @@ int main(int argc, char **argv) {
 	view->setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "boundary");
 
-	std::cout << "Total de puntos: " << proyectada->size() << '\n';
+	std::cout << "Total de puntos: " << nube->size() << '\n';
 	std::cout << "Puntos invalidos: " << puntos_malos->size() << '\n';
-	std::cout << "Total de puntos: " << tmesh->sizeVertices() << '\n';
+	std::cout << "Total de puntos malos: " << bad_points->size() << '\n';
 	std::cout << "Total de triángulos: " << tmesh->sizeFaces() << '\n';
 	std::cout << "Total de aristas: " << tmesh->sizeEdges() << '\n';
 
@@ -123,6 +136,22 @@ int main(int argc, char **argv) {
 		view->spinOnce(100);
 #endif
 	return 0;
+}
+
+std::vector<int> kill_near(const std::vector<int> &puntos_malos, nih::cloud::Ptr nube, double distance){
+	pcl::KdTreeFLANN<nih::point> kdtree;
+	kdtree.setInputCloud(nube);
+
+	std::vector<int> index;
+	for(int K=0; K<puntos_malos.size(); ++K){
+		nih::point p = (*nube)[puntos_malos[K]];
+		std::vector<int> aux;
+		std::vector<float> sqr_dist;
+		kdtree.radiusSearch(p, distance, aux, sqr_dist);
+		index.insert(index.end(), aux.begin(), aux.end());
+	}
+
+	return index;
 }
 
 std::vector<int>
