@@ -4,14 +4,17 @@
  * triangula
  * vuelve al espacio
  */
+#include "../fusion_3d.hpp"
 
 #include <pcl/io/ply_io.h>
 #include <pcl/point_cloud.h>
 
 #include <pcl/geometry/triangle_mesh.h>
 #include <pcl/filters/filter.h>
+#include <pcl/filters/voxel_grid.h>
 #include <delaunator.hpp>
 
+#include <pcl/PolygonMesh.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
 #include <iostream>
@@ -30,9 +33,11 @@ namespace nih{
 		int id;
 	};
 	using TMesh = pcl::geometry::TriangleMesh <pcl::geometry::DefaultMeshTraits<VertexData> >::Ptr;
+	//using TMesh = pcl::PolygonMesh::Ptr;
 }
 
 nih::TMesh triangulate(pcl::PointCloud<pcl::PointXYZ>::Ptr nube);
+pcl::PolygonMesh::Ptr triangulate2(pcl::PointCloud<pcl::PointXYZ>::Ptr nube);
 
 int main(int argc, char **argv) {
 	if(argc < 2) {
@@ -41,9 +46,30 @@ int main(int argc, char **argv) {
 	}
 
 	auto nube = load_cloud(argv[1]);
+
+	nih::point bottom_left_back, upper_right_front;
+	pcl::getMinMax3D(*nube, bottom_left_back, upper_right_front);
+
+	using nih::p2v;
+	nih::vector diff = p2v(upper_right_front) - p2v(bottom_left_back);
+	double model_resolution = diff[0] / sqrt(nube->size());
+
+	// submuestreo
+	int n;
+	std::cin >> n;
+	pcl::VoxelGrid<pcl::PointXYZ> muestreo;
+	muestreo.setInputCloud(nube);
+	muestreo.setLeafSize(
+		model_resolution*n,
+		model_resolution*n,
+		model_resolution*n
+	);
+	muestreo.filter(*nube);
+
+
 	auto proyectada = project(nube->makeShared());
 
-	auto triangle_mesh = triangulate(nube);
+	auto triangle_mesh = triangulate2(nube);
 
 
 	//visualization
@@ -56,28 +82,61 @@ int main(int argc, char **argv) {
 	view->addPointCloud(nube, orig_color, "orig");
 	view->addPointCloud(proyectada, proj_color, "proj");
 
-	//pintar puntos del contorno
-	int contorno=0;
-	pcl::PointXYZ p1;
-	bool first_found = false;
-	for(int K=0; K<proyectada->size(); ++K){
-		if(triangle_mesh->isBoundary(pcl::geometry::VertexIndex(K))){
-			++contorno;
-			if(not first_found){
-				first_found = true;
-				p1 = (*proyectada)[K];
-				continue;
-			}
-			view->addLine(p1, (*proyectada)[K], 0, 255, 0, std::to_string(K));
-			p1 = (*proyectada)[K];
+	view->addPolygonMesh(*triangle_mesh, "tmesh");
+
+	//contorno
+	auto tmesh = triangulate(nube);
+	auto contorno = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+	for(int K = 0; K < nube->size(); ++K) {
+		if(tmesh->isBoundary(pcl::geometry::VertexIndex(K))) {
+			contorno->push_back((*nube)[K]);
 		}
 	}
+
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
+	    boundary_color(contorno, 0, 255, 0);
+	view->addPointCloud(contorno, boundary_color, "boundary");
+	view->setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "boundary");
+
 	std::cout << "Total de puntos: " << proyectada->size() << '\n';
-	std::cout << "Puntos del contorno: " << contorno << '\n';
+	std::cout << "Puntos del contorno: " << contorno->size() << '\n';
+	std::cout << "Total de puntos: " << tmesh->sizeVertices() << '\n';
+	std::cout << "Total de triángulos: "<< tmesh->sizeFaces() << '\n';
+	std::cout << "Total de aristas: "<< tmesh->sizeEdges() << '\n';
 
 	while(!view->wasStopped())
 		view->spinOnce(100);
 	return 0;
+}
+
+pcl::PolygonMesh::Ptr triangulate2(pcl::PointCloud<pcl::PointXYZ>::Ptr nube) {
+	auto mesh = boost::make_shared<pcl::PolygonMesh>();
+
+	/*triangulación delaunay*/
+	// copiar las coordenadas xy de la nube de puntos
+	std::vector<double> xy;
+	xy.resize(2 * nube->size());
+	for(int K = 0; K < nube->size(); ++K) {
+		xy[2 * K] = (*nube)[K].x;
+		xy[2 * K + 1] = (*nube)[K].y;
+	}
+	// cálculo de la triangulación
+	delaunator::Delaunator delaunay(xy);
+	//índices de los vértices de los triángulos triangulos en
+	// delaunay.triangles[3*K+{0..2}]
+
+	mesh->polygons.reserve(delaunay.triangles.size());
+	for(int K = 0; K < delaunay.triangles.size(); K += 3) {
+		pcl::Vertices v;
+		v.vertices.resize(3);
+		for(int L = 0; L < 3; ++L)
+			v.vertices[L] = delaunay.triangles[K + L];
+		mesh->polygons.push_back(v);
+	}
+	pcl::toPCLPointCloud2(*nube, mesh->cloud);
+
+	return mesh;
 }
 
 nih::TMesh triangulate(pcl::PointCloud<pcl::PointXYZ>::Ptr nube) {
