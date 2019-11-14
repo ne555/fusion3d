@@ -3,7 +3,7 @@ def triangulate(cloud):
     return delaunay(xy)
 
 def submuestreo(cloud, n=2):
-    #puntos que sobreviven n/sub^2
+    #puntos que sobreviven cloud.size/n^2
     resolution = get_x_separation(cloud)
     return voxel_grid([n*resolution])
 

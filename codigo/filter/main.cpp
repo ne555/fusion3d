@@ -56,6 +56,11 @@ std::vector<int> kill_near(
 
 nih::normal::Ptr compute_normals(nih::cloud::Ptr nube, double distance);
 
+//filtra puntos de contorno, bordes y normales ortogonales
+nih::cloud::Ptr good_points(nih::cloud::Ptr nube);
+
+nih::cloud::Ptr submuestreo(nih::cloud::Ptr nube, double alfa);
+
 int main(int argc, char **argv) {
 	if(argc < 2) {
 		usage(argv[0]);
@@ -63,79 +68,10 @@ int main(int argc, char **argv) {
 	}
 
 	auto original = load_cloud(argv[1]);
-	auto nube = original->makeShared();
+	auto nube = submuestreo(original, 2);
+	auto good = good_points(nube);
 
-	nih::point bottom_left_back, upper_right_front;
-	pcl::getMinMax3D(*nube, bottom_left_back, upper_right_front);
-
-	using nih::p2v;
-	nih::vector diff = p2v(upper_right_front) - p2v(bottom_left_back);
-	double model_resolution = diff[0] / sqrt(nube->size());
-
-	// submuestreo
-	pcl::VoxelGrid<pcl::PointXYZ> muestreo;
-	muestreo.setInputCloud(nube);
-	model_resolution = 2 * model_resolution;
-	muestreo.setLeafSize(model_resolution, model_resolution, model_resolution);
-	muestreo.filter(*nube);
-
-	auto proyectada = project(nube->makeShared());
-
-	auto triangle_mesh = triangulate2(nube);
-
-	// puntos a eliminar
-	auto tmesh = triangulate(nube);
-	auto puntos_malos = boost::make_shared<std::vector<int> >(); //¡¿?!
-
-	// puntos aislados
-	*puntos_malos = delete_big_edges(tmesh, nube, 3 * model_resolution);
-	// contorno
-	for(int K = 0; K < tmesh->sizeVertices(); ++K) {
-		pcl::geometry::VertexIndex v(K);
-		if(not tmesh->isValid(v) or tmesh->isBoundary(v)) {
-			auto &data = tmesh->getVertexDataCloud();
-			puntos_malos->push_back(data[v.get()].id);
-		}
-	}
-
-	// puntos cercanos a muertos
-	{
-		auto aux = kill_near(*puntos_malos, nube, 1.5 * model_resolution);
-		puntos_malos->insert(puntos_malos->end(), aux.begin(), aux.end());
-		std::sort(puntos_malos->begin(), puntos_malos->end());
-		puntos_malos->erase(
-		    std::unique(puntos_malos->begin(), puntos_malos->end()),
-		    puntos_malos->end());
-	}
-
-	// matar puntos con normales ortogonales
-	auto normales = compute_normals(nube, 4 * model_resolution);
-	nih::vector eye(0, 0, 1);
-	double threshold = .2; //~80 grados
-	for(int K = 0; K < normales->size(); ++K) {
-		nih::vector n((*normales)[K].normal);
-		double dot = eye.dot(n);
-		if(dot < threshold)
-			puntos_malos->push_back(K);
-	}
-	std::sort(puntos_malos->begin(), puntos_malos->end());
-	puntos_malos->erase(
-	    std::unique(puntos_malos->begin(), puntos_malos->end()),
-	    puntos_malos->end());
-
-	// ver puntos malos
-	auto bad_points = boost::make_shared<nih::cloud>();
-	auto good_points = boost::make_shared<nih::cloud>();
-	pcl::ExtractIndices<nih::point> filtro;
-	filtro.setInputCloud(nube);
-	filtro.setIndices(puntos_malos);
-	// filtro.setNegative(true);
-	filtro.filter(*bad_points);
-
-	filtro.setNegative(true);
-	filtro.filter(*good_points);
-
-#if 1
+#if 0
 	// visualization
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("triangulation");
@@ -180,6 +116,78 @@ int main(int argc, char **argv) {
 		view->spinOnce(100);
 #endif
 	return 0;
+}
+
+nih::cloud::Ptr submuestreo(nih::cloud::Ptr nube, double alfa){
+	// submuestreo
+	double model_resolution = nih::get_resolution(nube);
+	pcl::VoxelGrid<pcl::PointXYZ> muestreo;
+	muestreo.setInputCloud(nube);
+	muestreo.setLeafSize(alfa*model_resolution, alfa*model_resolution, alfa*model_resolution);
+
+	auto filtrada = boost::make_shared<nih::cloud>();
+	muestreo.filter(*filtrada);
+	return filtrada;
+}
+
+nih::cloud::Ptr good_points(nih::cloud::Ptr nube) {
+	// los umbrales son miembros de una clase
+	// con estos valores por defecto
+	double model_resolution = nih::get_resolution(nube);
+	double edge_max_size = 3 * model_resolution;
+	double near_dist = 1.5 * model_resolution;
+	double angle_thresold = 0.2; //~cos(80)
+
+	// puntos a eliminar
+	auto tmesh = triangulate(nube);
+	auto puntos_malos = boost::make_shared<std::vector<int> >();
+
+	// puntos aislados
+	*puntos_malos = delete_big_edges(tmesh, nube, 3 * model_resolution);
+	// contorno
+	for(int K = 0; K < tmesh->sizeVertices(); ++K) {
+		pcl::geometry::VertexIndex v(K);
+		if(not tmesh->isValid(v) or tmesh->isBoundary(v)) {
+			auto &data = tmesh->getVertexDataCloud();
+			puntos_malos->push_back(data[v.get()].id);
+		}
+	}
+
+	// puntos cercanos a muertos
+	{
+		auto aux = kill_near(*puntos_malos, nube, 1.5 * model_resolution);
+		puntos_malos->insert(puntos_malos->end(), aux.begin(), aux.end());
+	}
+	std::sort(puntos_malos->begin(), puntos_malos->end());
+	puntos_malos->erase(
+	    std::unique(puntos_malos->begin(), puntos_malos->end()),
+	    puntos_malos->end());
+
+	// matar puntos con normales ortogonales
+	{
+		auto normales = compute_normals(nube, 4 * model_resolution);
+		nih::vector eye(0, 0, 1);
+		double threshold = .2; //~80 grados
+		for(int K = 0; K < normales->size(); ++K) {
+			nih::vector n((*normales)[K].normal);
+			double dot = eye.dot(n);
+			if(dot < threshold)
+				puntos_malos->push_back(K);
+		}
+	}
+	std::sort(puntos_malos->begin(), puntos_malos->end());
+	puntos_malos->erase(
+	    std::unique(puntos_malos->begin(), puntos_malos->end()),
+	    puntos_malos->end());
+
+	auto puntos_validos = boost::make_shared<nih::cloud>();
+	pcl::ExtractIndices<nih::point> filtro;
+	filtro.setInputCloud(nube);
+	filtro.setIndices(puntos_malos);
+	filtro.setNegative(true);
+	filtro.filter(*puntos_validos);
+
+	return puntos_validos; // podría devolver las normales también
 }
 
 nih::normal::Ptr compute_normals(nih::cloud::Ptr nube, double distance) {
