@@ -17,6 +17,8 @@
 #include <pcl/geometry/triangle_mesh.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
+#include <pcl/keypoints/iss_3d.h>
+
 #include <pcl/PolygonMesh.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
@@ -39,6 +41,15 @@ namespace nih {
 	using TMesh = pcl::geometry::TriangleMesh<
 	    pcl::geometry::DefaultMeshTraits<VertexData> >::Ptr;
 	// using TMesh = pcl::PolygonMesh::Ptr;
+
+	class nube_norm{
+	public:
+		typedef boost::shared_ptr<nube_norm> Ptr;
+
+		cloud::Ptr puntos;
+		normal::Ptr normales;
+		double resolution;
+	};
 } // namespace nih
 
 nih::TMesh triangulate(pcl::PointCloud<pcl::PointXYZ>::Ptr nube);
@@ -56,8 +67,8 @@ std::vector<int> kill_near(
 
 nih::normal::Ptr compute_normals(nih::cloud::Ptr nube, double distance);
 
-//filtra puntos de contorno, bordes y normales ortogonales
-nih::cloudnormal::Ptr good_points(nih::cloud::Ptr nube);
+// filtra puntos de contorno, bordes y normales ortogonales
+nih::nube_norm::Ptr good_points(nih::cloud::Ptr nube);
 nih::cloud::Ptr submuestreo(nih::cloud::Ptr nube, double alfa);
 
 int main(int argc, char **argv) {
@@ -69,32 +80,40 @@ int main(int argc, char **argv) {
 	auto original = load_cloud(argv[1]);
 	auto nube = good_points(submuestreo(original, 2));
 
+	// keypoints
+	pcl::ISSKeypoint3D<nih::point, nih::point, pcl::Normal> iss_detector;
+	iss_detector.setInputCloud(nube->puntos);
+	iss_detector.setNormals(nube->normales);
 
-	//visualization
+
+	// visualization
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("triangulation");
 	view->setBackgroundColor(0, 0, 0);
-	view->addPointCloud<pcl::PointNormal>(nube, "puntos");
-	view->addPointCloudNormals<pcl::PointNormal>(nube, 5, .01, "normales");
+	view->addPointCloud(nube->puntos, "puntos");
+	view->addPointCloudNormals<nih::point, pcl::Normal>(nube->puntos, nube->normales, 5, .01, "normales");
 	while(!view->wasStopped())
 		view->spinOnce(100);
 
 	return 0;
 }
 
-nih::cloud::Ptr submuestreo(nih::cloud::Ptr nube, double alfa){
+nih::cloud::Ptr submuestreo(nih::cloud::Ptr nube, double alfa) {
 	// submuestreo
 	double model_resolution = nih::get_resolution(nube);
 	pcl::VoxelGrid<pcl::PointXYZ> muestreo;
 	muestreo.setInputCloud(nube);
-	muestreo.setLeafSize(alfa*model_resolution, alfa*model_resolution, alfa*model_resolution);
+	muestreo.setLeafSize(
+	    alfa * model_resolution,
+	    alfa * model_resolution,
+	    alfa * model_resolution);
 
 	auto filtrada = boost::make_shared<nih::cloud>();
 	muestreo.filter(*filtrada);
 	return filtrada;
 }
 
-nih::cloudnormal::Ptr good_points(nih::cloud::Ptr nube) {
+nih::nube_norm::Ptr good_points(nih::cloud::Ptr nube) {
 	// los umbrales son miembros de una clase
 	// con estos valores por defecto
 	double model_resolution = nih::get_resolution(nube);
@@ -144,7 +163,7 @@ nih::cloudnormal::Ptr good_points(nih::cloud::Ptr nube) {
 	    std::unique(puntos_malos->begin(), puntos_malos->end()),
 	    puntos_malos->end());
 
-	//filtrado puntos
+	// filtrado puntos
 	auto puntos_validos = boost::make_shared<nih::cloud>();
 	{
 		pcl::ExtractIndices<nih::point> filtro;
@@ -153,7 +172,7 @@ nih::cloudnormal::Ptr good_points(nih::cloud::Ptr nube) {
 		filtro.setNegative(true);
 		filtro.filter(*puntos_validos);
 	}
-	//filtrado normales
+	// filtrado normales
 	{
 		pcl::ExtractIndices<pcl::Normal> filtro;
 		filtro.setInputCloud(normales);
@@ -162,9 +181,11 @@ nih::cloudnormal::Ptr good_points(nih::cloud::Ptr nube) {
 		filtro.filter(*normales);
 	}
 
-	//concatenar con las normales
-	auto result = boost::make_shared<nih::cloudnormal>();
-	pcl::concatenateFields(*puntos_validos, *normales, *result);
+	// armar el resultado
+	auto result = boost::make_shared<nih::nube_norm>();
+	result->puntos = puntos_validos;
+	result->normales = normales;
+	result->resolution = model_resolution;
 
 	return result; // podría devolver las normales también
 }
