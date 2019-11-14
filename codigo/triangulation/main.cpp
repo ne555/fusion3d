@@ -59,7 +59,8 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	auto nube = load_cloud(argv[1]);
+	auto original = load_cloud(argv[1]);
+	auto nube = original->makeShared();
 
 	nih::point bottom_left_back, upper_right_front;
 	pcl::getMinMax3D(*nube, bottom_left_back, upper_right_front);
@@ -71,8 +72,8 @@ int main(int argc, char **argv) {
 	// submuestreo
 	pcl::VoxelGrid<pcl::PointXYZ> muestreo;
 	muestreo.setInputCloud(nube);
-	muestreo.setLeafSize(
-	    model_resolution * 1, model_resolution * 1, model_resolution * 1);
+	model_resolution = 2*model_resolution;
+	muestreo.setLeafSize(model_resolution, model_resolution, model_resolution);
 	muestreo.filter(*nube);
 
 	auto proyectada = project(nube->makeShared());
@@ -84,7 +85,7 @@ int main(int argc, char **argv) {
 	auto puntos_malos = boost::make_shared<std::vector<int>>(); //¡¿?!
 
 	//puntos aislados
-	*puntos_malos = delete_big_edges(tmesh, nube, 8 * model_resolution);
+	*puntos_malos = delete_big_edges(tmesh, nube, 3 * model_resolution);
 	//contorno
 	for(int K = 0; K < tmesh->sizeVertices(); ++K) {
 		pcl::geometry::VertexIndex v(K);
@@ -96,7 +97,7 @@ int main(int argc, char **argv) {
 
 	//puntos cercanos a muertos
 	{
-		auto aux = kill_near(*puntos_malos, nube, 4*model_resolution);
+		auto aux = kill_near(*puntos_malos, nube, 1.5*model_resolution);
 		puntos_malos->insert(puntos_malos->end(), aux.begin(), aux.end());
 		std::sort(puntos_malos->begin(), puntos_malos->end());
 		puntos_malos->erase(std::unique(puntos_malos->begin(), puntos_malos->end()), puntos_malos->end());
@@ -118,6 +119,7 @@ int main(int argc, char **argv) {
 
 	//ver puntos malos
 	auto bad_points = boost::make_shared<nih::cloud>();
+	auto good_points = boost::make_shared<nih::cloud>();
 	pcl::ExtractIndices<nih::point> filtro;
 	filtro.setInputCloud(nube);
 	filtro.setIndices(puntos_malos);
@@ -125,7 +127,7 @@ int main(int argc, char **argv) {
 	filtro.filter(*bad_points);
 
 	filtro.setNegative(true);
-	filtro.filter(*nube);
+	filtro.filter(*good_points);
 
 #if 1
 	// visualization
@@ -136,13 +138,16 @@ int main(int argc, char **argv) {
 	    nube, 255, 0, 0);
 	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> proj_color(
 	    proyectada, 0, 0, 255);
-	view->addPointCloud(nube, orig_color, "orig");
+	//view->addPointCloud(nube, orig_color, "orig");
 	//view->addPointCloud(proyectada, proj_color, "proj");
 
 	// view->addPolygonMesh(*triangle_mesh, "tmesh");
-	//view->addPolylineFromPolygonMesh(*triangle_mesh, "tmesh");
+	view->addPolylineFromPolygonMesh(*triangle_mesh, "tmesh");
 	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> bad_color(bad_points, 0, 255, 0);
 	//view->addPointCloud(bad_points, bad_color, "boundary");
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> good_color(good_points, 0, 255, 0);
+	view->addPointCloud(good_points, good_color, "survivor");
+	view->setPointCloudRenderingProperties( pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "survivor");
 
 
 	//view->setPointCloudRenderingProperties( pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "boundary");
@@ -150,10 +155,15 @@ int main(int argc, char **argv) {
 
 	//view->addPointCloudNormals<nih::point, pcl::Normal>(nube, normales, 25, .01);
 
-	std::cout << "Total de puntos: " << nube->size() << '\n';
+	std::cout << "Total de puntos originales: " << original->size() << '\n';
+	std::cout << "resolución: " << nih::get_resolution(original) << '\n';
+	std::cout << "Luego del submuestreo: " << nube->size() << '\n';
+	std::cout << "resolución: " << nih::get_resolution(nube) << '\n';
 	std::cout << "Puntos inválidos: " << puntos_malos->size() << '\n';
-	std::cout << "Total de triángulos: " << tmesh->sizeFaces() << '\n';
-	std::cout << "Total de aristas: " << tmesh->sizeEdges() << '\n';
+	std::cout << "Sobreviven: " << good_points->size() << '\n';
+
+	//std::cout << "Total de triángulos: " << tmesh->sizeFaces() << '\n';
+	//std::cout << "Total de aristas: " << tmesh->sizeEdges() << '\n';
 
 	while(!view->wasStopped())
 		view->spinOnce(100);
