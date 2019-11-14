@@ -2,18 +2,19 @@ def triangulate(cloud):
     xy = [p.z=0 in cloud]
     return delaunay(xy)
 
-def good_points(cloud, submuestreo, threshold):
-    #submuestreo = puntos que sobreviven n/sub^2
+def submuestreo(cloud, n=2):
+    #puntos que sobreviven n/sub^2
+    resolution = get_x_separation(cloud)
+    return voxel_grid([n*resolution])
+
+def good_points(cloud, threshold):
     #threshold1 = longitud excesiva de aristas (en relación al submuestreo)
     #threshold2 = cercanía a los bordes (en relación al submuestreo)
     #threshold3 = ángulo de ortogonalidad ~90
     #Buenos valores:
-    #submuestreo = 2
     #threshold = [3, 1.5, 80 (dot=0.2)]
 
     resolution = get_x_separation(cloud)
-    cloud = voxel_grid([submuestreo*resolution])
-    resolution = get_x_separation(cloud) #update
     t = triangulate(cloud)
 
     boundary = [for p in t if is_boundary(p)]
@@ -23,4 +24,4 @@ def good_points(cloud, submuestreo, threshold):
 
     bad_points = boundary + big_edges + near_death + ortho
     #return filter_out(cloud, bad_points)
-    return cloud, bad_points
+    return bad_points
