@@ -103,7 +103,6 @@ int main(int argc, char **argv) {
 	}
 
 	//matar puntos con normales ortogonales
-	auto normales_malas = boost::make_shared<std::vector<int>>(); //¡¿?!
 	auto normales = compute_normals(nube, 4*model_resolution);
 	nih::vector eye (0, 0, 1);
 	double threshold = .2; //~80 grados
@@ -111,13 +110,10 @@ int main(int argc, char **argv) {
 		nih::vector n((*normales)[K].normal);
 		double dot = eye.dot(n);
 		if(dot < threshold)
-			normales_malas->push_back(K);
+			puntos_malos->push_back(K);
 	}
-	std::sort(normales_malas->begin(), normales_malas->end());
-	normales_malas->erase(std::unique(normales_malas->begin(), normales_malas->end()), normales_malas->end());
-
-	//std::sort(puntos_malos->begin(), puntos_malos->end());
-	//puntos_malos->erase(std::unique(puntos_malos->begin(), puntos_malos->end()), puntos_malos->end());
+	std::sort(puntos_malos->begin(), puntos_malos->end());
+	puntos_malos->erase(std::unique(puntos_malos->begin(), puntos_malos->end()), puntos_malos->end());
 
 
 	//ver puntos malos
@@ -128,11 +124,8 @@ int main(int argc, char **argv) {
 	//filtro.setNegative(true);
 	filtro.filter(*bad_points);
 
-	auto bad_norms = boost::make_shared<nih::cloud>();
-	filtro.setInputCloud(nube);
-	filtro.setIndices(normales_malas);
-	//filtro.setNegative(true);
-	filtro.filter(*bad_norms);
+	filtro.setNegative(true);
+	filtro.filter(*nube);
 
 #if 1
 	// visualization
@@ -149,22 +142,16 @@ int main(int argc, char **argv) {
 	// view->addPolygonMesh(*triangle_mesh, "tmesh");
 	//view->addPolylineFromPolygonMesh(*triangle_mesh, "tmesh");
 	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> bad_color(bad_points, 0, 255, 0);
-	view->addPointCloud(bad_points, bad_color, "boundary");
+	//view->addPointCloud(bad_points, bad_color, "boundary");
 
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> bad_n_color(bad_norms, 255, 255, 0);
-	view->addPointCloud(bad_norms, bad_n_color, "bad_norm");
 
-	view->setPointCloudRenderingProperties(
-	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "boundary");
+	//view->setPointCloudRenderingProperties( pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "boundary");
+	//view->setPointCloudRenderingProperties( pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "bad_norm");
 
-	view->setPointCloudRenderingProperties(
-	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "bad_norm");
-
-	view->addPointCloudNormals<nih::point, pcl::Normal>(nube, normales, 25, .01);
+	//view->addPointCloudNormals<nih::point, pcl::Normal>(nube, normales, 25, .01);
 
 	std::cout << "Total de puntos: " << nube->size() << '\n';
 	std::cout << "Puntos inválidos: " << puntos_malos->size() << '\n';
-	std::cout << "Normales inválidas " << normales_malas->size() << '\n';
 	std::cout << "Total de triángulos: " << tmesh->sizeFaces() << '\n';
 	std::cout << "Total de aristas: " << tmesh->sizeEdges() << '\n';
 
