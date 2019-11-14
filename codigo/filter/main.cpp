@@ -79,50 +79,6 @@ int main(int argc, char **argv) {
 	while(!view->wasStopped())
 		view->spinOnce(100);
 
-#if 0
-	// visualization
-	auto view =
-	    boost::make_shared<pcl::visualization::PCLVisualizer>("triangulation");
-	view->setBackgroundColor(0, 0, 0);
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> orig_color(
-	    nube, 255, 0, 0);
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> proj_color(
-	    proyectada, 0, 0, 255);
-	// view->addPointCloud(nube, orig_color, "orig");
-	// view->addPointCloud(proyectada, proj_color, "proj");
-
-	// view->addPolygonMesh(*triangle_mesh, "tmesh");
-	view->addPolylineFromPolygonMesh(*triangle_mesh, "tmesh");
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> bad_color(
-	    bad_points, 0, 255, 0);
-	// view->addPointCloud(bad_points, bad_color, "boundary");
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> good_color(
-	    good_points, 0, 255, 0);
-	view->addPointCloud(good_points, good_color, "survivor");
-	view->setPointCloudRenderingProperties(
-	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "survivor");
-
-	// view->setPointCloudRenderingProperties(
-	// pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "boundary");
-	// view->setPointCloudRenderingProperties(
-	// pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "bad_norm");
-
-	// view->addPointCloudNormals<nih::point, pcl::Normal>(nube, normales, 25,
-	// .01);
-
-	std::cout << "Total de puntos originales: " << original->size() << '\n';
-	std::cout << "resolución: " << nih::get_resolution(original) << '\n';
-	std::cout << "Luego del submuestreo: " << nube->size() << '\n';
-	std::cout << "resolución: " << nih::get_resolution(nube) << '\n';
-	std::cout << "Puntos inválidos: " << puntos_malos->size() << '\n';
-	std::cout << "Sobreviven: " << good_points->size() << '\n';
-
-	// std::cout << "Total de triángulos: " << tmesh->sizeFaces() << '\n';
-	// std::cout << "Total de aristas: " << tmesh->sizeEdges() << '\n';
-
-	while(!view->wasStopped())
-		view->spinOnce(100);
-#endif
 	return 0;
 }
 
