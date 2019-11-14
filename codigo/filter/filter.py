@@ -23,5 +23,4 @@ def good_points(cloud, threshold):
     ortho = [for p in t if angle( normal(p), [0, 0, 1] ) > threshold3 ]
 
     bad_points = boundary + big_edges + near_death + ortho
-    #return filter_out(cloud, bad_points)
     return bad_points

@@ -18,6 +18,7 @@
 namespace nih {
 	typedef pcl::PointCloud<pcl::PointXYZ> cloud;
 	typedef pcl::PointCloud<pcl::Normal> normal;
+	typedef pcl::PointCloud<pcl::PointNormal> cloudnormal;
 	typedef pcl::PointXYZ point;
 	typedef Eigen::Transform<float, 3, Eigen::Affine> transformation;
 	typedef Eigen::Vector3f vector;

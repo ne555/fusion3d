@@ -57,8 +57,7 @@ std::vector<int> kill_near(
 nih::normal::Ptr compute_normals(nih::cloud::Ptr nube, double distance);
 
 //filtra puntos de contorno, bordes y normales ortogonales
-nih::cloud::Ptr good_points(nih::cloud::Ptr nube);
-
+nih::cloudnormal::Ptr good_points(nih::cloud::Ptr nube);
 nih::cloud::Ptr submuestreo(nih::cloud::Ptr nube, double alfa);
 
 int main(int argc, char **argv) {
@@ -68,8 +67,17 @@ int main(int argc, char **argv) {
 	}
 
 	auto original = load_cloud(argv[1]);
-	auto nube = submuestreo(original, 2);
-	auto good = good_points(nube);
+	auto nube = good_points(submuestreo(original, 2));
+
+
+	//visualization
+	auto view =
+	    boost::make_shared<pcl::visualization::PCLVisualizer>("triangulation");
+	view->setBackgroundColor(0, 0, 0);
+	view->addPointCloud<pcl::PointNormal>(nube, "puntos");
+	view->addPointCloudNormals<pcl::PointNormal>(nube, 5, .01, "normales");
+	while(!view->wasStopped())
+		view->spinOnce(100);
 
 #if 0
 	// visualization
@@ -130,7 +138,7 @@ nih::cloud::Ptr submuestreo(nih::cloud::Ptr nube, double alfa){
 	return filtrada;
 }
 
-nih::cloud::Ptr good_points(nih::cloud::Ptr nube) {
+nih::cloudnormal::Ptr good_points(nih::cloud::Ptr nube) {
 	// los umbrales son miembros de una clase
 	// con estos valores por defecto
 	double model_resolution = nih::get_resolution(nube);
@@ -164,8 +172,8 @@ nih::cloud::Ptr good_points(nih::cloud::Ptr nube) {
 	    puntos_malos->end());
 
 	// matar puntos con normales ortogonales
+	auto normales = compute_normals(nube, 4 * model_resolution);
 	{
-		auto normales = compute_normals(nube, 4 * model_resolution);
 		nih::vector eye(0, 0, 1);
 		double threshold = .2; //~80 grados
 		for(int K = 0; K < normales->size(); ++K) {
@@ -180,14 +188,29 @@ nih::cloud::Ptr good_points(nih::cloud::Ptr nube) {
 	    std::unique(puntos_malos->begin(), puntos_malos->end()),
 	    puntos_malos->end());
 
+	//filtrado puntos
 	auto puntos_validos = boost::make_shared<nih::cloud>();
-	pcl::ExtractIndices<nih::point> filtro;
-	filtro.setInputCloud(nube);
-	filtro.setIndices(puntos_malos);
-	filtro.setNegative(true);
-	filtro.filter(*puntos_validos);
+	{
+		pcl::ExtractIndices<nih::point> filtro;
+		filtro.setInputCloud(nube);
+		filtro.setIndices(puntos_malos);
+		filtro.setNegative(true);
+		filtro.filter(*puntos_validos);
+	}
+	//filtrado normales
+	{
+		pcl::ExtractIndices<pcl::Normal> filtro;
+		filtro.setInputCloud(normales);
+		filtro.setIndices(puntos_malos);
+		filtro.setNegative(true);
+		filtro.filter(*normales);
+	}
 
-	return puntos_validos; // podría devolver las normales también
+	//concatenar con las normales
+	auto result = boost::make_shared<nih::cloudnormal>();
+	pcl::concatenateFields(*puntos_validos, *normales, *result);
+
+	return result; // podría devolver las normales también
 }
 
 nih::normal::Ptr compute_normals(nih::cloud::Ptr nube, double distance) {
