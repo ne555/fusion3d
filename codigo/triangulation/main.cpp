@@ -15,6 +15,7 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/geometry/triangle_mesh.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/features/normal_3d.h>
 
 #include <pcl/PolygonMesh.h>
 #include <pcl/visualization/pcl_visualizer.h>
@@ -49,6 +50,8 @@ delete_big_edges(nih::TMesh mesh, nih::cloud::Ptr nube, double threshold);
 
 // devuelve una lista con vértices a eliminar
 std::vector<int> kill_near(const std::vector<int> &puntos_malos, nih::cloud::Ptr nube, double distance);
+
+nih::normal::Ptr compute_normals(nih::cloud::Ptr nube, double distance);
 
 int main(int argc, char **argv) {
 	if(argc < 2) {
@@ -99,13 +102,37 @@ int main(int argc, char **argv) {
 		puntos_malos->erase(std::unique(puntos_malos->begin(), puntos_malos->end()), puntos_malos->end());
 	}
 
+	//matar puntos con normales ortogonales
+	auto normales_malas = boost::make_shared<std::vector<int>>(); //¡¿?!
+	auto normales = compute_normals(nube, 4*model_resolution);
+	nih::vector eye (0, 0, 1);
+	double threshold = .2; //~80 grados
+	for(int K=0; K<normales->size(); ++K){
+		nih::vector n((*normales)[K].normal);
+		double dot = eye.dot(n);
+		if(dot < threshold)
+			normales_malas->push_back(K);
+	}
+	std::sort(normales_malas->begin(), normales_malas->end());
+	normales_malas->erase(std::unique(normales_malas->begin(), normales_malas->end()), normales_malas->end());
+
+	//std::sort(puntos_malos->begin(), puntos_malos->end());
+	//puntos_malos->erase(std::unique(puntos_malos->begin(), puntos_malos->end()), puntos_malos->end());
+
+
 	//ver puntos malos
-	nih::cloud::Ptr bad_points = boost::make_shared<nih::cloud>();
+	auto bad_points = boost::make_shared<nih::cloud>();
 	pcl::ExtractIndices<nih::point> filtro;
 	filtro.setInputCloud(nube);
 	filtro.setIndices(puntos_malos);
 	//filtro.setNegative(true);
 	filtro.filter(*bad_points);
+
+	auto bad_norms = boost::make_shared<nih::cloud>();
+	filtro.setInputCloud(nube);
+	filtro.setIndices(normales_malas);
+	//filtro.setNegative(true);
+	filtro.filter(*bad_norms);
 
 #if 1
 	// visualization
@@ -120,15 +147,24 @@ int main(int argc, char **argv) {
 	//view->addPointCloud(proyectada, proj_color, "proj");
 
 	// view->addPolygonMesh(*triangle_mesh, "tmesh");
-	view->addPolylineFromPolygonMesh(*triangle_mesh, "tmesh");
+	//view->addPolylineFromPolygonMesh(*triangle_mesh, "tmesh");
 	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> bad_color(bad_points, 0, 255, 0);
 	view->addPointCloud(bad_points, bad_color, "boundary");
+
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> bad_n_color(bad_norms, 255, 255, 0);
+	view->addPointCloud(bad_norms, bad_n_color, "bad_norm");
+
 	view->setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "boundary");
 
+	view->setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "bad_norm");
+
+	view->addPointCloudNormals<nih::point, pcl::Normal>(nube, normales, 25, .01);
+
 	std::cout << "Total de puntos: " << nube->size() << '\n';
-	std::cout << "Puntos invalidos: " << puntos_malos->size() << '\n';
-	std::cout << "Total de puntos malos: " << bad_points->size() << '\n';
+	std::cout << "Puntos inválidos: " << puntos_malos->size() << '\n';
+	std::cout << "Normales inválidas " << normales_malas->size() << '\n';
 	std::cout << "Total de triángulos: " << tmesh->sizeFaces() << '\n';
 	std::cout << "Total de aristas: " << tmesh->sizeEdges() << '\n';
 
@@ -136,6 +172,20 @@ int main(int argc, char **argv) {
 		view->spinOnce(100);
 #endif
 	return 0;
+}
+
+nih::normal::Ptr compute_normals(nih::cloud::Ptr nube, double distance){
+	auto normales = boost::make_shared<nih::normal>();
+
+	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
+	ne.setViewPoint(0, 0, 1); //proyección z
+	auto kdtree = boost::make_shared<pcl::search::KdTree<pcl::PointXYZ> >();
+	ne.setSearchMethod(kdtree);
+	ne.setRadiusSearch(distance);
+	ne.setInputCloud(nube);
+	ne.compute(*normales);
+
+	return normales;
 }
 
 std::vector<int> kill_near(const std::vector<int> &puntos_malos, nih::cloud::Ptr nube, double distance){
