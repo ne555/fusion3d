@@ -16,6 +16,8 @@ Intervalo de confianza:
 
 submuestreo de la entrada
 	detecctión de keypoints
+		utilizar la información de triangulación
+			calcular keypoints por parche y luego unir
 		iss: puntos distribuídos, no agrupa en la oreja
 		brisk_2d: keypoints empty
 		sift: empty

@@ -84,14 +84,32 @@ int main(int argc, char **argv) {
 	pcl::ISSKeypoint3D<nih::point, nih::point, pcl::Normal> iss_detector;
 	iss_detector.setInputCloud(nube->puntos);
 	iss_detector.setNormals(nube->normales);
+	// ¿qué valores son buenos?
+	iss_detector.setSalientRadius(8*nube->resolution);
+	iss_detector.setNonMaxRadius(4*nube->resolution);
+	iss_detector.setThreshold21(0.975);
+	iss_detector.setThreshold32(0.975);
+	iss_detector.setMinNeighbors(5);
+	auto iss_keypoints = boost::make_shared<nih::cloud>();
+	iss_detector.compute(*iss_keypoints);
 
+	std::cerr << "Keypoints: " << iss_keypoints->size() << '\n';
 
 	// visualization
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("triangulation");
 	view->setBackgroundColor(0, 0, 0);
+	auto mesh = triangulate2(nube->puntos);
+	//view->addPolylineFromPolygonMesh(*mesh, "mesh");
 	view->addPointCloud(nube->puntos, "puntos");
-	view->addPointCloudNormals<nih::point, pcl::Normal>(nube->puntos, nube->normales, 5, .01, "normales");
+	//view->addPointCloudNormals<nih::point, pcl::Normal>(nube->puntos, nube->normales, 5, .01, "normales");
+
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
+	    iss_color(iss_keypoints, 0, 255, 0);
+	view->addPointCloud(iss_keypoints, iss_color, "iss");
+	view->setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "iss");
+
 	while(!view->wasStopped())
 		view->spinOnce(100);
 
