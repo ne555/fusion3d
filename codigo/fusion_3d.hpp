@@ -7,6 +7,7 @@
 #include <pcl/io/ply_io.h>
 #include <pcl/io/vtk_lib_io.h>
 #include <pcl/point_cloud.h>
+#include <pcl/common/common.h>
 
 #include <pcl/filters/filter.h>
 
@@ -28,6 +29,10 @@ namespace nih {
 	//operations element to element
 	inline vector prod(vector a, const vector &b);
 	inline vector div(vector a, const vector &b);
+
+	//information
+	//espacio esperado entre puntos (proyecta en z=0)
+	double get_resolution(cloud::Ptr input);
 
 	transformation get_transformation(std::ifstream &input);
 	//bounding box
@@ -60,6 +65,15 @@ namespace nih {
 
 		return nube; //unorganized, no nan
 #endif
+	}
+	double get_resolution(cloud::Ptr input) {
+		point bottom_left_back, upper_right_front;
+		pcl::getMinMax3D(*input, bottom_left_back, upper_right_front);
+
+		vector diff = p2v(upper_right_front) - p2v(bottom_left_back);
+		//supone una malla "cuadrada" (ignora z)
+		double model_resolution = diff[0] / sqrt(input->size());
+		return model_resolution;
 	}
 
 	point v2p(vector v) {
