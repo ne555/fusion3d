@@ -40,3 +40,21 @@ def correspondence(cloud_a, cloud_b):
     c = correspondence()
     c.source(feature_a)
     c.target(feature_b)
+
+
+def best_matches_with_y_threshold(feature_a, cloud_a, feature_b, cloud_b, threshold):
+    match = []
+    for fa in feature_a:
+        distance = infty
+        c.source = index(fa)
+        c.target = index(fb)
+        for fb in feature_b:
+            if abs(cloud_a[index(fa)].y - cloud_b[index(fb)]) > threshold:
+                continue
+            elif dist(fa, fb) < distance:
+                distance = dist(fa, fb)
+        c.distance = distance
+
+        if c.distance not_eq infty:
+            match.push(c)
+    return match

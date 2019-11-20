@@ -28,6 +28,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <limits>
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr load_cloud(std::string filename);
 void usage(const char *program) {
@@ -82,6 +83,26 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
 	nih::normal::Ptr normals,
 	double resolution);
 
+template <class Feature>
+//pcl::Correspondences::Ptr best_matches_with_y_threshold(
+boost::shared_ptr<pcl::Correspondences>
+best_matches_with_y_threshold(
+    Feature f_a,
+    nih::cloud::Ptr cloud_a,
+    Feature f_b,
+    nih::cloud::Ptr cloud_b,
+    double threshold);
+
+template <class Feature>
+//pcl::Correspondences::Ptr best_matches_with_y_threshold(
+boost::shared_ptr<pcl::Correspondences>
+best_matches_reciprocal_with_y_threshold(
+    Feature f_a,
+    nih::cloud::Ptr cloud_a,
+    Feature f_b,
+    nih::cloud::Ptr cloud_b,
+    double threshold);
+
 int main(int argc, char **argv) {
 	if(argc < 4) {
 		usage(argv[0]);
@@ -102,11 +123,18 @@ int main(int argc, char **argv) {
 	pcl::registration::
 	    CorrespondenceEstimation<pcl::FPFHSignature33, pcl::FPFHSignature33>
 	        correspondencia_estimador;
-	auto correspondencia = boost::make_shared<pcl::Correspondences>();
 	correspondencia_estimador.setInputSource(features_a);
 	correspondencia_estimador.setInputTarget(features_b);
-	correspondencia_estimador.determineReciprocalCorrespondences(*correspondencia);
+	//auto correspondencia = boost::make_shared<pcl::Correspondences>();
+	//correspondencia_estimador.determineReciprocalCorrespondences(*correspondencia);
 	//correspondencia_estimador.determineCorrespondences(*correspondencia);
+	auto correspondencia = best_matches_reciprocal_with_y_threshold(
+		features_a,
+		keypoints_a,
+		features_b,
+		keypoints_b,
+		8*nube_a->resolution
+	);
 
 
 
@@ -182,6 +210,97 @@ int main(int argc, char **argv) {
 		view->spinOnce(100);
 
 	return 0;
+}
+
+template <class T>
+T square(T x){
+	return x*x;
+}
+
+double distance_fpfh(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b){
+	double d = 0;
+	for(int K=0; K<a.descriptorSize(); ++K)
+		d += square(a.histogram[K] - b.histogram[K]);
+	return d;
+}
+
+template <class Feature>
+boost::shared_ptr<pcl::Correspondences>
+best_matches_with_y_threshold(
+	Feature f_a,
+	nih::cloud::Ptr cloud_a,
+	Feature f_b,
+	nih::cloud::Ptr cloud_b,
+	double threshold
+){
+	auto matches = boost::make_shared<pcl::Correspondences>();
+	for(int K=0; K<f_a->size(); ++K){
+		double distance = std::numeric_limits<double>::infinity();
+		pcl::Correspondence corresp;
+		corresp.index_query = K;
+
+		for(int L=0; L<f_b->size(); ++L){
+			double distance_y = std::abs((*cloud_a)[K].y - (*cloud_b)[L].y);
+			if(distance_y < threshold){
+				double d = distance_fpfh((*f_a)[K], (*f_b)[L]);
+				if(d < distance){
+					distance = d;
+					corresp.index_match = L;
+					corresp.distance = d;
+				}
+			}
+		}
+
+		if(distance < std::numeric_limits<double>::infinity())
+			matches->push_back(corresp);
+	}
+
+	return matches;
+}
+
+template <class Feature>
+//pcl::Correspondences::Ptr best_matches_with_y_threshold(
+boost::shared_ptr<pcl::Correspondences>
+best_matches_reciprocal_with_y_threshold(
+    Feature f_a,
+    nih::cloud::Ptr cloud_a,
+    Feature f_b,
+    nih::cloud::Ptr cloud_b,
+    double threshold){
+	auto match_a2b =
+		best_matches_with_y_threshold(f_a, cloud_a, f_b, cloud_b, threshold);
+	auto match_b2a =
+		best_matches_with_y_threshold(f_b, cloud_b, f_a, cloud_a, threshold);
+	//ordena por índice (primero a, luego b)
+	std::sort(match_a2b->begin(), match_a2b->end(), [](const auto &a, const auto &b){
+		if (a.index_query == b.index_query)
+			return a.index_match < b.index_match;
+		return a.index_query < b.index_query;
+	});
+	std::sort(match_b2a->begin(), match_b2a->end(), [](const auto &a, const auto &b){
+		if (a.index_match == b.index_match)
+			return a.index_query < b.index_query;
+		return a.index_match < b.index_match;
+	});
+
+	//merge
+	auto result = boost::make_shared<pcl::Correspondences>();
+	int K=0, L=0;
+	for(int K=0; K<match_a2b->size(); ++K){
+		for(; L<match_b2a->size(); ++L){
+			if( (*match_b2a)[L].index_match < (*match_a2b)[K].index_query)
+				continue;
+			if( (*match_b2a)[L].index_match > (*match_a2b)[K].index_query)
+				break;
+			if( (*match_b2a)[L].index_query < (*match_a2b)[K].index_match)
+				continue;
+
+			if( (*match_b2a)[L].index_query == (*match_a2b)[K].index_match)
+				result->push_back((*match_a2b)[K]);
+		}
+	}
+
+	return result;
 }
 
 nih::cloud::Ptr keypoints_fpfh(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
