@@ -196,7 +196,7 @@ nih::cloud::Ptr iss_keypoints(nih::cloud::Ptr nube, nih::normal::Ptr normales, d
 	// ¿qué valores son buenos?
 	iss_detector.setSalientRadius(8*resolution);
 	iss_detector.setNonMaxRadius(8*resolution);
-	iss_detector.setBorderRadius(1*resolution);
+	iss_detector.setBorderRadius(4*resolution);
 	iss_detector.setThreshold21(0.975);
 	iss_detector.setThreshold32(0.975);
 	iss_detector.setMinNeighbors(8);
@@ -254,7 +254,7 @@ nih::nube_norm::Ptr good_points(nih::cloud::Ptr nube) {
 	    puntos_malos->end());
 
 	// matar puntos con normales ortogonales
-	auto normales = compute_normals(nube, 4 * model_resolution);
+	auto normales = compute_normals(nube, 8 * model_resolution);
 	{
 		nih::vector eye(0, 0, 1);
 		double threshold = .2; //~80 grados
