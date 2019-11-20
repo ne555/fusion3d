@@ -19,6 +19,7 @@
 
 #include <pcl/keypoints/iss_3d.h>
 #include <pcl/features/fpfh.h>
+#include <pcl/features/multiscale_feature_persistence.h>
 #include <pcl/registration/correspondence_estimation.h>
 
 #include <pcl/PolygonMesh.h>
@@ -73,6 +74,7 @@ nih::normal::Ptr compute_normals(nih::cloud::Ptr nube, double distance);
 nih::nube_norm::Ptr good_points(nih::cloud::Ptr nube);
 nih::cloud::Ptr submuestreo(nih::cloud::Ptr nube, double alfa);
 nih::cloud::Ptr keypoints_iss(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_fpfh(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
 
 pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
 	nih::cloud::Ptr input,
@@ -89,12 +91,12 @@ int main(int argc, char **argv) {
 
 	auto original_a = load_cloud(argv[1]);
 	auto nube_a = good_points(submuestreo(original_a, 2));
-	auto keypoints_a = keypoints_iss(nube_a->puntos, nube_a->normales, nube_a->resolution);
+	auto keypoints_a = keypoints_fpfh(nube_a->puntos, nube_a->normales, nube_a->resolution);
 	auto features_a = feature_fpfh(keypoints_a, nube_a->puntos, nube_a->normales, nube_a->resolution);
 
 	auto original_b = load_cloud(argv[2]);
 	auto nube_b = good_points(submuestreo(original_b, 2));
-	auto keypoints_b = keypoints_iss(nube_b->puntos, nube_b->normales, nube_b->resolution);
+	auto keypoints_b = keypoints_fpfh(nube_b->puntos, nube_b->normales, nube_b->resolution);
 	auto features_b = feature_fpfh(keypoints_b, nube_b->puntos, nube_b->normales, nube_b->resolution);
 
 	pcl::registration::
@@ -180,6 +182,45 @@ int main(int argc, char **argv) {
 		view->spinOnce(100);
 
 	return 0;
+}
+
+nih::cloud::Ptr keypoints_fpfh(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
+	//características únicas en varias escalas
+	pcl::MultiscaleFeaturePersistence<nih::point, pcl::FPFHSignature33>
+	    feature_persistence;
+	std::vector<float> scale_values;
+	scale_values.push_back(2*resolution);
+	scale_values.push_back(4*resolution);
+	scale_values.push_back(8*resolution);
+	feature_persistence.setScalesVector(scale_values);
+	feature_persistence.setAlpha(1.5); //desvío
+
+	// estimador
+	auto fpfh = boost::make_shared<pcl::FPFHEstimation<
+	    pcl::PointXYZ,
+	    pcl::Normal,
+	    pcl::FPFHSignature33> >();
+	fpfh->setInputCloud(nube);
+	fpfh->setInputNormals(normales);
+
+	feature_persistence.setFeatureEstimator(fpfh);
+	feature_persistence.setDistanceMetric(pcl::CS);
+
+	// salida
+	auto output_features = boost::make_shared<pcl::PointCloud<pcl::FPFHSignature33> >();
+	auto output_indices =
+	    boost::make_shared<std::vector<int> >(); // horrible memory management
+	feature_persistence.determinePersistentFeatures(
+	    *output_features, output_indices);
+
+	// extracción de los puntos
+	pcl::ExtractIndices<nih::point> extract_indices_filter;
+	extract_indices_filter.setInputCloud(nube);
+	extract_indices_filter.setIndices(output_indices);
+	auto persistent_locations = boost::make_shared<nih::cloud>();
+	extract_indices_filter.filter(*persistent_locations);
+
+	return persistent_locations;
 }
 
 pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
