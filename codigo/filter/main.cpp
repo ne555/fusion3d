@@ -110,18 +110,25 @@ int main(int argc, char **argv) {
 
 	std::cerr << "Keypoints A: " << keypoints_a->size() << '\n';
 	std::cerr << "Keypoints B: " << keypoints_b->size() << '\n';
-	std::cout << "Correspondencias " << correspondencia->size() << std::endl;
 	std::sort(correspondencia->begin(), correspondencia->end(),
 			[](const auto &a, const auto &b){
 				return a.distance < b.distance;
 			}
 	);
-	for(int K=0; K<correspondencia->size(); ++K){
-		std::cout << (*correspondencia)[K].index_query << " -> ";
-		std::cout << (*correspondencia)[K].index_match << ' ';
-		std::cout << "D " << (*correspondencia)[K].distance << ' ';
-		std::cout << "W " << (*correspondencia)[K].weight << '\n';
+	/*Rotación sobre base*/
+	//Eliminación de correspondencias que se mueven "demasiado" en y
+	for(auto it = correspondencia->begin(); it not_eq correspondencia->end(); ){
+		int a = it->index_query;
+		int b = it->index_match;
+		double distance_y = std::abs((*keypoints_a)[a].y - (*keypoints_b)[b].y);
+		if(distance_y > 8*nube_a->resolution){
+			std::cout << "Die " << it-correspondencia->begin() << ' ' << it->distance << '\n';
+			it = correspondencia->erase(it);
+		}
+		else
+			++it;
 	}
+
 	//std::cout << "Top 5\n";
 	//correspondencia->resize(5);
 
@@ -161,6 +168,13 @@ int main(int argc, char **argv) {
 	    *correspondencia,
 	    "correspondencia"
 	);
+	std::cout << "Correspondencias " << correspondencia->size() << std::endl;
+	for(int K=0; K<correspondencia->size(); ++K){
+		std::cout << (*correspondencia)[K].index_query << " -> ";
+		std::cout << (*correspondencia)[K].index_match << ' ';
+		std::cout << "D " << (*correspondencia)[K].distance << ' ';
+		std::cout << "W " << (*correspondencia)[K].weight << '\n';
+	}
 
 	while(!view->wasStopped())
 		view->spinOnce(100);
