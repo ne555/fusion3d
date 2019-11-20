@@ -18,6 +18,8 @@
 #include <pcl/kdtree/kdtree_flann.h>
 
 #include <pcl/keypoints/iss_3d.h>
+#include <pcl/features/fpfh.h>
+#include <pcl/registration/correspondence_estimation.h>
 
 #include <pcl/PolygonMesh.h>
 #include <pcl/visualization/pcl_visualizer.h>
@@ -28,7 +30,7 @@
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr load_cloud(std::string filename);
 void usage(const char *program) {
-	std::cerr << program << " cloud.ply\n";
+	std::cerr << program << " cloud_a.ply cloud_b.py angle\n";
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr
@@ -72,39 +74,118 @@ nih::nube_norm::Ptr good_points(nih::cloud::Ptr nube);
 nih::cloud::Ptr submuestreo(nih::cloud::Ptr nube, double alfa);
 nih::cloud::Ptr iss_keypoints(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
 
+pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
+	nih::cloud::Ptr input,
+	nih::cloud::Ptr surface,
+	nih::normal::Ptr normals,
+	double resolution);
+
 int main(int argc, char **argv) {
-	if(argc < 2) {
+	if(argc < 4) {
 		usage(argv[0]);
 		return 1;
 	}
+	double angle = std::stod(argv[3]);
 
-	auto original = load_cloud(argv[1]);
-	auto nube = good_points(submuestreo(original, 2));
+	auto original_a = load_cloud(argv[1]);
+	auto nube_a = good_points(submuestreo(original_a, 2));
+	auto keypoints_a = iss_keypoints(nube_a->puntos, nube_a->normales, nube_a->resolution);
+	auto features_a = feature_fpfh(keypoints_a, nube_a->puntos, nube_a->normales, nube_a->resolution);
 
-	auto keypoints = iss_keypoints(nube->puntos, nube->normales, nube->resolution);
+	auto original_b = load_cloud(argv[2]);
+	auto nube_b = good_points(submuestreo(original_b, 2));
+	auto keypoints_b = iss_keypoints(nube_b->puntos, nube_b->normales, nube_b->resolution);
+	auto features_b = feature_fpfh(keypoints_b, nube_b->puntos, nube_b->normales, nube_b->resolution);
+
+	pcl::registration::
+	    CorrespondenceEstimation<pcl::FPFHSignature33, pcl::FPFHSignature33>
+	        correspondencia_estimador;
+	auto correspondencia = boost::make_shared<pcl::Correspondences>();
+	correspondencia_estimador.setInputSource(features_a);
+	correspondencia_estimador.setInputTarget(features_b);
+	correspondencia_estimador.determineReciprocalCorrespondences(*correspondencia);
+	//correspondencia_estimador.determineCorrespondences(*correspondencia);
 
 
-	std::cerr << "Keypoints: " << keypoints->size() << '\n';
+
+	std::cerr << "Keypoints A: " << keypoints_a->size() << '\n';
+	std::cerr << "Keypoints B: " << keypoints_b->size() << '\n';
+	std::cout << "Correspondencias " << correspondencia->size() << std::endl;
+	std::sort(correspondencia->begin(), correspondencia->end(),
+			[](const auto &a, const auto &b){
+				return a.distance < b.distance;
+			}
+	);
+	for(int K=0; K<correspondencia->size(); ++K){
+		std::cout << (*correspondencia)[K].index_query << " -> ";
+		std::cout << (*correspondencia)[K].index_match << ' ';
+		std::cout << "D " << (*correspondencia)[K].distance << ' ';
+		std::cout << "W " << (*correspondencia)[K].weight << '\n';
+	}
+	//std::cout << "Top 5\n";
+	//correspondencia->resize(5);
 
 	// visualization
+	//rota según la aproximación
+	nih::transformation rotacion;
+	rotacion = Eigen::AngleAxis<float>(angle * 3.14/180, Eigen::Vector3f(0, 1, 0));
+	pcl::transformPointCloud(*nube_b->puntos, *nube_b->puntos, rotacion);
+	pcl::transformPointCloud(*keypoints_b, *keypoints_b, rotacion);
+	//mover la nube en z para mejor diferenciación
+	for(int K = 0; K < nube_b->puntos->size(); ++K)
+		(*nube_b->puntos)[K].z += .2;
+	for(int K = 0; K < keypoints_b->size(); ++K)
+		(*keypoints_b)[K].z += .2;
+
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("triangulation");
 	view->setBackgroundColor(0, 0, 0);
-	auto mesh = triangulate2(nube->puntos);
+	//auto mesh = triangulate2(nube->puntos);
 	//view->addPolylineFromPolygonMesh(*mesh, "mesh");
-	view->addPointCloud(nube->puntos, "puntos");
+	view->addPointCloud(nube_a->puntos, "puntos A");
+	view->addPointCloud(nube_b->puntos, "puntos B");
 	//view->addPointCloudNormals<nih::point, pcl::Normal>(nube->puntos, nube->normales, 5, .01, "normales");
 
 	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
-	    iss_color(keypoints, 0, 255, 0);
-	view->addPointCloud(keypoints, iss_color, "iss");
+	    iss_color(keypoints_a, 0, 255, 0);
+	view->addPointCloud(keypoints_a, iss_color, "iss A");
+	view->addPointCloud(keypoints_b, iss_color, "iss B");
 	view->setPointCloudRenderingProperties(
-	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "iss");
+	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "iss A");
+	view->setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "iss B");
+
+	view->addCorrespondences<pcl::PointXYZ>(
+	    keypoints_a,
+	    keypoints_b,
+	    *correspondencia,
+	    "correspondencia"
+	);
 
 	while(!view->wasStopped())
 		view->spinOnce(100);
 
 	return 0;
+}
+
+pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
+    nih::cloud::Ptr input, nih::cloud::Ptr surface, nih::normal::Ptr normals, double resolution) {
+	pcl::FPFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::FPFHSignature33> fpfh;
+
+	fpfh.setInputCloud(input);
+	fpfh.setInputNormals(normals);
+	fpfh.setSearchSurface(surface);
+
+	fpfh.setSearchMethod(
+	    boost::make_shared<pcl::search::KdTree<pcl::PointXYZ> >());
+
+	auto signature =
+	    boost::make_shared<pcl::PointCloud<pcl::FPFHSignature33> >();
+
+	fpfh.setRadiusSearch(8 * resolution);
+	fpfh.compute(*signature);
+
+	return signature;
 }
 
 nih::cloud::Ptr iss_keypoints(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
@@ -118,7 +199,7 @@ nih::cloud::Ptr iss_keypoints(nih::cloud::Ptr nube, nih::normal::Ptr normales, d
 	iss_detector.setBorderRadius(1*resolution);
 	iss_detector.setThreshold21(0.975);
 	iss_detector.setThreshold32(0.975);
-	iss_detector.setMinNeighbors(5);
+	iss_detector.setMinNeighbors(8);
 	auto iss_keypoints = boost::make_shared<nih::cloud>();
 	iss_detector.compute(*iss_keypoints);
 	return iss_keypoints;

@@ -24,3 +24,19 @@ def good_points(cloud, threshold):
 
     bad_points = boundary + big_edges + near_death + ortho
     return bad_points
+
+def iss_keypoints(cloud, resolution):
+    pass
+
+def feature_fpfh(keypoints, cloud):
+    pass
+
+def correspondence(cloud_a, cloud_b):
+    key_a = iss_keypoints(cloud_a)
+    key_b = iss_keypoints(cloud_b)
+    feature_a = feature_fpfh(key_a, cloud_a)
+    feature_b = feature_fpfh(key_b, cloud_b)
+
+    c = correspondence()
+    c.source(feature_a)
+    c.target(feature_b)
