@@ -72,7 +72,7 @@ nih::normal::Ptr compute_normals(nih::cloud::Ptr nube, double distance);
 // filtra puntos de contorno, bordes y normales ortogonales
 nih::nube_norm::Ptr good_points(nih::cloud::Ptr nube);
 nih::cloud::Ptr submuestreo(nih::cloud::Ptr nube, double alfa);
-nih::cloud::Ptr iss_keypoints(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_iss(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
 
 pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
 	nih::cloud::Ptr input,
@@ -89,12 +89,12 @@ int main(int argc, char **argv) {
 
 	auto original_a = load_cloud(argv[1]);
 	auto nube_a = good_points(submuestreo(original_a, 2));
-	auto keypoints_a = iss_keypoints(nube_a->puntos, nube_a->normales, nube_a->resolution);
+	auto keypoints_a = keypoints_iss(nube_a->puntos, nube_a->normales, nube_a->resolution);
 	auto features_a = feature_fpfh(keypoints_a, nube_a->puntos, nube_a->normales, nube_a->resolution);
 
 	auto original_b = load_cloud(argv[2]);
 	auto nube_b = good_points(submuestreo(original_b, 2));
-	auto keypoints_b = iss_keypoints(nube_b->puntos, nube_b->normales, nube_b->resolution);
+	auto keypoints_b = keypoints_iss(nube_b->puntos, nube_b->normales, nube_b->resolution);
 	auto features_b = feature_fpfh(keypoints_b, nube_b->puntos, nube_b->normales, nube_b->resolution);
 
 	pcl::registration::
@@ -202,7 +202,7 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
 	return signature;
 }
 
-nih::cloud::Ptr iss_keypoints(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
+nih::cloud::Ptr keypoints_iss(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
 	// keypoints
 	pcl::ISSKeypoint3D<nih::point, nih::point, pcl::Normal> iss_detector;
 	iss_detector.setInputCloud(nube);
