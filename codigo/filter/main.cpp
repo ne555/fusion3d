@@ -70,6 +70,7 @@ nih::normal::Ptr compute_normals(nih::cloud::Ptr nube, double distance);
 // filtra puntos de contorno, bordes y normales ortogonales
 nih::nube_norm::Ptr good_points(nih::cloud::Ptr nube);
 nih::cloud::Ptr submuestreo(nih::cloud::Ptr nube, double alfa);
+nih::cloud::Ptr iss_keypoints(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
 
 int main(int argc, char **argv) {
 	if(argc < 2) {
@@ -80,20 +81,10 @@ int main(int argc, char **argv) {
 	auto original = load_cloud(argv[1]);
 	auto nube = good_points(submuestreo(original, 2));
 
-	// keypoints
-	pcl::ISSKeypoint3D<nih::point, nih::point, pcl::Normal> iss_detector;
-	iss_detector.setInputCloud(nube->puntos);
-	iss_detector.setNormals(nube->normales);
-	// ¿qué valores son buenos?
-	iss_detector.setSalientRadius(8*nube->resolution);
-	iss_detector.setNonMaxRadius(4*nube->resolution);
-	iss_detector.setThreshold21(0.975);
-	iss_detector.setThreshold32(0.975);
-	iss_detector.setMinNeighbors(5);
-	auto iss_keypoints = boost::make_shared<nih::cloud>();
-	iss_detector.compute(*iss_keypoints);
+	auto keypoints = iss_keypoints(nube->puntos, nube->normales, nube->resolution);
 
-	std::cerr << "Keypoints: " << iss_keypoints->size() << '\n';
+
+	std::cerr << "Keypoints: " << keypoints->size() << '\n';
 
 	// visualization
 	auto view =
@@ -105,8 +96,8 @@ int main(int argc, char **argv) {
 	//view->addPointCloudNormals<nih::point, pcl::Normal>(nube->puntos, nube->normales, 5, .01, "normales");
 
 	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
-	    iss_color(iss_keypoints, 0, 255, 0);
-	view->addPointCloud(iss_keypoints, iss_color, "iss");
+	    iss_color(keypoints, 0, 255, 0);
+	view->addPointCloud(keypoints, iss_color, "iss");
 	view->setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "iss");
 
@@ -114,6 +105,23 @@ int main(int argc, char **argv) {
 		view->spinOnce(100);
 
 	return 0;
+}
+
+nih::cloud::Ptr iss_keypoints(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
+	// keypoints
+	pcl::ISSKeypoint3D<nih::point, nih::point, pcl::Normal> iss_detector;
+	iss_detector.setInputCloud(nube);
+	iss_detector.setNormals(normales);
+	// ¿qué valores son buenos?
+	iss_detector.setSalientRadius(8*resolution);
+	iss_detector.setNonMaxRadius(8*resolution);
+	iss_detector.setBorderRadius(1*resolution);
+	iss_detector.setThreshold21(0.975);
+	iss_detector.setThreshold32(0.975);
+	iss_detector.setMinNeighbors(5);
+	auto iss_keypoints = boost::make_shared<nih::cloud>();
+	iss_detector.compute(*iss_keypoints);
+	return iss_keypoints;
 }
 
 nih::cloud::Ptr submuestreo(nih::cloud::Ptr nube, double alfa) {
