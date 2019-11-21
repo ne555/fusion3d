@@ -38,6 +38,8 @@ alineación
 	icp
 	SampleConsensusInitialAlignment
 	Levenberg-Marquardt
+	marco de referencia con los eigenvectors de la covarianza de la matriz de dispersión
+		weighted k-means on the correspondences to find the rotation
 
 leer .ply con estructura
 escribir .ply con estructura

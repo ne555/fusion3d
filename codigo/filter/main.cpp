@@ -104,6 +104,18 @@ best_matches_reciprocal_with_y_threshold(
     nih::cloud::Ptr cloud_b,
     double threshold);
 
+namespace nih{
+class frame{
+	public:
+		Eigen::Vector3d x, y, z;
+		double lambda_x, lambda_y, lambda_z;
+};
+
+frame
+compute_reference_frame(nih::cloud::Ptr nube, const nih::point &p, double radius);
+}
+
+
 int main(int argc, char **argv) {
 	if(argc < 4) {
 		usage(argv[0]);
@@ -152,17 +164,26 @@ int main(int argc, char **argv) {
 		int a = it->index_query;
 		int b = it->index_match;
 		double distance_y = std::abs((*keypoints_a)[a].y - (*keypoints_b)[b].y);
-		if(distance_y > 8 * nube_a->resolution) {
-			std::cout << "Die " << it - correspondencia->begin() << ' '
-			          << it->distance << '\n';
+		if(distance_y > 8 * nube_a->resolution)
 			it = correspondencia->erase(it);
-		} else
+		else
 			++it;
 	}
 
-	// std::cout << "Top 5\n";
-	// correspondencia->resize(5);
+	//obtención de marco de referencia F_j mediante covarianza de la matriz de dispersión
+	//cálculo de las rotaciones entre los F_j
+	for(int K=0; K<correspondencia->size(); ++K){
+		nih::frame f = nih::compute_reference_frame(
+				nube_a->puntos,
+				(*keypoints_a)[
+					(*correspondencia)[K].index_query
+				],
+				8*nube_a->resolution
+			);
+		std::cout << f.lambda_x << ' ' << f.lambda_y << ' ' << f.lambda_z << '\n';
+	}
 
+#if 0
 	// visualization
 	// rota según la aproximación
 	nih::transformation rotacion;
@@ -207,8 +228,55 @@ int main(int argc, char **argv) {
 
 	while(!view->wasStopped())
 		view->spinOnce(100);
+#endif
 
 	return 0;
+}
+
+namespace nih{
+frame
+compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double radius){
+	//basado en ISSKeypoint3D::getScatterMatrix
+
+	pcl::KdTreeFLANN<nih::point> kdtree;
+	kdtree.setInputCloud(nube);
+	std::vector<int> indices;
+	std::vector<float> distances;
+	kdtree.radiusSearch(center, radius, indices, distances);
+
+	Eigen::Matrix3d covarianza = Eigen::Matrix3d::Zero ();
+	for(int K = 0; K < indices.size(); K++) {
+		const nih::point &p = (*nube)[indices[K]];
+
+		for(int L=0; L<3; ++L)
+			for(int M=0; M<3; ++M)
+				covarianza(L,M) += (p.data[L] - center.data[L]) * (p.data[M] - center.data[M]);
+	}
+
+	//compute eigenvales and eigenvectors
+	Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver (covarianza);
+
+	frame f;
+	f.lambda_x = solver.eigenvalues ()[2];
+	f.lambda_y = solver.eigenvalues ()[1];
+	f.lambda_z = solver.eigenvalues ()[0];
+
+	f.x = solver.eigenvectors ().col(2);
+	f.y = solver.eigenvectors ().col(1);
+	f.z = solver.eigenvectors ().col(0);
+
+	//make sure that vector `z' points to outside screen {0, 0, 1}
+	if(f.z(2)< 0 ){
+		//rotate 180 over f.x
+		Eigen::Transform<double, 3, Eigen::Affine> rotacion;
+		rotacion =
+			Eigen::AngleAxis<double>(M_PI, f.x);
+		f.y = rotacion * f.y;
+		f.z = rotacion * f.z;
+	}
+
+	return f;
+}
 }
 
 template <class T>
