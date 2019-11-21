@@ -112,7 +112,7 @@ class frame{
 };
 
 frame
-compute_reference_frame(nih::cloud::Ptr nube, const nih::point &p, double radius);
+compute_reference_frame(nih::cloud::Ptr nube, const nih::point &p, double radius, pcl::KdTreeFLANN<nih::point> &kdtree);
 }
 
 
@@ -172,16 +172,23 @@ int main(int argc, char **argv) {
 
 	//obtención de marco de referencia F_j mediante covarianza de la matriz de dispersión
 	//cálculo de las rotaciones entre los F_j
-	for(int K=0; K<correspondencia->size(); ++K){
-		nih::frame f = nih::compute_reference_frame(
-				nube_a->puntos,
-				(*keypoints_a)[
-					(*correspondencia)[K].index_query
-				],
-				8*nube_a->resolution
-			);
-		std::cout << f.lambda_x << ' ' << f.lambda_y << ' ' << f.lambda_z << '\n';
-	}
+	pcl::KdTreeFLANN<nih::point> kdtree_a;
+	kdtree_a.setInputCloud(nube_a->puntos);
+	pcl::KdTreeFLANN<nih::point> kdtree_b;
+	kdtree_b.setInputCloud(nube_b->puntos);
+	
+for(int K = 0; K < correspondencia->size(); ++K) {
+	nih::frame f_a = nih::compute_reference_frame(
+	    nube_a->puntos,
+	    (*keypoints_a)[(*correspondencia)[K].index_query],
+	    8 * nube_a->resolution,
+	    kdtree_a);
+	nih::frame f_b = nih::compute_reference_frame(
+	    nube_b->puntos,
+	    (*keypoints_b)[(*correspondencia)[K].index_match],
+	    8 * nube_b->resolution,
+	    kdtree_b);
+}
 
 #if 0
 	// visualization
@@ -235,11 +242,8 @@ int main(int argc, char **argv) {
 
 namespace nih{
 frame
-compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double radius){
+compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double radius, pcl::KdTreeFLANN<nih::point> &kdtree){
 	//basado en ISSKeypoint3D::getScatterMatrix
-
-	pcl::KdTreeFLANN<nih::point> kdtree;
-	kdtree.setInputCloud(nube);
 	std::vector<int> indices;
 	std::vector<float> distances;
 	kdtree.radiusSearch(center, radius, indices, distances);
