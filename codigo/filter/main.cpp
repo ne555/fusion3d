@@ -95,7 +95,6 @@ boost::shared_ptr<pcl::Correspondences> best_matches_with_y_threshold(
     double threshold);
 
 template <class Feature>
-// pcl::Correspondences::Ptr best_matches_with_y_threshold(
 boost::shared_ptr<pcl::Correspondences>
 best_matches_reciprocal_with_y_threshold(
     Feature f_a,
@@ -107,14 +106,15 @@ best_matches_reciprocal_with_y_threshold(
 namespace nih{
 class frame{
 	public:
-		Eigen::Vector3d x, y, z;
-		double lambda_x, lambda_y, lambda_z;
+		Eigen::Vector3d v[3];
+		double lambda[3];
 };
 
 frame
 compute_reference_frame(nih::cloud::Ptr nube, const nih::point &p, double radius, pcl::KdTreeFLANN<nih::point> &kdtree);
 }
 
+Eigen::Vector3d project(Eigen::Vector3d v, Eigen::Vector3d normal);
 
 int main(int argc, char **argv) {
 	if(argc < 4) {
@@ -152,8 +152,6 @@ int main(int argc, char **argv) {
 	    keypoints_b,
 	    8 * nube_a->resolution);
 
-	std::cerr << "Keypoints A: " << keypoints_a->size() << '\n';
-	std::cerr << "Keypoints B: " << keypoints_b->size() << '\n';
 	std::sort(
 	    correspondencia->begin(),
 	    correspondencia->end(),
@@ -169,6 +167,9 @@ int main(int argc, char **argv) {
 		else
 			++it;
 	}
+	std::cerr << "Keypoints A: " << keypoints_a->size() << '\n';
+	std::cerr << "Keypoints B: " << keypoints_b->size() << '\n';
+	std::cerr << "Correspondencias: " << correspondencia->size() << '\n';
 
 	//obtención de marco de referencia F_j mediante covarianza de la matriz de dispersión
 	//cálculo de las rotaciones entre los F_j
@@ -177,18 +178,36 @@ int main(int argc, char **argv) {
 	pcl::KdTreeFLANN<nih::point> kdtree_b;
 	kdtree_b.setInputCloud(nube_b->puntos);
 	
-for(int K = 0; K < correspondencia->size(); ++K) {
-	nih::frame f_a = nih::compute_reference_frame(
-	    nube_a->puntos,
-	    (*keypoints_a)[(*correspondencia)[K].index_query],
-	    8 * nube_a->resolution,
-	    kdtree_a);
-	nih::frame f_b = nih::compute_reference_frame(
-	    nube_b->puntos,
-	    (*keypoints_b)[(*correspondencia)[K].index_match],
-	    8 * nube_b->resolution,
-	    kdtree_b);
-}
+	for(int K = 0; K < correspondencia->size(); ++K) {
+		nih::frame f_a = nih::compute_reference_frame(
+			nube_a->puntos,
+			(*keypoints_a)[(*correspondencia)[K].index_query],
+			4 * nube_a->resolution,
+			kdtree_a);
+		nih::frame f_b = nih::compute_reference_frame(
+			nube_b->puntos,
+			(*keypoints_b)[(*correspondencia)[K].index_match],
+			4 * nube_b->resolution,
+			kdtree_b);
+		//cálculo de ángulos
+		Eigen::Vector3d x(1, 0, 0), y(0, 1, 0), z(0, 0, 1);
+		//eje x
+		//proyectar y_a y y_b en plano yz_global
+		double angle_x = project(f_a.v[1], x).dot(project(f_b.v[1], x));
+		angle_x = acos(angle_x)*180/M_PI;
+		//eje y
+		//proyectar z_a y z_b en plano zx_global
+		double angle_y = project(f_a.v[2], y).dot(project(f_b.v[2], y));
+		angle_y = acos(angle_y)*180/M_PI;
+		//eje z
+		//proyectar x_a y x_b en plano xy_global
+		double angle_z = project(f_a.v[0], z).dot(project(f_b.v[0], z));
+		angle_z = acos(angle_z)*180/M_PI;
+
+
+		std::cout << "Confianza: " << (*correspondencia)[K].distance << ' ';
+		std::cout << "Angles: " << angle_x << ' ' << angle_y << ' ' << angle_z << '\n';
+	}
 
 #if 0
 	// visualization
@@ -240,6 +259,10 @@ for(int K = 0; K < correspondencia->size(); ++K) {
 	return 0;
 }
 
+Eigen::Vector3d project(Eigen::Vector3d v, Eigen::Vector3d normal){
+	return v - v.dot(normal) * normal;
+}
+
 namespace nih{
 frame
 compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double radius, pcl::KdTreeFLANN<nih::point> &kdtree){
@@ -247,6 +270,7 @@ compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double r
 	std::vector<int> indices;
 	std::vector<float> distances;
 	kdtree.radiusSearch(center, radius, indices, distances);
+	std::cerr << "Puntos tomados: " << indices.size() << '\n';
 
 	Eigen::Matrix3d covarianza = Eigen::Matrix3d::Zero ();
 	for(int K = 0; K < indices.size(); K++) {
@@ -261,22 +285,21 @@ compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double r
 	Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver (covarianza);
 
 	frame f;
-	f.lambda_x = solver.eigenvalues ()[2];
-	f.lambda_y = solver.eigenvalues ()[1];
-	f.lambda_z = solver.eigenvalues ()[0];
-
-	f.x = solver.eigenvectors ().col(2);
-	f.y = solver.eigenvectors ().col(1);
-	f.z = solver.eigenvectors ().col(0);
+	for(int K=0; K<3; ++K){
+		f.lambda[K] = solver.eigenvalues()[3-(K+1)];
+		f.v[K] = solver.eigenvectors().col(3-(K+1));
+	}
+	//to always have right-hand rule
+	f.v[2] = f.v[0].cross(f.v[1]);
 
 	//make sure that vector `z' points to outside screen {0, 0, 1}
-	if(f.z(2)< 0 ){
+	if(f.v[2](2) < 0 ){
 		//rotate 180 over f.x
 		Eigen::Transform<double, 3, Eigen::Affine> rotacion;
 		rotacion =
-			Eigen::AngleAxis<double>(M_PI, f.x);
-		f.y = rotacion * f.y;
-		f.z = rotacion * f.z;
+			Eigen::AngleAxis<double>(M_PI, f.v[0]);
+		for(int K=1; K<3; ++K)
+			f.v[K] = rotacion * f.v[K];
 	}
 
 	return f;
@@ -433,7 +456,7 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
 	auto signature =
 	    boost::make_shared<pcl::PointCloud<pcl::FPFHSignature33> >();
 
-	fpfh.setRadiusSearch(8 * resolution);
+	fpfh.setRadiusSearch(4 * resolution);
 	fpfh.compute(*signature);
 
 	return signature;
@@ -506,14 +529,13 @@ nih::nube_norm::Ptr good_points(nih::cloud::Ptr nube) {
 	    puntos_malos->end());
 
 	// matar puntos con normales ortogonales
-	auto normales = compute_normals(nube, 8 * model_resolution);
+	auto normales = compute_normals(nube, 4 * model_resolution);
 	{
 		nih::vector eye(0, 0, 1);
-		double threshold = .2; //~80 grados
 		for(int K = 0; K < normales->size(); ++K) {
 			nih::vector n((*normales)[K].normal);
 			double dot = eye.dot(n);
-			if(dot < threshold)
+			if(dot < angle_threshold)
 				puntos_malos->push_back(K);
 		}
 	}
