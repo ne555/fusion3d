@@ -30,6 +30,11 @@
 #include <string>
 #include <vector>
 
+template <class T>
+T square(T x) {
+	return x * x;
+}
+
 pcl::PointCloud<pcl::PointXYZ>::Ptr load_cloud(std::string filename);
 void usage(const char *program) {
 	std::cerr << program << " cloud_a.ply cloud_b.py angle\n";
@@ -116,6 +121,15 @@ compute_reference_frame(nih::cloud::Ptr nube, const nih::point &p, double radius
 
 Eigen::Vector3d project(Eigen::Vector3d v, Eigen::Vector3d normal);
 
+int
+get_index(nih::cloud::Ptr nube, const nih::point &center, pcl::KdTreeFLANN<nih::point> &kdtree){
+	std::vector<int> indices;
+	std::vector<float> distances;
+	kdtree.nearestKSearch(center, 1, indices, distances);
+	//std::cerr << "d: " << distances[0] << '\n';
+	return indices[0];
+}
+
 int main(int argc, char **argv) {
 	if(argc < 4) {
 		usage(argv[0]);
@@ -146,6 +160,7 @@ int main(int argc, char **argv) {
 	// correspondencia_estimador.determineReciprocalCorrespondences(*correspondencia);
 	// correspondencia_estimador.determineCorrespondences(*correspondencia);
 	auto correspondencia = best_matches_reciprocal_with_y_threshold(
+	//auto correspondencia = best_matches_with_y_threshold(
 	    features_a,
 	    keypoints_a,
 	    features_b,
@@ -177,7 +192,15 @@ int main(int argc, char **argv) {
 	kdtree_a.setInputCloud(nube_a->puntos);
 	pcl::KdTreeFLANN<nih::point> kdtree_b;
 	kdtree_b.setInputCloud(nube_b->puntos);
-	
+
+	auto key_normal_a = boost::make_shared<nih::normal>();
+	auto key_normal_b = boost::make_shared<nih::normal>();
+	auto eje = boost::make_shared<nih::normal>();
+	auto key_p_a = boost::make_shared<nih::cloud>();
+	auto key_p_b = boost::make_shared<nih::cloud>();
+
+	std::vector<double> angulo_y;
+
 	for(int K = 0; K < correspondencia->size(); ++K) {
 		nih::frame f_a = nih::compute_reference_frame(
 			nube_a->puntos,
@@ -189,29 +212,73 @@ int main(int argc, char **argv) {
 			(*keypoints_b)[(*correspondencia)[K].index_match],
 			4 * nube_b->resolution,
 			kdtree_b);
+
+		int a = get_index(nube_a->puntos,
+			(*keypoints_a)[(*correspondencia)[K].index_query],
+			kdtree_a);
+		int b = get_index(nube_b->puntos,
+			(*keypoints_b)[(*correspondencia)[K].index_match],
+			kdtree_b);
+
+		key_normal_a->push_back((*nube_a->normales)[a]);
+		key_p_a->push_back((*nube_a->puntos)[a]);
+		key_normal_b->push_back((*nube_b->normales)[b]);
+		key_p_b->push_back((*nube_b->puntos)[b]);
+
+
+		Eigen::Vector3d normal_a, normal_b;
+#if 1
+		for(int L=0; L<3; ++L){
+			normal_a(L) = (*nube_a->normales)[a].normal[L];
+			normal_b(L) = (*nube_b->normales)[b].normal[L];
+		}
+#endif
+		std::cout << (normal_a-f_a.v[2]).norm() << ' ';
+		std::cout << (normal_b-f_b.v[2]).norm() << '\n';
+
 		//cálculo de ángulos
+		//proyectar la normal (f.z, f.v[2]) en cada plano y medir el ángulo
 		Eigen::Vector3d x(1, 0, 0), y(0, 1, 0), z(0, 0, 1);
-		//eje x
-		//proyectar y_a y y_b en plano yz_global
-		double angle_x = project(f_a.v[1], x).dot(project(f_b.v[1], x));
+		//eje x, plano yz
+		double angle_x = project(f_a.v[2], x).dot(project(f_b.v[2], x));
 		angle_x = acos(angle_x)*180/M_PI;
-		//eje y
-		//proyectar z_a y z_b en plano zx_global
+		//eje y, plano zx
 		double angle_y = project(f_a.v[2], y).dot(project(f_b.v[2], y));
+		//double angle_y = project(normal_a, y).dot(project(normal_b, y));
 		angle_y = acos(angle_y)*180/M_PI;
-		//eje z
-		//proyectar x_a y x_b en plano xy_global
-		double angle_z = project(f_a.v[0], z).dot(project(f_b.v[0], z));
+		//eje z, plano xy
+		double angle_z = project(f_a.v[2], z).dot(project(f_b.v[2], z));
 		angle_z = acos(angle_z)*180/M_PI;
 
 
-		std::cout << "Confianza: " << (*correspondencia)[K].distance << ' ';
-		std::cout << "Angles: " << angle_x << ' ' << angle_y << ' ' << angle_z << '\n';
+		//std::cout << "Confianza: " << (*correspondencia)[K].distance << ' ';
+		//std::cout << "Angles: " << ' ' << angle_y << '\n';
+		angulo_y.push_back(angle_y);
+		//std::cout << "vector_a: " << (*nube_a->normales)[a] << '\n';
+		//std::cout << "vector_b: " << (*nube_b->normales)[b] << '\n';
+		//std::cout << "prod: " << f_a.v[2].dot(f_b.v[2]) << " norms: " << f_a.v[2].norm() << ' ' << f_b.v[2].norm() << '\n';
+		//std::cout << "angle: " << acos(f_a.v[2].dot(f_b.v[2]))*180/M_PI << '\n';
 	}
 
+	std::sort(angulo_y.begin(), angulo_y.end());
+	std::cout << "Angulos:\n";
+	for(int K=0; K<angulo_y.size(); ++K)
+		std::cout << angulo_y[K] << ' ';
+	std::cout << '\n';
+	//media y varianza de angulo_y
+	double media = 0;
+	for(auto angle: angulo_y)
+		media += angle;
+	media /= angulo_y.size();
+	double desvio = 0;
+	for(auto angle: angulo_y)
+		desvio += square(angle-media);
+	desvio /= angulo_y.size();
+	std::cout << "Size " << angulo_y.size() << " Media: " << media << " Desvio: " << sqrt(desvio) << '\n';
+
 #if 0
-	// visualization
-	// rota según la aproximación
+	//// visualization
+	//// rota según la aproximación
 	nih::transformation rotacion;
 	rotacion =
 	    Eigen::AngleAxis<float>(angle * 3.14 / 180, Eigen::Vector3f(0, 1, 0));
@@ -232,10 +299,22 @@ int main(int argc, char **argv) {
 	view->addPointCloud(nube_b->puntos, "puntos B");
 	// view->addPointCloudNormals<nih::point, pcl::Normal>(nube->puntos,
 	// nube->normales, 5, .01, "normales");
+	view->addPointCloudNormals<nih::point, pcl::Normal>(
+			key_p_a,
+	key_normal_a, 1, .01, "key_norm_a");
+
+	view->addPointCloudNormals<nih::point, pcl::Normal>(
+			key_p_a,
+	key_normal_b, 1, .01, "key_norm_b");
+
+	//view->addPointCloudNormals<nih::point, pcl::Normal>(
+	//		nube_a->puntos,
+	//nube_a->normales, 1, .005, "all");
 
 	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> iss_color(
 	    keypoints_a, 0, 255, 0);
 	view->addPointCloud(keypoints_a, iss_color, "iss A");
+	//view->addPointCloud(key_p_a, iss_color, "iss A");
 	view->addPointCloud(keypoints_b, iss_color, "iss B");
 	view->setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "iss A");
@@ -244,13 +323,13 @@ int main(int argc, char **argv) {
 
 	view->addCorrespondences<pcl::PointXYZ>(
 	    keypoints_a, keypoints_b, *correspondencia, "correspondencia");
-	std::cout << "Correspondencias " << correspondencia->size() << std::endl;
-	for(int K = 0; K < correspondencia->size(); ++K) {
-		std::cout << (*correspondencia)[K].index_query << " -> ";
-		std::cout << (*correspondencia)[K].index_match << ' ';
-		std::cout << "D " << (*correspondencia)[K].distance << ' ';
-		std::cout << "W " << (*correspondencia)[K].weight << '\n';
-	}
+	//std::cout << "Correspondencias " << correspondencia->size() << std::endl;
+	//for(int K = 0; K < correspondencia->size(); ++K) {
+	//	std::cout << (*correspondencia)[K].index_query << " -> ";
+	//	std::cout << (*correspondencia)[K].index_match << ' ';
+	//	std::cout << "D " << (*correspondencia)[K].distance << ' ';
+	//	std::cout << "W " << (*correspondencia)[K].weight << '\n';
+	//}
 
 	while(!view->wasStopped())
 		view->spinOnce(100);
@@ -260,17 +339,18 @@ int main(int argc, char **argv) {
 }
 
 Eigen::Vector3d project(Eigen::Vector3d v, Eigen::Vector3d normal){
-	return v - v.dot(normal) * normal;
+	Eigen::Vector3d proj = v - v.dot(normal) * normal;
+	return proj/proj.norm();
 }
 
 namespace nih{
 frame
 compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double radius, pcl::KdTreeFLANN<nih::point> &kdtree){
+#if 1
 	//basado en ISSKeypoint3D::getScatterMatrix
 	std::vector<int> indices;
 	std::vector<float> distances;
 	kdtree.radiusSearch(center, radius, indices, distances);
-	std::cerr << "Puntos tomados: " << indices.size() << '\n';
 
 	Eigen::Matrix3d covarianza = Eigen::Matrix3d::Zero ();
 	for(int K = 0; K < indices.size(); K++) {
@@ -290,10 +370,11 @@ compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double r
 		f.v[K] = solver.eigenvectors().col(3-(K+1));
 	}
 	//to always have right-hand rule
-	f.v[2] = f.v[0].cross(f.v[1]);
+	//f.v[2] = f.v[0].cross(f.v[1]);
 
 	//make sure that vector `z' points to outside screen {0, 0, 1}
 	if(f.v[2](2) < 0 ){
+		std::cerr << '#';
 		//rotate 180 over f.x
 		Eigen::Transform<double, 3, Eigen::Affine> rotacion;
 		rotacion =
@@ -303,13 +384,10 @@ compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double r
 	}
 
 	return f;
+#endif
 }
 }
 
-template <class T>
-T square(T x) {
-	return x * x;
-}
 
 double
 distance_fpfh(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b) {
@@ -501,7 +579,7 @@ nih::nube_norm::Ptr good_points(nih::cloud::Ptr nube) {
 	double model_resolution = nih::get_resolution(nube);
 	double edge_max_size = 3 * model_resolution;
 	double near_dist = 1.5 * model_resolution;
-	double angle_thresold = 0.2; //~cos(80)
+	double angle_threshold = 0.2; //~cos(80)
 
 	// puntos a eliminar
 	auto tmesh = triangulate(nube);
