@@ -176,12 +176,37 @@ int main(int argc, char **argv) {
 	auto key_p_a = boost::make_shared<nih::cloud>();
 	auto key_p_b = boost::make_shared<nih::cloud>();
 	for(int K = 0; K < correspondencia->size(); ++K) {
-		int a = get_index((*keypoints_a)[(*correspondencia)[K].index_query],
-			kdtree_a);
-		int b = get_index((*keypoints_b)[(*correspondencia)[K].index_match],
-			kdtree_b);
-		key_p_a->push_back((*nube_a->puntos)[a]);
-		key_p_b->push_back((*nube_b->puntos)[b]);
+		auto pa = (*keypoints_a)[(*correspondencia)[K].index_query];
+		auto pb = (*keypoints_b)[(*correspondencia)[K].index_match];
+		key_p_a->push_back(pa);
+		key_p_b->push_back(pb);
+
+		auto fa = nih::compute_reference_frame(nube_a->puntos, pa, 4*nube_a->resolution, kdtree_a);
+		auto fb = nih::compute_reference_frame(nube_b->puntos, pb, 4*nube_b->resolution, kdtree_b);
+
+		//cálculo de rotación
+		Eigen::Matrix3d rotation, ra, rb;
+
+		//rotar 180 sobre z
+		{
+			Eigen::Transform<double, 3, Eigen::Affine> rotacion;
+			rotacion =
+				Eigen::AngleAxis<double>(M_PI, fb.v[2]);
+			fb.v[0] = rotacion * fb.v[0];
+			fb.v[1] = rotacion * fb.v[1];
+		}
+		for(int L=0; L<3; ++L)
+			for(int M=0; M<3; ++M){
+				ra(L, M) = fa.v[M](L);
+				rb(L, M) = fb.v[M](L);
+			}
+		rotation = ra * rb.transpose();
+
+		Eigen::AngleAxisd aa;
+		aa.fromRotationMatrix(rotation);
+		std::cout << "angle: " << aa.angle()*180/M_PI << '\t';
+		std::cout << "axis: " << aa.axis().transpose() << '\t';
+		std::cout << "dist_y: " << abs(aa.axis().dot(Eigen::Vector3d::UnitY())) << '\n';
 	}
 
 	pcl::IterativeClosestPoint<nih::point, nih::point> icp;
@@ -208,7 +233,7 @@ int main(int argc, char **argv) {
 	std::cout << std::flush;
 
 
-#if 1
+#if 0
 	//// visualization
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("triangulation");
@@ -264,7 +289,6 @@ Eigen::Vector3d project(Eigen::Vector3d v, Eigen::Vector3d normal){
 namespace nih{
 frame
 compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double radius, pcl::KdTreeFLANN<nih::point> &kdtree){
-#if 1
 	//basado en ISSKeypoint3D::getScatterMatrix
 	std::vector<int> indices;
 	std::vector<float> distances;
@@ -288,7 +312,7 @@ compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double r
 		f.v[K] = solver.eigenvectors().col(3-(K+1));
 	}
 	//to always have right-hand rule
-	//f.v[2] = f.v[0].cross(f.v[1]);
+	f.v[2] = f.v[0].cross(f.v[1]);
 
 	//make sure that vector `z' points to outside screen {0, 0, 1}
 	if(f.v[2](2) < 0 ){
@@ -301,7 +325,6 @@ compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double r
 	}
 
 	return f;
-#endif
 }
 }
 
@@ -451,7 +474,7 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
 	auto signature =
 	    boost::make_shared<pcl::PointCloud<pcl::FPFHSignature33> >();
 
-	fpfh.setRadiusSearch(4 * resolution);
+	fpfh.setRadiusSearch(8 * resolution);
 	fpfh.compute(*signature);
 
 	return signature;
