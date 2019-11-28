@@ -28,7 +28,7 @@ namespace nih {
 	// returns isolated vertices
 	inline std::vector<int> delete_big_edges(TMesh mesh, cloud::Ptr nube, double threshold);
 // returns vertices to delete
-	std::vector<int> kill_near(const std::vector<int> &bad_points, cloud::Ptr nube, double distance);
+	inline std::vector<int> kill_near(const std::vector<int> &bad_points, cloud::Ptr nube, double distance);
 	inline cloud_with_normal preprocess(cloud::Ptr nube);
 	inline TMesh triangulate(cloud::Ptr nube);
 } // namespace nih

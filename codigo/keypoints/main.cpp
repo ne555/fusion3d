@@ -45,10 +45,10 @@ int main(int argc, char **argv){
 	view->addPointCloud(nube_source.points, "source");
 	view->addPointCloud(nube_target.points, "target");
 
-	//auto result = cloud_diff_with_threshold(nube_source->puntos, nube_target->puntos, 8*nube_source->resolution);
-	//pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> point_cloud_color_handler(result, "intensity");
-	//view->addPointCloud< pcl::PointXYZI >(result, point_cloud_color_handler, "diff");
-	//view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "diff");
+	auto result = nih::cloud_diff_with_threshold(nube_source.points, nube_target.points, 8*nube_source.resolution);
+	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> point_cloud_color_handler(result, "intensity");
+	view->addPointCloud< pcl::PointXYZI >(result, point_cloud_color_handler, "diff");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "diff");
 	while(!view->wasStopped())
 		view->spinOnce(100);
 

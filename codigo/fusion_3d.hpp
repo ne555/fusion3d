@@ -34,16 +34,54 @@ namespace nih {
 	// operations element to element
 	inline vector prod(vector a, const vector &b);
 	inline vector div(vector a, const vector &b);
+	double distance(const point &a, const point &b);
 
 	// information
 	// espacio esperado entre puntos (proyecta en z=0)
 	inline double get_resolution(cloud::Ptr input);
+	int get_index(const point &center, pcl::KdTreeFLANN<nih::point> &kdtree);
 	inline cloud::Ptr subsampling(cloud::Ptr nube, double alfa);
+
+	//returns a cloud with distance information
+	inline pcl::PointCloud<pcl::PointXYZI>::Ptr
+	cloud_diff_with_threshold(cloud::Ptr a, cloud::Ptr b, double threshold);
 } // namespace nih
 
 
 // implementation
 namespace nih {
+	double distance(const point &a, const point &b){
+		return (p2v(a) - p2v(b)).norm();
+	}
+
+	int get_index(const nih::point &center, pcl::KdTreeFLANN<nih::point> &kdtree){
+		std::vector<int> indices;
+		std::vector<float> distances;
+		kdtree.nearestKSearch(center, 1, indices, distances);
+		return indices[0];
+	}
+
+	pcl::PointCloud<pcl::PointXYZI>::Ptr
+	cloud_diff_with_threshold(nih::cloud::Ptr a, nih::cloud::Ptr b, double threshold){
+		//almacena distancia |a - b| clampeado a `clamp'
+		auto result = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+		pcl::KdTreeFLANN<nih::point> kdtree;
+		kdtree.setInputCloud(b);
+
+		for(const auto &p: a->points){
+			pcl::PointXYZI pi;
+			pi.x = p.x;
+			pi.y = p.y;
+			pi.z = p.z;
+			//buscar el más cercano en b
+			int b_index = get_index(p, kdtree);
+			pi.intensity = distance(p, (*b)[b_index]);
+			if(pi.intensity < threshold)
+				result->push_back(pi);
+		}
+
+		return result;
+	}
 	normal::Ptr compute_normals(cloud::Ptr nube, double distance) {
 		auto normales = boost::make_shared<nih::normal>();
 
