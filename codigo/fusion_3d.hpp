@@ -2,18 +2,20 @@
 #ifndef FUSION_3D_HPP
 #define FUSION_3D_HPP
 
+#include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
+#include <pcl/features/normal_3d.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
 #include <pcl/io/vtk_lib_io.h>
 #include <pcl/point_cloud.h>
-#include <pcl/common/common.h>
 
 #include <pcl/filters/filter.h>
+#include <pcl/filters/voxel_grid.h>
 
-#include <vector>
-#include <string>
 #include <fstream>
+#include <string>
+#include <vector>
 
 namespace nih {
 	typedef pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -23,49 +25,49 @@ namespace nih {
 	typedef Eigen::Transform<float, 3, Eigen::Affine> transformation;
 	typedef Eigen::Vector3f vector;
 
+	inline cloud::Ptr load_cloud_ply(std::string filename);
+	inline transformation get_transformation(std::ifstream &input);
+	normal::Ptr compute_normals(cloud::Ptr nube, double distance);
+
 	inline point v2p(vector v);
 	inline vector p2v(point p);
-	inline cloud::Ptr load_cloud_ply(std::string filename);
-
-	//operations element to element
+	// operations element to element
 	inline vector prod(vector a, const vector &b);
 	inline vector div(vector a, const vector &b);
 
-	//information
-	//espacio esperado entre puntos (proyecta en z=0)
-	double get_resolution(cloud::Ptr input);
-
-	transformation get_transformation(std::ifstream &input);
-	//bounding box
-	//getMinMax3d()
-	//CropBox
-
-	//filters work with indices too
+	// information
+	// espacio esperado entre puntos (proyecta en z=0)
+	inline double get_resolution(cloud::Ptr input);
+	inline cloud::Ptr subsampling(cloud::Ptr nube, double alfa);
 } // namespace nih
+
 
 // implementation
 namespace nih {
+	normal::Ptr compute_normals(cloud::Ptr nube, double distance) {
+		auto normales = boost::make_shared<nih::normal>();
+
+		pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
+		ne.setViewPoint(0, 0, 1); // proyección z
+		auto kdtree = boost::make_shared<pcl::search::KdTree<pcl::PointXYZ> >();
+		ne.setSearchMethod(kdtree);
+		ne.setRadiusSearch(distance);
+		ne.setInputCloud(nube);
+		ne.compute(*normales);
+
+		return normales;
+	}
 	cloud::Ptr load_cloud_ply(std::string filename) {
-#if 0
 		pcl::PLYReader reader;
-		cloud::Ptr nube(new cloud);
+		auto nube = boost::make_shared<cloud>();
 		reader.read(filename, *nube);
-		/*
+
+		// remove NaN
 		nube->is_dense = false;
 		std::vector<int> indices;
 		pcl::removeNaNFromPointCloud(*nube, *nube, indices);
-		*/
 
-		return nube; //organized, full of NaN (icp dies with nan, kdtree dies with nan)
-#else
-
-		cloud::Ptr nube(new cloud);
-		pcl::PolygonMesh mesh;
-		pcl::io::loadPolygonFilePLY(filename, mesh);
-		pcl::fromPCLPointCloud2(mesh.cloud, *nube);
-
-		return nube; //unorganized, no nan
-#endif
+		return nube;
 	}
 	double get_resolution(cloud::Ptr input) {
 		point bottom_left_back, upper_right_front;
@@ -110,6 +112,22 @@ namespace nih {
 
 		return transformation;
 	}
+
+	cloud::Ptr subsampling(cloud::Ptr nube, double alfa) {
+		// submuestreo
+		double model_resolution = get_resolution(nube);
+		pcl::VoxelGrid<point> muestreo;
+		muestreo.setInputCloud(nube);
+		muestreo.setLeafSize(
+			alfa * model_resolution,
+			alfa * model_resolution,
+			alfa * model_resolution);
+
+		auto filtrada = boost::make_shared<cloud>();
+		muestreo.filter(*filtrada);
+		return filtrada;
+	}
+
 } // namespace nih
 
 #endif
