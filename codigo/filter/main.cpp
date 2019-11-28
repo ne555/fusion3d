@@ -133,7 +133,7 @@ get_index(const nih::point &center, pcl::KdTreeFLANN<nih::point> &kdtree){
 }
 
 pcl::PointCloud<pcl::PointXYZI>::Ptr
-cloud_diff_with_clamp(nih::cloud::Ptr a, nih::cloud::Ptr b, double clamp);
+cloud_diff_with_threshold(nih::cloud::Ptr a, nih::cloud::Ptr b, double threshold);
 
 int main(int argc, char **argv) {
 	if(argc < 4) {
@@ -185,15 +185,15 @@ int main(int argc, char **argv) {
 	}
 
 	pcl::IterativeClosestPoint<nih::point, nih::point> icp;
-	icp.setInputSource(key_p_a);
-	icp.setInputTarget(key_p_b);
+	icp.setInputSource(key_p_b);
+	icp.setInputTarget(key_p_a);
 	icp.setUseReciprocalCorrespondences(true);
 	auto result_icp = boost::make_shared<nih::cloud>();
 	icp.align(*result_icp);
 
 	nih::transformation icp_transf;
 	icp_transf = icp.getFinalTransformation();
-	pcl::transformPointCloud(*nube_a->puntos, *nube_a->puntos, icp_transf);
+	pcl::transformPointCloud(*nube_b->puntos, *nube_b->puntos, icp_transf);
 
 	Eigen::Matrix3f rotate, escala;
 	icp_transf.computeRotationScaling(&rotate, &escala);
@@ -214,13 +214,13 @@ int main(int argc, char **argv) {
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("triangulation");
 	view->setBackgroundColor(0, 0, 0);
 
-	auto result = cloud_diff_with_clamp(nube_a->puntos, nube_b->puntos, 4*nube_a->resolution);
+	view->addPointCloud(nube_b->puntos, "source");
+	view->addPointCloud(nube_a->puntos, "target");
 
+	auto result = cloud_diff_with_threshold(nube_b->puntos, nube_a->puntos, 8*nube_a->resolution);
 	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> point_cloud_color_handler(result, "intensity");
 	view->addPointCloud< pcl::PointXYZI >(result, point_cloud_color_handler, "diff");
-
-	view->setPointCloudRenderingProperties(
-	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "diff");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "diff");
 
 	while(!view->wasStopped())
 		view->spinOnce(100);
@@ -235,7 +235,7 @@ double distance(const nih::point &a, const nih::point &b){
 }
 
 pcl::PointCloud<pcl::PointXYZI>::Ptr
-cloud_diff_with_clamp(nih::cloud::Ptr a, nih::cloud::Ptr b, double clamp){
+cloud_diff_with_threshold(nih::cloud::Ptr a, nih::cloud::Ptr b, double threshold){
 	//almacena distancia |a - b| clampeado a `clamp'
 	auto result = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
 	pcl::KdTreeFLANN<nih::point> kdtree;
@@ -249,9 +249,8 @@ cloud_diff_with_clamp(nih::cloud::Ptr a, nih::cloud::Ptr b, double clamp){
 		//buscar el más cercano en b
 		int b_index = get_index(p, kdtree);
 		pi.intensity = distance(p, (*b)[b_index]);
-		if(pi.intensity > clamp)
-			pi.intensity = clamp;
-		result->push_back(pi);
+		if(pi.intensity < threshold)
+			result->push_back(pi);
 	}
 
 	return result;
