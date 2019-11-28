@@ -6,6 +6,7 @@
 #include <pcl/keypoints/iss_3d.h>
 #include <pcl/features/fpfh.h>
 #include <pcl/features/multiscale_feature_persistence.h>
+#include <pcl/registration/correspondence_estimation.h>
 
 #include <iostream>
 #include <string>
@@ -34,8 +35,8 @@ int main(int argc, char **argv){
 	auto transf_b = nih::get_transformation(input);
 
 	//preproceso
-	auto nube_target = nih::preprocess(nih::subsampling(orig_a, 2));
-	auto nube_source = nih::preprocess(nih::subsampling(orig_b, 2));
+	auto nube_target = nih::preprocess(nih::subsampling(orig_a, 3));
+	auto nube_source = nih::preprocess(nih::subsampling(orig_b, 3));
 
 
 	//detección de keypoints
@@ -48,6 +49,19 @@ int main(int argc, char **argv){
 	pcl::transformPointCloud(*nube_target.points, *nube_target.points, transf_a);
 	pcl::transformPointCloud(*key_source, *key_source, transf_b);
 	pcl::transformPointCloud(*key_target, *key_target, transf_a);
+
+	//correspondencias
+	pcl::registration::
+	    CorrespondenceEstimation<nih::point, nih::point>
+	        corr_est;
+	auto correspondencias = boost::make_shared<pcl::Correspondences>();
+	corr_est.setInputSource(key_source);
+	corr_est.setInputTarget(key_target);
+	//corr_est.determineCorrespondences(*correspondencias);
+	corr_est.determineReciprocalCorrespondences(*correspondencias);
+	std::cout << "Keypoints source: " << key_source->size() << '\n';
+	std::cout << "Keypoints target: " << key_target->size() << '\n';
+	std::cout << "crude size is:" << correspondencias->size() << '\n';
 
 	//visualización
 	auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("keypoints");
@@ -62,8 +76,13 @@ int main(int argc, char **argv){
 	    red(key_target, 255, 0, 0);
 	view->addPointCloud(key_source, green, "key_source");
 	view->addPointCloud(key_target, red, "key_target");
+	view->addCorrespondences<nih::point>(
+	    key_source,
+	    key_target,
+	    *correspondencias,
+	    "correspondence");
 
-	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "key_source");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_source");
 	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "key_target");
 
 	while(!view->wasStopped())
