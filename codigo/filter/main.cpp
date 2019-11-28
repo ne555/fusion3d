@@ -132,6 +132,9 @@ get_index(nih::cloud::Ptr nube, const nih::point &center, pcl::KdTreeFLANN<nih::
 	return indices[0];
 }
 
+pcl::PointCloud<pcl::PointXYZI>::Ptr
+cloud_diff_with_threshold(nih::cloud::Ptr a, nih::cloud::Ptr b, double threshold);
+
 int main(int argc, char **argv) {
 	if(argc < 4) {
 		usage(argv[0]);
@@ -165,6 +168,24 @@ int main(int argc, char **argv) {
 	    correspondencia->end(),
 	    [](const auto &a, const auto &b) { return a.distance < b.distance; });
 
+	//obtención de los puntos de las correspondencias
+	pcl::KdTreeFLANN<nih::point> kdtree_a;
+	kdtree_a.setInputCloud(nube_a->puntos);
+	pcl::KdTreeFLANN<nih::point> kdtree_b;
+	kdtree_b.setInputCloud(nube_b->puntos);
+	auto key_p_a = boost::make_shared<nih::cloud>();
+	auto key_p_b = boost::make_shared<nih::cloud>();
+	for(int K = 0; K < correspondencia->size(); ++K) {
+		int a = get_index(nube_a->puntos,
+			(*keypoints_a)[(*correspondencia)[K].index_query],
+			kdtree_a);
+		int b = get_index(nube_b->puntos,
+			(*keypoints_b)[(*correspondencia)[K].index_match],
+			kdtree_b);
+		key_p_a->push_back((*nube_a->puntos)[a]);
+		key_p_b->push_back((*nube_b->puntos)[b]);
+	}
+
 	pcl::IterativeClosestPoint<nih::point, nih::point> icp;
 	icp.setInputSource(key_p_a);
 	icp.setInputTarget(key_p_b);
@@ -188,72 +209,41 @@ int main(int argc, char **argv) {
 	std::cout << std::flush;
 
 
-#if 0
+#if 1
 	//// visualization
-	//// rota según la aproximación
-	nih::transformation rotacion;
-	rotacion =
-	    Eigen::AngleAxis<float>(angle * 3.14 / 180, Eigen::Vector3f(0, 1, 0));
-	//pcl::transformPointCloud(*nube_b->puntos, *nube_b->puntos, rotacion);
-	//pcl::transformPointCloud(*keypoints_b, *keypoints_b, rotacion);
-	// mover la nube en z para mejor diferenciación
-	//for(int K = 0; K < nube_b->puntos->size(); ++K)
-	//	(*nube_b->puntos)[K].z += .2;
-	//for(int K = 0; K < keypoints_b->size(); ++K)
-	//	(*keypoints_b)[K].z += .2;
-	pcl::transformPointCloud(*nube_a->puntos, *nube_a->puntos, icp_transf);
-	pcl::transformPointCloud(*key_p_a, *key_p_a, icp_transf);
-
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("triangulation");
 	view->setBackgroundColor(0, 0, 0);
-	// auto mesh = triangulate2(nube->puntos);
-	// view->addPolylineFromPolygonMesh(*mesh, "mesh");
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_color_a(nube_a->puntos, 255, 255, 0);
-	view->addPointCloud(nube_a->puntos, cloud_color_a, "puntos A");
-	view->addPointCloud(nube_b->puntos, "puntos B");
-	// view->addPointCloudNormals<nih::point, pcl::Normal>(nube->puntos,
-	// nube->normales, 5, .01, "normales");
-	view->addPointCloudNormals<nih::point, pcl::Normal>(
-			key_p_a,
-	key_normal_a, 1, .01, "key_norm_a");
 
-	view->addPointCloudNormals<nih::point, pcl::Normal>(
-			key_p_a,
-	key_normal_b, 1, .01, "key_norm_b");
+	auto result = cloud_diff_with_threshold(nube_a->puntos, nube_b->puntos, 8*nube_a->resolution);
 
-	//view->addPointCloudNormals<nih::point, pcl::Normal>(
-	//		nube_a->puntos,
-	//nube_a->normales, 1, .005, "all");
+	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> point_cloud_color_handler(result, "intensity");
+	view->addPointCloud< pcl::PointXYZI >(result, point_cloud_color_handler, "diff");
 
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> iss_color_a(
-	    keypoints_a, 0, 255, 0);
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> iss_color_b(
-	    keypoints_a, 255, 0, 0);
-	//view->addPointCloud(keypoints_a, iss_color, "iss A");
-	view->addPointCloud(key_p_a, iss_color_a, "iss A");
-	//view->addPointCloud(keypoints_b, iss_color, "iss B");
-	view->addPointCloud(key_p_b, iss_color_b, "iss B");
 	view->setPointCloudRenderingProperties(
-	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "iss A");
-	view->setPointCloudRenderingProperties(
-	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "iss B");
-
-	view->addCorrespondences<pcl::PointXYZ>(
-	    keypoints_a, keypoints_b, *correspondencia, "correspondencia");
-	//std::cout << "Correspondencias " << correspondencia->size() << std::endl;
-	//for(int K = 0; K < correspondencia->size(); ++K) {
-	//	std::cout << (*correspondencia)[K].index_query << " -> ";
-	//	std::cout << (*correspondencia)[K].index_match << ' ';
-	//	std::cout << "D " << (*correspondencia)[K].distance << ' ';
-	//	std::cout << "W " << (*correspondencia)[K].weight << '\n';
-	//}
+	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "diff");
 
 	while(!view->wasStopped())
 		view->spinOnce(100);
 #endif
 
 	return 0;
+}
+
+pcl::PointCloud<pcl::PointXYZI>::Ptr
+cloud_diff_with_threshold(nih::cloud::Ptr a, nih::cloud::Ptr b, double threshold){
+	auto result = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+
+	for(const auto &p: b->points){
+		pcl::PointXYZI pi;
+		pi.x = p.x;
+		pi.y = p.y;
+		pi.z = p.z;
+		pi.intensity = p.z*p.z;
+		result->push_back(pi);
+	}
+
+	return result;
 }
 
 Eigen::Vector3d project(Eigen::Vector3d v, Eigen::Vector3d normal){
