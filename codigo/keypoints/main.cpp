@@ -50,11 +50,23 @@ nih::cloud::Ptr keypoints_uniform(
 
 nih::transformation align_icp(nih::cloud::Ptr source, nih::cloud::Ptr target);
 
+struct harris_parameters{
+	//float radius, threshold;
+	int method;
+	pcl::HarrisKeypoint3D<pcl::PointXYZI, pcl::PointXYZI>::ResponseMethod get_method() const{
+		int aux = (method%5) + 1;
+		return
+			pcl::HarrisKeypoint3D<pcl::PointXYZI, pcl::PointXYZI>::ResponseMethod (aux);
+	}
+} param;
+
 int main(int argc, char **argv) {
 	if(argc < 3) {
 		usage(argv[0]);
 		return 1;
 	}
+	//std::cin >> param.method;
+	param.method = 4; //curvature
 	// lectura de datos de entrada
 	std::string directory = argv[1], config = argv[2];
 	std::ifstream input(config);
@@ -302,6 +314,7 @@ nih::cloud::Ptr keypoints_harris3(
 	pcl::HarrisKeypoint3D<pcl::PointXYZI, pcl::PointXYZI> harris3;
 	harris3.setInputCloud(nube_con_intensidad);
 	harris3.setNormals(normales);
+	harris3.setMethod(param.get_method());
 
 	harris3.compute(*keypoints_con_intensidad);
 	for(const auto &pi : keypoints_con_intensidad->points) {

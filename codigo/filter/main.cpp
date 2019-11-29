@@ -261,7 +261,7 @@ double distance(const nih::point &a, const nih::point &b){
 
 pcl::PointCloud<pcl::PointXYZI>::Ptr
 cloud_diff_with_threshold(nih::cloud::Ptr a, nih::cloud::Ptr b, double threshold){
-	//almacena distancia |a - b| clampeado a `clamp'
+	//almacena distancia |a - b| si es menor al threshold
 	auto result = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
 	pcl::KdTreeFLANN<nih::point> kdtree;
 	kdtree.setInputCloud(b);
