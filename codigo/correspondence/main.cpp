@@ -43,6 +43,14 @@ class frame{
 frame
 compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double radius, pcl::KdTreeFLANN<nih::point> &kdtree);
 
+template <class Feature>
+boost::shared_ptr<pcl::Correspondences>
+best_matches(Feature source, Feature target);
+
+template <class Feature>
+boost::shared_ptr<pcl::Correspondences>
+best_reciprocal_matches(Feature source, Feature target);
+
 int main(int argc, char **argv){
 	if(argc < 3) {
 		usage(argv[0]);
@@ -73,8 +81,35 @@ int main(int argc, char **argv){
 	auto feature_target = feature_fpfh(key_target, nube_target.points, nube_target.normals, nube_target.resolution);
 
 	//correspondencias
+	auto correspondencias = best_reciprocal_matches(feature_source, feature_target);
 
+	{
+		//capturar sólo los puntos que corresponden
+		auto key_s = boost::make_shared<nih::cloud>();
+		auto key_t = boost::make_shared<nih::cloud>();
+		auto corr = boost::make_shared<pcl::Correspondences>();
+		int n = 0;
+		for(auto K: *correspondencias){
+			auto ps = (*key_source)[K.index_query];
+			auto pt = (*key_target)[K.index_match];
 
+			key_s->push_back(ps);
+			key_t->push_back(pt);
+
+			pcl::Correspondence c;
+			c.index_query = n;
+			c.index_match = n;
+			c.distance = K.distance;
+			corr->push_back(c);
+			++n;
+		}
+
+		key_source = key_s;
+		key_target = key_t;
+		correspondencias = corr;
+	}
+
+	std::cerr << "Correspondencias: " << correspondencias->size() << '\n';
 
 
 
@@ -104,11 +139,64 @@ int main(int argc, char **argv){
 	view->setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_target");
 
+	view->addCorrespondences<pcl::PointXYZ>(
+	    key_source,
+	    key_target,
+	    *correspondencias,
+	    "correspondence");
 
 	while(!view->wasStopped())
 		view->spinOnce(100);
 
 	return 0;
+}
+
+template <class Feature>
+boost::shared_ptr<pcl::Correspondences>
+best_matches(Feature source, Feature target) {
+	auto matches = boost::make_shared<pcl::Correspondences>();
+	for(int K=0; K<source->size(); ++K){
+		double distance = std::numeric_limits<double>::infinity();
+		pcl::Correspondence corresp;
+		corresp.index_query = K;
+
+		for(int L = 0; L < target->size(); ++L) {
+			double d = distance_fpfh((*source)[K], (*target)[L]);
+			if(d < distance) {
+				distance = d;
+				corresp.index_match = L;
+				corresp.distance = d;
+			}
+		}
+		if(distance < std::numeric_limits<double>::infinity())
+			matches->push_back(corresp);
+	}
+
+	return matches;
+}
+
+template <class Feature>
+boost::shared_ptr<pcl::Correspondences>
+best_reciprocal_matches(Feature source, Feature target) {
+	auto a2b = best_matches(source, target);
+	auto b2a = best_matches(target, source);
+	auto matches = boost::make_shared<pcl::Correspondences>();
+
+	for(auto K: *a2b){
+		int from = K.index_query;
+		int to = K.index_match;
+		bool same = false;
+		for(auto L: *b2a){
+			if(L.index_query == to){
+				same = L.index_match==from;
+				break;
+			}
+		}
+		if(same)
+			matches->push_back(K);
+	}
+
+	return matches;
 }
 
 void show_axis_angle(const nih::transformation &t){
