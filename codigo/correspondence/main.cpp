@@ -1,0 +1,252 @@
+#include "../filter.hpp"
+#include "../fusion_3d.hpp"
+#include "../util.hpp"
+
+#include <pcl/features/fpfh.h>
+#include <pcl/keypoints/harris_3d.h>
+#include <pcl/registration/correspondence_estimation.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/kdtree/kdtree_flann.h>
+
+void usage(const char *program) {
+	std::cerr << program << " directory "
+	          << "conf_file\n";
+}
+
+pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_diff_with_threshold(
+    nih::cloud::Ptr a, nih::cloud::Ptr b, double threshold);
+nih::cloud::Ptr keypoints_harris3(
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
+    nih::cloud::Ptr input,
+    nih::cloud::Ptr surface,
+    nih::normal::Ptr normals,
+    double resolution);
+
+double
+distance_fpfh(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b) {
+	double d = 0;
+	for(int K = 0; K < a.descriptorSize(); ++K)
+		d += nih::square(a.histogram[K] - b.histogram[K]);
+	return d/33;
+}
+
+void show_axis_angle(const nih::transformation &t);
+void show_axis_angle(const Eigen::Matrix3f &rotation);
+
+class frame{
+	public:
+		Eigen::Vector3d v[3];
+		double lambda[3];
+};
+
+frame
+compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double radius, pcl::KdTreeFLANN<nih::point> &kdtree);
+
+int main(int argc, char **argv){
+	if(argc < 3) {
+		usage(argv[0]);
+		return 1;
+	}
+	std::string directory = argv[1], config = argv[2];
+	std::ifstream input(config);
+	std::string filename;
+	input >> filename;
+	auto orig_a = nih::load_cloud_ply(directory + filename);
+	auto transf_a = nih::get_transformation(input);
+	input >> filename;
+	auto orig_b = nih::load_cloud_ply(directory + filename);
+	auto transf_b = nih::get_transformation(input);
+
+	// preproceso
+	auto nube_target = nih::preprocess(nih::subsampling(orig_a, 3));
+	auto nube_source = nih::preprocess(nih::subsampling(orig_b, 3));
+
+	//keypoints
+	auto key_source = keypoints_harris3(
+	    nube_source.points, nube_source.normals, nube_source.resolution);
+	auto key_target = keypoints_harris3(
+	    nube_target.points, nube_target.normals, nube_target.resolution);
+
+	//features
+	auto feature_source = feature_fpfh(key_source, nube_source.points, nube_source.normals, nube_source.resolution);
+	auto feature_target = feature_fpfh(key_target, nube_target.points, nube_target.normals, nube_target.resolution);
+
+	//correspondencias
+
+
+
+
+
+	// alineación (con ground truth)
+	pcl::transformPointCloud(
+	    *nube_source.points, *nube_source.points, transf_b);
+	pcl::transformPointCloud(
+	    *nube_target.points, *nube_target.points, transf_a);
+	pcl::transformPointCloud(*key_source, *key_source, transf_b);
+	pcl::transformPointCloud(*key_target, *key_target, transf_a);
+
+
+
+	auto view =
+	    boost::make_shared<pcl::visualization::PCLVisualizer>("correspondences");
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> green(
+	    key_source, 0, 255, 0),
+	    red(key_target, 255, 0, 0);
+
+	view->addPointCloud(nube_source.points, "source");
+	view->addPointCloud(nube_target.points, "target");
+	view->addPointCloud(key_source, green, "key_source");
+	view->addPointCloud(key_target, red, "key_target");
+
+	view->setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_source");
+	view->setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_target");
+
+
+	while(!view->wasStopped())
+		view->spinOnce(100);
+
+	return 0;
+}
+
+void show_axis_angle(const nih::transformation &t){
+	Eigen::Matrix3f rotation, scale;
+	t.computeRotationScaling(&rotation, &scale);
+	Eigen::AngleAxisf aa;
+	aa.fromRotationMatrix(rotation);
+	std::cout << "angle: " << aa.angle()*180/M_PI << '\t';
+	std::cout << "axis: " << aa.axis().transpose() << '\t';
+	std::cout << "dist_y: " << abs(aa.axis().dot(Eigen::Vector3f::UnitY())) << '\n';
+}
+void show_axis_angle(const Eigen::Matrix3f &rotation){
+	Eigen::AngleAxisf aa;
+	aa.fromRotationMatrix(rotation);
+	std::cout << "angle: " << aa.angle()*180/M_PI << '\t';
+	std::cout << "axis: " << aa.axis().transpose() << '\t';
+	std::cout << "dist_y: " << abs(aa.axis().dot(Eigen::Vector3f::UnitY())) << '\n';
+}
+
+
+frame
+compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double radius, pcl::KdTreeFLANN<nih::point> &kdtree){
+	//basado en ISSKeypoint3D::getScatterMatrix
+	std::vector<int> indices;
+	std::vector<float> distances;
+	kdtree.radiusSearch(center, radius, indices, distances);
+
+	Eigen::Matrix3d covarianza = Eigen::Matrix3d::Zero ();
+	for(int K = 0; K < indices.size(); K++) {
+		const nih::point &p = (*nube)[indices[K]];
+
+		for(int L=0; L<3; ++L)
+			for(int M=0; M<3; ++M)
+				covarianza(L,M) += (p.data[L] - center.data[L]) * (p.data[M] - center.data[M]);
+	}
+
+	//compute eigenvales and eigenvectors
+	Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver (covarianza);
+
+	frame f;
+	for(int K=0; K<3; ++K){
+		f.lambda[K] = solver.eigenvalues()[3-(K+1)];
+		f.v[K] = solver.eigenvectors().col(3-(K+1));
+	}
+	//to always have right-hand rule
+	f.v[2] = f.v[0].cross(f.v[1]);
+
+	//make sure that vector `z' points to outside screen {0, 0, 1}
+	if(f.v[2](2) < 0 ){
+		//rotate 180 over f.x
+		Eigen::Transform<double, 3, Eigen::Affine> rotacion;
+		rotacion =
+			Eigen::AngleAxis<double>(M_PI, f.v[0]);
+		for(int K=1; K<3; ++K)
+			f.v[K] = rotacion * f.v[K];
+	}
+
+	return f;
+}
+
+
+pcl::PointCloud<pcl::PointXYZI>::Ptr
+cloud_diff_with_threshold(nih::cloud::Ptr a, nih::cloud::Ptr b, double threshold){
+	//almacena distancia |a - b| si es menor al threshold
+	auto result = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+	pcl::KdTreeFLANN<nih::point> kdtree;
+	kdtree.setInputCloud(b);
+
+	for(const auto &p: a->points){
+		pcl::PointXYZI pi;
+		pi.x = p.x;
+		pi.y = p.y;
+		pi.z = p.z;
+		//buscar el más cercano en b
+		int b_index = nih::get_index(p, kdtree);
+		pi.intensity = nih::distance(p, (*b)[b_index]);
+		if(pi.intensity < threshold)
+			result->push_back(pi);
+	}
+
+	return result;
+}
+
+nih::cloud::Ptr keypoints_harris3(
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution) {
+	auto keypoints = boost::make_shared<nih::cloud>();
+	auto keypoints_con_intensidad =
+	    boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
+	auto nube_con_intensidad =
+	    boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
+	for(const auto &p : nube->points) {
+		pcl::PointXYZI pi;
+		pi.x = p.x;
+		pi.y = p.y;
+		pi.z = p.z;
+		pi.intensity = 0;
+
+		nube_con_intensidad->push_back(pi);
+	}
+
+	pcl::HarrisKeypoint3D<pcl::PointXYZI, pcl::PointXYZI> harris3;
+	harris3.setInputCloud(nube_con_intensidad);
+	harris3.setNormals(normales);
+	harris3.setMethod(pcl::HarrisKeypoint3D<pcl::PointXYZI, pcl::PointXYZI>::
+                      ResponseMethod::CURVATURE);
+
+	harris3.compute(*keypoints_con_intensidad);
+	for(const auto &pi : keypoints_con_intensidad->points) {
+		nih::point p;
+		p.x = pi.x;
+		p.y = pi.y;
+		p.z = pi.z;
+
+		keypoints->push_back(p);
+	}
+
+	return keypoints;
+}
+
+pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
+    nih::cloud::Ptr input,
+    nih::cloud::Ptr surface,
+    nih::normal::Ptr normals,
+    double resolution) {
+	pcl::FPFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::FPFHSignature33> fpfh;
+
+	fpfh.setInputCloud(input);
+	fpfh.setInputNormals(normals);
+	fpfh.setSearchSurface(surface);
+
+	fpfh.setSearchMethod(
+	    boost::make_shared<pcl::search::KdTree<pcl::PointXYZ> >());
+
+	auto signature =
+	    boost::make_shared<pcl::PointCloud<pcl::FPFHSignature33> >();
+
+	fpfh.setRadiusSearch(8 * resolution);
+	fpfh.compute(*signature);
+
+	return signature;
+}
