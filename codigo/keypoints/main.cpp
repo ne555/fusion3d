@@ -3,10 +3,19 @@
 #include "../util.hpp"
 
 #include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/keypoints/iss_3d.h>
 #include <pcl/features/fpfh.h>
 #include <pcl/features/multiscale_feature_persistence.h>
 #include <pcl/registration/correspondence_estimation.h>
+
+#include <pcl/keypoints/iss_3d.h>
+#include <pcl/keypoints/agast_2d.h>
+#include <pcl/keypoints/brisk_2d.h>
+#include <pcl/keypoints/harris_3d.h>
+#include <pcl/keypoints/harris_6d.h>
+#include <pcl/keypoints/sift_keypoint.h>
+#include <pcl/keypoints/smoothed_surfaces_keypoint.h>
+#include <pcl/keypoints/trajkovic_3d.h>
+#include <pcl/filters/uniform_sampling.h>
 
 #include <iostream>
 #include <string>
@@ -17,6 +26,15 @@ void usage(const char *program) {
 }
 
 nih::cloud::Ptr keypoints_iss(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_fpfh(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_agast(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_brisk(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_harris3(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_harris6(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_sift(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_smooth(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_trajkovic(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_uniform(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
 
 int main(int argc, char **argv){
 	if(argc < 3) {
@@ -40,8 +58,8 @@ int main(int argc, char **argv){
 
 
 	//detección de keypoints
-	auto key_source = keypoints_iss(nube_source.points, nube_source.normals, nube_source.resolution);
-	auto key_target = keypoints_iss(nube_target.points, nube_target.normals, nube_target.resolution);
+	auto key_source = keypoints_harris3(nube_source.points, nube_source.normals, nube_source.resolution);
+	auto key_target = keypoints_harris3(nube_target.points, nube_target.normals, nube_target.resolution);
 
 
 	//alineación (con ground truth)
@@ -61,26 +79,47 @@ int main(int argc, char **argv){
 	corr_est.determineReciprocalCorrespondences(*correspondencias);
 	std::cout << "Keypoints source: " << key_source->size() << '\n';
 	std::cout << "Keypoints target: " << key_target->size() << '\n';
-	std::cout << "crude size is:" << correspondencias->size() << '\n';
+	std::cout << "correspondences: " << correspondencias->size() << '\n';
+
+	{
+		auto key_s = boost::make_shared<nih::cloud>();
+		auto key_t = boost::make_shared<nih::cloud>();
+		std::vector<double> distances;
+		for(auto K: *correspondencias){
+			double d = nih::distance( (*key_source)[K.index_query], (*key_target)[K.index_match] );
+			distances.push_back(d/nube_source.resolution);
+			if(d/nube_source.resolution < 6){
+				key_s->push_back((*key_source)[K.index_query]);
+				key_t->push_back((*key_target)[K.index_match]);
+			}
+		}
+		key_source = key_s;
+		key_target = key_t;
+	}
+	std::cout << "sobreviven\n";
+	std::cout << "Keypoints source: " << key_source->size() << '\n';
+	std::cout << "Keypoints target: " << key_target->size() << '\n';
 
 	//visualización
 	auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("keypoints");
 	view->setBackgroundColor(0, 0, 0);
 
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
+	    green(key_source, 0, 255, 0),
+	    red(key_target, 255, 0, 0);
+
 	view->addPointCloud(nube_source.points, "source");
 	view->addPointCloud(nube_target.points, "target");
 
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
-	    green(key_source, 0, 255, 0);
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
-	    red(key_target, 255, 0, 0);
 	view->addPointCloud(key_source, green, "key_source");
 	view->addPointCloud(key_target, red, "key_target");
+	/*
 	view->addCorrespondences<nih::point>(
 	    key_source,
 	    key_target,
 	    *correspondencias,
 	    "correspondence");
+		*/
 
 	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_source");
 	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "key_target");
@@ -89,6 +128,204 @@ int main(int argc, char **argv){
 		view->spinOnce(100);
 
 	return 0;
+}
+
+nih::cloud::Ptr keypoints_uniform(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
+	auto keypoints = boost::make_shared<nih::cloud>();
+	pcl::UniformSampling<nih::point> uniform;
+	uniform.setInputCloud(nube);
+	uniform.setRadiusSearch(8*resolution);
+	uniform.filter(*keypoints);
+
+	return keypoints;
+}
+
+nih::cloud::Ptr keypoints_trajkovic(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
+	auto keypoints = boost::make_shared<nih::cloud>();
+	auto keypoints_con_intensidad = boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
+	auto nube_con_intensidad = boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
+	for(const auto &p: nube->points){
+		pcl::PointXYZI pi;
+		pi.x = p.x;
+		pi.y = p.y;
+		pi.z = p.z;
+		pi.intensity = p.z;
+
+		nube_con_intensidad->push_back(pi);
+	}
+
+
+	pcl::TrajkovicKeypoint3D<pcl::PointXYZI, pcl::PointXYZI> trajkovic;
+	trajkovic.setInputCloud(nube_con_intensidad);
+	trajkovic.setNormals(normales);
+	trajkovic.compute(*keypoints_con_intensidad);
+
+	for(const auto &pi: keypoints_con_intensidad->points){
+		nih::point p;
+		p.x = pi.x;
+		p.y = pi.y;
+		p.z = pi.z;
+
+		keypoints->push_back(p);
+	}
+
+	return keypoints;
+}
+
+nih::cloud::Ptr keypoints_sift(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
+	auto keypoints = boost::make_shared<nih::cloud>();
+	auto keypoints_con_intensidad = boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
+	auto nube_con_intensidad = boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
+	for(const auto &p: nube->points){
+		pcl::PointXYZI pi;
+		pi.x = p.x;
+		pi.y = p.y;
+		pi.z = p.z;
+		pi.intensity = p.z;
+
+		nube_con_intensidad->push_back(pi);
+	}
+
+	pcl::SIFTKeypoint<pcl::PointXYZI, pcl::PointXYZI> sift;
+	sift.setInputCloud(nube_con_intensidad);
+	sift.setScales(1.5, 3, 1);
+	sift.setMinimumContrast(0);
+	
+	sift.compute(*keypoints_con_intensidad);
+	for(const auto &pi: keypoints_con_intensidad->points){
+		nih::point p;
+		p.x = pi.x;
+		p.y = pi.y;
+		p.z = pi.z;
+
+		keypoints->push_back(p);
+	}
+
+	return keypoints;
+}
+
+nih::cloud::Ptr keypoints_harris6(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
+	auto keypoints = boost::make_shared<nih::cloud>();
+	auto keypoints_con_intensidad = boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
+	auto nube_con_intensidad = boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
+	for(const auto &p: nube->points){
+		pcl::PointXYZI pi;
+		pi.x = p.x;
+		pi.y = p.y;
+		pi.z = p.z;
+		pi.intensity = p.z;
+
+		nube_con_intensidad->push_back(pi);
+	}
+
+	pcl::HarrisKeypoint3D<pcl::PointXYZI, pcl::PointXYZI> harris3;
+	harris3.setInputCloud(nube_con_intensidad);
+	harris3.setNormals(normales);
+	
+	harris3.compute(*keypoints_con_intensidad);
+	for(const auto &pi: keypoints_con_intensidad->points){
+		nih::point p;
+		p.x = pi.x;
+		p.y = pi.y;
+		p.z = pi.z;
+
+		keypoints->push_back(p);
+	}
+
+	return keypoints;
+}
+
+nih::cloud::Ptr keypoints_brisk(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
+	auto keypoints = boost::make_shared<nih::cloud>();
+	pcl::BriskKeypoint2D<nih::point, nih::point> brisk;
+	brisk.setThreshold (60);
+	brisk.setOctaves (4);
+	brisk.setInputCloud (nube);
+	brisk.compute(*keypoints);
+
+	return keypoints;
+}
+
+nih::cloud::Ptr keypoints_harris3(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
+	auto keypoints = boost::make_shared<nih::cloud>();
+	auto keypoints_con_intensidad = boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
+	auto nube_con_intensidad = boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
+	for(const auto &p: nube->points){
+		pcl::PointXYZI pi;
+		pi.x = p.x;
+		pi.y = p.y;
+		pi.z = p.z;
+		pi.intensity = p.z;
+
+		nube_con_intensidad->push_back(pi);
+	}
+
+	pcl::HarrisKeypoint3D<pcl::PointXYZI, pcl::PointXYZI> harris3;
+	harris3.setInputCloud(nube_con_intensidad);
+	harris3.setNormals(normales);
+	
+	harris3.compute(*keypoints_con_intensidad);
+	for(const auto &pi: keypoints_con_intensidad->points){
+		nih::point p;
+		p.x = pi.x;
+		p.y = pi.y;
+		p.z = pi.z;
+
+		keypoints->push_back(p);
+	}
+
+	return keypoints;
+}
+
+nih::cloud::Ptr keypoints_agast(nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution){
+	auto keypoints = boost::make_shared<nih::cloud>();
+	pcl::AgastKeypoint2D<nih::point, nih::point> agast;
+	agast.setThreshold(30);
+	agast.setInputCloud(nube);
+	agast.compute(*keypoints);
+
+	return keypoints;
+}
+
+nih::cloud::Ptr keypoints_fpfh(
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution) {
+	// características únicas en varias escalas
+	pcl::MultiscaleFeaturePersistence<nih::point, pcl::FPFHSignature33>
+	    feature_persistence;
+	std::vector<float> scale_values;
+	scale_values.push_back(2 * resolution);
+	scale_values.push_back(4 * resolution);
+	scale_values.push_back(8 * resolution);
+	feature_persistence.setScalesVector(scale_values);
+	feature_persistence.setAlpha(1.5); // desvío
+
+	// estimador
+	auto fpfh = boost::make_shared<pcl::FPFHEstimation<
+	    pcl::PointXYZ,
+	    pcl::Normal,
+	    pcl::FPFHSignature33> >();
+	fpfh->setInputCloud(nube);
+	fpfh->setInputNormals(normales);
+
+	feature_persistence.setFeatureEstimator(fpfh);
+	feature_persistence.setDistanceMetric(pcl::CS);
+
+	// salida
+	auto output_features =
+	    boost::make_shared<pcl::PointCloud<pcl::FPFHSignature33> >();
+	auto output_indices =
+	    boost::make_shared<std::vector<int> >(); // horrible memory management
+	feature_persistence.determinePersistentFeatures(
+	    *output_features, output_indices);
+
+	// extracción de los puntos
+	pcl::ExtractIndices<nih::point> extract_indices_filter;
+	extract_indices_filter.setInputCloud(nube);
+	extract_indices_filter.setIndices(output_indices);
+	auto persistent_locations = boost::make_shared<nih::cloud>();
+	extract_indices_filter.filter(*persistent_locations);
+
+	return persistent_locations;
 }
 
 nih::cloud::Ptr keypoints_iss(
