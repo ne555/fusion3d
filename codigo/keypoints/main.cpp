@@ -71,9 +71,9 @@ int main(int argc, char **argv) {
 	auto nube_source = nih::preprocess(nih::subsampling(orig_b, 3));
 
 	// detección de keypoints
-	auto key_source = keypoints_harris6(
+	auto key_source = keypoints_harris3(
 	    nube_source.points, nube_source.normals, nube_source.resolution);
-	auto key_target = keypoints_harris6(
+	auto key_target = keypoints_harris3(
 	    nube_target.points, nube_target.normals, nube_target.resolution);
 
 	// alineación (con ground truth)
@@ -258,42 +258,6 @@ nih::cloud::Ptr keypoints_sift(
 	sift.setMinimumContrast(0);
 
 	sift.compute(*keypoints_con_intensidad);
-	for(const auto &pi : keypoints_con_intensidad->points) {
-		nih::point p;
-		p.x = pi.x;
-		p.y = pi.y;
-		p.z = pi.z;
-
-		keypoints->push_back(p);
-	}
-
-	return keypoints;
-}
-
-nih::cloud::Ptr keypoints_harris6(
-    nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution) {
-	auto keypoints = boost::make_shared<nih::cloud>();
-	auto keypoints_con_intensidad =
-	    boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
-	auto nube_con_intensidad =
-	    boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
-	//for(const auto &p : nube->points) {
-	for(int K=0; K<nube->size(); ++K) {
-		const auto &p = (*nube)[K];
-		pcl::PointXYZI pi;
-		pi.x = p.x;
-		pi.y = p.y;
-		pi.z = p.z;
-		pi.intensity = (*normales)[K].normal[2];
-
-		nube_con_intensidad->push_back(pi);
-	}
-
-	pcl::HarrisKeypoint3D<pcl::PointXYZI, pcl::PointXYZI> harris3;
-	harris3.setInputCloud(nube_con_intensidad);
-	harris3.setNormals(normales);
-
-	harris3.compute(*keypoints_con_intensidad);
 	for(const auto &pi : keypoints_con_intensidad->points) {
 		nih::point p;
 		p.x = pi.x;
