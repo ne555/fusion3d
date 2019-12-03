@@ -36,12 +36,15 @@ void show_axis_angle(const Eigen::Matrix3f &rotation);
 
 class frame{
 	public:
-		Eigen::Vector3d v[3];
-		double lambda[3];
+		Eigen::Vector3f v[3];
+		float lambda[3];
 };
 
 frame
 compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double radius, pcl::KdTreeFLANN<nih::point> &kdtree);
+
+frame resolver_ambiguedad(frame);
+Eigen::Matrix3f compute_rotation(const frame &source, const frame &target);
 
 template <class Feature>
 boost::shared_ptr<pcl::Correspondences>
@@ -50,6 +53,9 @@ best_matches(Feature source, Feature target);
 template <class Feature>
 boost::shared_ptr<pcl::Correspondences>
 best_reciprocal_matches(Feature source, Feature target);
+
+void show_rotation(const Eigen::Matrix3f &r);
+void show_rotation(const nih::transformation &source, const nih::transformation &target);
 
 int main(int argc, char **argv){
 	if(argc < 3) {
@@ -67,14 +73,16 @@ int main(int argc, char **argv){
 	auto transf_b = nih::get_transformation(input);
 
 	// preproceso
-	auto nube_target = nih::preprocess(nih::subsampling(orig_a, 3));
-	auto nube_source = nih::preprocess(nih::subsampling(orig_b, 3));
+	auto nube_target = nih::preprocess(nih::subsampling(orig_a, 2));
+	auto nube_source = nih::preprocess(nih::subsampling(orig_b, 2));
 
 	//keypoints
 	auto key_source = keypoints_harris3(
 	    nube_source.points, nube_source.normals, nube_source.resolution);
 	auto key_target = keypoints_harris3(
 	    nube_target.points, nube_target.normals, nube_target.resolution);
+	auto key_source_orig = key_source->makeShared();
+	auto key_target_orig = key_target->makeShared();
 
 	//features
 	auto feature_source = feature_fpfh(key_source, nube_source.points, nube_source.normals, nube_source.resolution);
@@ -109,6 +117,28 @@ int main(int argc, char **argv){
 		correspondencias = corr;
 	}
 
+	//marco de referencia
+	{
+		pcl::KdTreeFLANN<nih::point> kd_source, kd_target;
+		kd_source.setInputCloud(nube_source.points);
+		kd_target.setInputCloud(nube_target.points);
+		for(auto c: *correspondencias){
+			double radio = 8*nube_source.resolution;
+			auto f_source = compute_reference_frame(nube_source.points, (*key_source)[c.index_query], radio, kd_source);
+			auto f_target = compute_reference_frame(nube_target.points, (*key_target)[c.index_match], radio, kd_target);
+			auto f_target_prima = resolver_ambiguedad(f_target);
+
+			auto r1 = compute_rotation(f_source, f_target);
+			auto r2 = compute_rotation(f_source, f_target_prima);
+
+			std::cout << "distancia " << c.distance << '\n';
+			std::cout << "r1 ";
+			show_rotation(r1);
+			std::cout << "r2 ";
+			show_rotation(r2);
+		}
+	}
+
 	auto normal_source = boost::make_shared<nih::normal>();
 	auto normal_target = boost::make_shared<nih::normal>();
 	{
@@ -122,6 +152,7 @@ int main(int argc, char **argv){
 			normal_target->push_back((*nube_target.normals)[nih::get_index(p, kd_target)]);
 	}
 
+	std::cerr << "Keypoints: " << key_source_orig->size() << ' ' << key_target_orig->size() << '\n';
 	std::cerr << "Correspondencias: " << correspondencias->size() << '\n';
 
 
@@ -133,6 +164,10 @@ int main(int argc, char **argv){
 	    *nube_target.points, *nube_target.points, transf_a);
 	pcl::transformPointCloud(*key_source, *key_source, transf_b);
 	pcl::transformPointCloud(*key_target, *key_target, transf_a);
+	pcl::transformPointCloud(*key_source_orig, *key_source_orig, transf_b);
+	pcl::transformPointCloud(*key_target_orig, *key_target_orig, transf_a);
+
+	show_rotation(transf_b, transf_a);
 
 
 
@@ -144,8 +179,8 @@ int main(int argc, char **argv){
 
 	view->addPointCloud(nube_source.points, "source");
 	view->addPointCloud(nube_target.points, "target");
-	view->addPointCloud(key_source, green, "key_source");
-	view->addPointCloud(key_target, red, "key_target");
+	view->addPointCloud(key_source_orig, green, "key_source");
+	view->addPointCloud(key_target_orig, red, "key_target");
 	//graficar las normales en los key_points
 
 	view->setPointCloudRenderingProperties(
@@ -174,10 +209,49 @@ int main(int argc, char **argv){
 	    *correspondencias,
 	    "correspondence");
 
+	view->setShapeRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_LINE_WIDTH,
+		5,
+		"correspondence"
+	);
+
 	while(!view->wasStopped())
 		view->spinOnce(100);
 
 	return 0;
+}
+
+
+Eigen::Matrix3f compute_rotation(const frame &source, const frame &target){
+	Eigen::Matrix3f rot_source, rot_target;
+	for(int K=0; K<3; ++K)
+		for(int L=0; L<3; ++L){
+			rot_source(K, L) = source.v[L](K);
+			rot_target(K, L) = target.v[L](K);
+		}
+	return rot_source.transpose() * rot_target;
+}
+
+frame resolver_ambiguedad(frame f){
+	//rotar 180 sobre z
+	nih::transformation rotacion;
+	rotacion = Eigen::AngleAxisf(M_PI, f.v[2]);
+	f.v[0] = rotacion * f.v[0];
+	f.v[1] = rotacion * f.v[1];
+	return f;
+}
+
+void show_rotation(const Eigen::Matrix3f &r){
+	show_axis_angle(r);
+}
+
+void show_rotation(const nih::transformation &source, const nih::transformation &target){
+	Eigen::Matrix3f rot_s, rot_t, scale;
+	source.computeRotationScaling(&rot_s, &scale);
+	target.computeRotationScaling(&rot_t, &scale);
+
+	Eigen::Matrix3f diff = rot_s.transpose() * rot_t;
+	show_rotation(diff);
 }
 
 template <class Feature>
@@ -231,18 +305,19 @@ best_reciprocal_matches(Feature source, Feature target) {
 void show_axis_angle(const nih::transformation &t){
 	Eigen::Matrix3f rotation, scale;
 	t.computeRotationScaling(&rotation, &scale);
-	Eigen::AngleAxisf aa;
-	aa.fromRotationMatrix(rotation);
-	std::cout << "angle: " << aa.angle()*180/M_PI << '\t';
-	std::cout << "axis: " << aa.axis().transpose() << '\t';
-	std::cout << "dist_y: " << abs(aa.axis().dot(Eigen::Vector3f::UnitY())) << '\n';
+	show_axis_angle(rotation);
 }
+
 void show_axis_angle(const Eigen::Matrix3f &rotation){
 	Eigen::AngleAxisf aa;
 	aa.fromRotationMatrix(rotation);
-	std::cout << "angle: " << aa.angle()*180/M_PI << '\t';
-	std::cout << "axis: " << aa.axis().transpose() << '\t';
-	std::cout << "dist_y: " << abs(aa.axis().dot(Eigen::Vector3f::UnitY())) << '\n';
+	if(1-abs(aa.axis().dot(Eigen::Vector3f::UnitY())) < 0.2){
+		std::cout << "angle: " << aa.angle()*180/M_PI << '\t';
+		std::cout << "axis: " << aa.axis().transpose() << '\t';
+		std::cout << "dist_y: " << 1-abs(aa.axis().dot(Eigen::Vector3f::UnitY())) << '\n';
+	}
+	else
+		std::cout << "---\n";
 }
 
 
@@ -253,7 +328,7 @@ compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double r
 	std::vector<float> distances;
 	kdtree.radiusSearch(center, radius, indices, distances);
 
-	Eigen::Matrix3d covarianza = Eigen::Matrix3d::Zero ();
+	Eigen::Matrix3f covarianza = Eigen::Matrix3f::Zero ();
 	for(int K = 0; K < indices.size(); K++) {
 		const nih::point &p = (*nube)[indices[K]];
 
@@ -263,7 +338,7 @@ compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double r
 	}
 
 	//compute eigenvales and eigenvectors
-	Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver (covarianza);
+	Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> solver (covarianza);
 
 	frame f;
 	for(int K=0; K<3; ++K){
@@ -276,9 +351,9 @@ compute_reference_frame(nih::cloud::Ptr nube, const nih::point &center, double r
 	//make sure that vector `z' points to outside screen {0, 0, 1}
 	if(f.v[2](2) < 0 ){
 		//rotate 180 over f.x
-		Eigen::Transform<double, 3, Eigen::Affine> rotacion;
+		nih::transformation rotacion;
 		rotacion =
-			Eigen::AngleAxis<double>(M_PI, f.v[0]);
+			Eigen::AngleAxisf(M_PI, f.v[0]);
 		for(int K=1; K<3; ++K)
 			f.v[K] = rotacion * f.v[K];
 	}
