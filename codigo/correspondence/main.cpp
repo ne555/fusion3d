@@ -109,6 +109,19 @@ int main(int argc, char **argv){
 		correspondencias = corr;
 	}
 
+	auto normal_source = boost::make_shared<nih::normal>();
+	auto normal_target = boost::make_shared<nih::normal>();
+	{
+		pcl::KdTreeFLANN<nih::point> kd_source, kd_target;
+		kd_source.setInputCloud(nube_source.points);
+		kd_target.setInputCloud(nube_target.points);
+
+		for(auto p: key_source->points)
+			normal_source->push_back((*nube_source.normals)[nih::get_index(p, kd_source)]);
+		for(auto p: key_target->points)
+			normal_target->push_back((*nube_target.normals)[nih::get_index(p, kd_target)]);
+	}
+
 	std::cerr << "Correspondencias: " << correspondencias->size() << '\n';
 
 
@@ -133,11 +146,27 @@ int main(int argc, char **argv){
 	view->addPointCloud(nube_target.points, "target");
 	view->addPointCloud(key_source, green, "key_source");
 	view->addPointCloud(key_target, red, "key_target");
+	//graficar las normales en los key_points
 
 	view->setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_source");
 	view->setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_target");
+
+	view->addPointCloudNormals<pcl::PointXYZ, pcl::Normal>(
+		key_source,
+		normal_source,
+		1,
+		0.01,
+		"mundo"
+	);
+	view->addPointCloudNormals<pcl::PointXYZ, pcl::Normal>(
+		key_source,
+		normal_target,
+		1,
+		0.01,
+		"hola"
+	);
 
 	view->addCorrespondences<pcl::PointXYZ>(
 	    key_source,
