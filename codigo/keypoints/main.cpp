@@ -78,15 +78,18 @@ int main(int argc, char **argv) {
 	auto orig_b = nih::load_cloud_ply(directory + filename);
 	auto transf_b = nih::get_transformation(input);
 
+	double resolution_orig = nih::get_resolution(orig_a);
+	double radio = 3*resolution_orig;
+
 	// preproceso
 	auto nube_target = nih::preprocess(nih::subsampling(orig_a, 3));
 	auto nube_source = nih::preprocess(nih::subsampling(orig_b, 3));
 
 	// detección de keypoints
 	auto key_source = keypoints_harris3(
-	    nube_source.points, nube_source.normals, nube_source.resolution);
+	    nube_source.points, nube_source.normals, resolution_orig);
 	auto key_target = keypoints_harris3(
-	    nube_target.points, nube_target.normals, nube_target.resolution);
+	    nube_target.points, nube_target.normals, resolution_orig);
 
 	// alineación (con ground truth)
 	pcl::transformPointCloud(
@@ -115,8 +118,8 @@ int main(int argc, char **argv) {
 		for(auto K : *correspondencias) {
 			double d = nih::distance(
 			    (*key_source)[K.index_query], (*key_target)[K.index_match]);
-			distances.push_back(d / nube_source.resolution);
-			if(d / nube_source.resolution < 6) {
+			distances.push_back(d / resolution_orig);
+			if(d / resolution_orig < 6) {
 				key_s->push_back((*key_source)[K.index_query]);
 				key_t->push_back((*key_target)[K.index_match]);
 			}

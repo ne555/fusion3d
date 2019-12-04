@@ -72,21 +72,26 @@ int main(int argc, char **argv){
 	auto orig_b = nih::load_cloud_ply(directory + filename);
 	auto transf_b = nih::get_transformation(input);
 
+	double orig_resolution = nih::get_resolution(orig_a);
+	double submuestreo;
+	std::cin >> submuestreo;
 	// preproceso
-	auto nube_target = nih::preprocess(nih::subsampling(orig_a, 2));
-	auto nube_source = nih::preprocess(nih::subsampling(orig_b, 2));
+	auto nube_target = nih::preprocess(nih::subsampling(orig_a, submuestreo));
+	auto nube_source = nih::preprocess(nih::subsampling(orig_b, submuestreo));
+	std::cerr << "Resolution: " << nube_target.resolution << '\n';
+	double radio = 4*orig_resolution;
 
 	//keypoints
 	auto key_source = keypoints_harris3(
-	    nube_source.points, nube_source.normals, nube_source.resolution);
+	    nube_source.points, nube_source.normals, radio);
 	auto key_target = keypoints_harris3(
-	    nube_target.points, nube_target.normals, nube_target.resolution);
+	    nube_target.points, nube_target.normals, radio);
 	auto key_source_orig = key_source->makeShared();
 	auto key_target_orig = key_target->makeShared();
 
 	//features
-	auto feature_source = feature_fpfh(key_source, nube_source.points, nube_source.normals, nube_source.resolution);
-	auto feature_target = feature_fpfh(key_target, nube_target.points, nube_target.normals, nube_target.resolution);
+	auto feature_source = feature_fpfh(key_source, nube_source.points, nube_source.normals, radio);
+	auto feature_target = feature_fpfh(key_target, nube_target.points, nube_target.normals, radio);
 
 	//correspondencias
 	auto correspondencias = best_reciprocal_matches(feature_source, feature_target);
@@ -123,7 +128,6 @@ int main(int argc, char **argv){
 		kd_source.setInputCloud(nube_source.points);
 		kd_target.setInputCloud(nube_target.points);
 		for(auto c: *correspondencias){
-			double radio = 8*nube_source.resolution;
 			auto f_source = compute_reference_frame(nube_source.points, (*key_source)[c.index_query], radio, kd_source);
 			auto f_target = compute_reference_frame(nube_target.points, (*key_target)[c.index_match], radio, kd_target);
 			auto f_target_prima = resolver_ambiguedad(f_target);
@@ -174,8 +178,8 @@ int main(int argc, char **argv){
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("correspondences");
 	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> green(
-	    key_source, 0, 255, 0),
-	    red(key_target, 255, 0, 0);
+	    key_source_orig, 0, 255, 0),
+	    red(key_target_orig, 255, 0, 0);
 
 	view->addPointCloud(nube_source.points, "source");
 	view->addPointCloud(nube_target.points, "target");
@@ -188,6 +192,8 @@ int main(int argc, char **argv){
 	view->setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_target");
 
+
+	/*
 	view->addPointCloudNormals<pcl::PointXYZ, pcl::Normal>(
 		key_source,
 		normal_source,
@@ -202,6 +208,7 @@ int main(int argc, char **argv){
 		0.01,
 		"hola"
 	);
+	*/
 
 	view->addCorrespondences<pcl::PointXYZ>(
 	    key_source,
@@ -215,8 +222,19 @@ int main(int argc, char **argv){
 		"correspondence"
 	);
 
-	while(!view->wasStopped())
+	view->addSphere((*key_source_orig)[0], radio, "esfera");
+	int asdf = 0;
+	while(!view->wasStopped()){
+		asdf = asdf%key_source_orig->size();
+		view->removeShape ("esfera");
+		view->addSphere((*key_source_orig)[asdf], radio, "esfera");
+		view->setShapeRenderingProperties(
+			pcl::visualization::PCL_VISUALIZER_COLOR,
+			0, 1, 1,
+			"esfera");
+		++asdf;
 		view->spinOnce(100);
+	}
 
 	return 0;
 }
@@ -437,7 +455,7 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
 	auto signature =
 	    boost::make_shared<pcl::PointCloud<pcl::FPFHSignature33> >();
 
-	fpfh.setRadiusSearch(8 * resolution);
+	fpfh.setRadiusSearch(resolution);
 	fpfh.compute(*signature);
 
 	return signature;

@@ -129,7 +129,7 @@ namespace nih {
 		auto puntos_malos = boost::make_shared<std::vector<int> >();
 
 		// puntos aislados
-		*puntos_malos = delete_big_edges(tmesh, nube, 3 * model_resolution);
+		*puntos_malos = delete_big_edges(tmesh, nube, edge_max_size);
 		// contorno
 		for(int K = 0; K < tmesh->sizeVertices(); ++K) {
 			pcl::geometry::VertexIndex v(K);
@@ -150,7 +150,7 @@ namespace nih {
 			puntos_malos->end());
 
 		// matar puntos con normales ortogonales
-		auto normales = compute_normals(nube, 4 * model_resolution);
+		auto normales = compute_normals(nube, 3 * model_resolution);
 		{
 			nih::vector eye(0, 0, 1);
 			for(int K = 0; K < normales->size(); ++K) {
