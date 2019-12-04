@@ -4,6 +4,7 @@
 
 #include <pcl/features/fpfh.h>
 #include <pcl/keypoints/harris_3d.h>
+#include <pcl/keypoints/iss_3d.h>
 #include <pcl/registration/correspondence_estimation.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/kdtree/kdtree_flann.h>
@@ -17,11 +18,13 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_diff_with_threshold(
     nih::cloud::Ptr a, nih::cloud::Ptr b, double threshold);
 nih::cloud::Ptr keypoints_harris3(
     nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_iss(
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
 pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
     nih::cloud::Ptr input,
     nih::cloud::Ptr surface,
     nih::normal::Ptr normals,
-    double resolution);
+    double radio);
 
 double
 distance_fpfh(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b) {
@@ -72,20 +75,15 @@ int main(int argc, char **argv){
 	auto orig_b = nih::load_cloud_ply(directory + filename);
 	auto transf_b = nih::get_transformation(input);
 
-	double orig_resolution = nih::get_resolution(orig_a);
-	double submuestreo;
-	std::cin >> submuestreo;
+	double resolution_orig = nih::get_resolution(orig_a);
 	// preproceso
-	auto nube_target = nih::preprocess(nih::subsampling(orig_a, submuestreo));
-	auto nube_source = nih::preprocess(nih::subsampling(orig_b, submuestreo));
-	std::cerr << "Resolution: " << nube_target.resolution << '\n';
-	double radio = 4*orig_resolution;
+	auto nube_target = nih::preprocess(orig_a);
+	auto nube_source = nih::preprocess(orig_b);
+	double radio = 8*resolution_orig;
 
 	//keypoints
-	auto key_source = keypoints_harris3(
-	    nube_source.points, nube_source.normals, radio);
-	auto key_target = keypoints_harris3(
-	    nube_target.points, nube_target.normals, radio);
+	auto key_source = keypoints_iss(nube_source.points, nube_source.normals, resolution_orig);
+	auto key_target = keypoints_iss(nube_target.points, nube_target.normals, resolution_orig);
 	auto key_source_orig = key_source->makeShared();
 	auto key_target_orig = key_target->makeShared();
 
@@ -122,6 +120,7 @@ int main(int argc, char **argv){
 		correspondencias = corr;
 	}
 
+#if 0
 	//marco de referencia
 	{
 		pcl::KdTreeFLANN<nih::point> kd_source, kd_target;
@@ -142,6 +141,7 @@ int main(int argc, char **argv){
 			show_rotation(r2);
 		}
 	}
+#endif
 
 	auto normal_source = boost::make_shared<nih::normal>();
 	auto normal_target = boost::make_shared<nih::normal>();
@@ -177,20 +177,19 @@ int main(int argc, char **argv){
 
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("correspondences");
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> green(
-	    key_source_orig, 0, 255, 0),
-	    red(key_target_orig, 255, 0, 0);
 
 	view->addPointCloud(nube_source.points, "source");
 	view->addPointCloud(nube_target.points, "target");
-	view->addPointCloud(key_source_orig, green, "key_source");
-	view->addPointCloud(key_target_orig, red, "key_target");
+	view->addPointCloud(key_source, "key_source");
+	view->addPointCloud(key_target, "key_target");
 	//graficar las normales en los key_points
 
 	view->setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_source");
 	view->setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_target");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1,0,0, "key_source");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0,0.7,0, "key_target");
 
 
 	/*
@@ -442,7 +441,7 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
     nih::cloud::Ptr input,
     nih::cloud::Ptr surface,
     nih::normal::Ptr normals,
-    double resolution) {
+    double radio) {
 	pcl::FPFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::FPFHSignature33> fpfh;
 
 	fpfh.setInputCloud(input);
@@ -455,8 +454,30 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
 	auto signature =
 	    boost::make_shared<pcl::PointCloud<pcl::FPFHSignature33> >();
 
-	fpfh.setRadiusSearch(resolution);
+	fpfh.setRadiusSearch(radio);
 	fpfh.compute(*signature);
 
 	return signature;
+}
+
+nih::cloud::Ptr keypoints_iss(
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution) {
+	// keypoints
+	pcl::ISSKeypoint3D<nih::point, nih::point, pcl::Normal> iss_detector;
+	iss_detector.setInputCloud(nube);
+	iss_detector.setNormals(normales);
+	// ¿qué valores son buenos?
+	iss_detector.setSalientRadius(8 * resolution);
+	iss_detector.setNonMaxRadius(6 * resolution);
+	{
+		//no considera puntos del borde
+		iss_detector.setBorderRadius(1.5 * resolution);
+		iss_detector.setAngleThreshold(nih::deg2rad(80));
+	}
+	iss_detector.setThreshold21(0.975);
+	iss_detector.setThreshold32(0.975);
+	iss_detector.setMinNeighbors(8);
+	auto iss_keypoints = boost::make_shared<nih::cloud>();
+	iss_detector.compute(*iss_keypoints);
+	return iss_keypoints;
 }

@@ -390,6 +390,7 @@ nih::cloud::Ptr keypoints_iss(
 	iss_detector.setSalientRadius(8 * resolution);
 	iss_detector.setNonMaxRadius(6 * resolution);
 	iss_detector.setBorderRadius(1.5 * resolution);
+	iss_detector.setAngleThreshold(nih::deg2rad(80));
 	iss_detector.setThreshold21(0.975);
 	iss_detector.setThreshold32(0.975);
 	iss_detector.setMinNeighbors(8);
