@@ -60,6 +60,8 @@ struct harris_parameters{
 	}
 } param;
 
+pcl::PolygonMesh::Ptr triangulate2(nih::cloud::Ptr nube, double max_edge_size);
+
 int main(int argc, char **argv) {
 	if(argc < 3) {
 		usage(argv[0]);
@@ -82,13 +84,13 @@ int main(int argc, char **argv) {
 	double radio = 3*resolution_orig;
 
 	// preproceso
-	auto nube_target = nih::preprocess(nih::subsampling(orig_a, 3));
-	auto nube_source = nih::preprocess(nih::subsampling(orig_b, 3));
+	auto nube_target = nih::preprocess(orig_a);
+	auto nube_source = nih::preprocess(orig_b);
 
 	// detección de keypoints
-	auto key_source = keypoints_harris3(
+	auto key_source = keypoints_iss(
 	    nube_source.points, nube_source.normals, resolution_orig);
-	auto key_target = keypoints_harris3(
+	auto key_target = keypoints_iss(
 	    nube_target.points, nube_target.normals, resolution_orig);
 
 	// alineación (con ground truth)
@@ -99,84 +101,78 @@ int main(int argc, char **argv) {
 	pcl::transformPointCloud(*key_source, *key_source, transf_b);
 	pcl::transformPointCloud(*key_target, *key_target, transf_a);
 
+
 	// correspondencias
 	pcl::registration::CorrespondenceEstimation<nih::point, nih::point>
 	    corr_est;
 	auto correspondencias = boost::make_shared<pcl::Correspondences>();
 	corr_est.setInputSource(key_source);
 	corr_est.setInputTarget(key_target);
-	// corr_est.determineCorrespondences(*correspondencias);
 	corr_est.determineReciprocalCorrespondences(*correspondencias);
-	std::cout << "Keypoints source: " << key_source->size() << '\n';
-	std::cout << "Keypoints target: " << key_target->size() << '\n';
-	std::cout << "correspondences: " << correspondencias->size() << '\n';
-
-		auto key_s = boost::make_shared<nih::cloud>();
-		auto key_t = boost::make_shared<nih::cloud>();
+	auto key_s = boost::make_shared<nih::cloud>();
+	auto key_t = boost::make_shared<nih::cloud>();
 	{
-		std::vector<double> distances;
 		for(auto K : *correspondencias) {
 			double d = nih::distance(
 			    (*key_source)[K.index_query], (*key_target)[K.index_match]);
-			distances.push_back(d / resolution_orig);
-			if(d / resolution_orig < 6) {
+			if(d / resolution_orig < 3) {
 				key_s->push_back((*key_source)[K.index_query]);
 				key_t->push_back((*key_target)[K.index_match]);
 			}
 		}
-		//key_source = key_s;
-		//key_target = key_t;
 	}
-	std::cout << "sobreviven\n";
-	std::cout << "Keypoints source: " << key_s->size() << '\n';
-	std::cout << "Keypoints target: " << key_t->size() << '\n';
 
-	auto transformation = align_icp(key_source, key_target);
+	//info
+	std::cerr << "points: " << nube_source.points->size() << ' ' << nube_target.points->size() << '\n';
+	std::cerr << "keypoints: " << key_source->size() << ' ' << key_target->size() << '\n';
+	std::cerr << "correspondences: " << correspondencias->size() << '\n';
+	std::cerr << "survivors: " << key_s->size() << ' ' << key_t->size() << '\n';
 
 	// visualización
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("keypoints");
 	view->setBackgroundColor(0, 0, 0);
+	int v1 ,v2;
+	view->createViewPort(0, 0.0, 0.5, 1.0, v1);
+	view->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
 
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> green(
-	    key_source, 0, 255, 0),
-	    red(key_target, 255, 0, 0);
+	auto source_mesh = triangulate2(nube_source.points, 3*nube_source.resolution);
+	auto target_mesh = triangulate2(nube_target.points, 3*nube_target.resolution);
+	//view->addPointCloud(nube_source.points, "source", v1);
+	//view->addPointCloud(nube_target.points, "target", v2);
+	view->addPolygonMesh(*source_mesh, "source1", v1);
+	view->addPolygonMesh(*target_mesh, "target1", v1);
+	view->addPolygonMesh(*source_mesh, "source2", v2);
+	view->addPolygonMesh(*target_mesh, "target2", v2);
 
-	view->addPointCloud(nube_source.points, "source");
-	view->addPointCloud(nube_target.points, "target");
+	view->addPointCloud(key_source, "key_source1", v1);
+	view->addPointCloud(key_target, "key_target1", v1);
 
-	view->addPointCloud(key_source, green, "key_source");
-	view->addPointCloud(key_target, red, "key_target");
-	/*
-	view->addCorrespondences<nih::point>(
-	    key_source,
-	    key_target,
-	    *correspondencias,
-	    "correspondence");
-	    */
+	view->addPointCloud(key_s, "key_source2", v2);
+	view->addPointCloud(key_t, "key_target2", v2);
 
-	view->setPointCloudRenderingProperties(
-	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_source");
-	view->setPointCloudRenderingProperties(
-	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "key_target");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_source1");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_source2");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_target1");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_target2");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1,0,0, "key_source1");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1,0,0, "key_source2");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0,.7,0, "key_target1");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0,.7,0, "key_target2");
 
-	auto view2 =
-	    boost::make_shared<pcl::visualization::PCLVisualizer>("keypoints2");
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> green2(
-	    key_s, 0, 255, 0),
-	    red2(key_t, 255, 0, 0);
-	view2->addPointCloud(nube_source.points, "source2");
-	view2->addPointCloud(nube_target.points, "target2");
-	view2->addPointCloud(key_s, green2, "key_source2");
-	view2->addPointCloud(key_t, red2, "key_target2");
-	view2->setPointCloudRenderingProperties(
-	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_source2");
-	view2->setPointCloudRenderingProperties(
-	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "key_target2");
 
+	view->addSphere((*key_source)[0], 8*resolution_orig, "esfera",v2);
+	int asdf = 0;
 	while(!view->wasStopped()){
+		asdf = asdf%key_source->size();
+		view->removeShape ("esfera");
+		view->addSphere((*key_source)[asdf], 8*resolution_orig, "esfera",v2);
+		view->setShapeRenderingProperties(
+			pcl::visualization::PCL_VISUALIZER_COLOR,
+			0, 1, 1,
+			"esfera");
+		++asdf;
 		view->spinOnce(100);
-		view2->spinOnce(100);
 	}
 
 	return 0;
@@ -392,8 +388,8 @@ nih::cloud::Ptr keypoints_iss(
 	iss_detector.setNormals(normales);
 	// ¿qué valores son buenos?
 	iss_detector.setSalientRadius(8 * resolution);
-	iss_detector.setNonMaxRadius(8 * resolution);
-	iss_detector.setBorderRadius(4 * resolution);
+	iss_detector.setNonMaxRadius(6 * resolution);
+	iss_detector.setBorderRadius(1.5 * resolution);
 	iss_detector.setThreshold21(0.975);
 	iss_detector.setThreshold32(0.975);
 	iss_detector.setMinNeighbors(8);
@@ -401,3 +397,45 @@ nih::cloud::Ptr keypoints_iss(
 	iss_detector.compute(*iss_keypoints);
 	return iss_keypoints;
 }
+
+double triangle_max_edge(nih::cloud::Ptr nube, const pcl::Vertices &v) {
+	double max = 0;
+	for(int K = 0; K < 3; ++K) {
+		double d =
+		    nih::distance((*nube)[v.vertices[K]], (*nube)[v.vertices[(K + 1) % 3]]);
+		if(d > max)
+			max = d;
+	}
+	return max;
+}
+
+pcl::PolygonMesh::Ptr triangulate2(nih::cloud::Ptr nube, double max_edge_size){
+	auto mesh = boost::make_shared<pcl::PolygonMesh>();
+
+	/*triangulación delaunay*/
+	// copiar las coordenadas xy de la nube de puntos
+	std::vector<double> xy;
+	xy.resize(2 * nube->size());
+	for(int K = 0; K < nube->size(); ++K) {
+		xy[2 * K] = (*nube)[K].x;
+		xy[2 * K + 1] = (*nube)[K].y;
+	}
+	// cálculo de la triangulación
+	delaunator::Delaunator delaunay(xy);
+	//índices de los vértices de los triángulos triangulos en
+	// delaunay.triangles[3*K+{0..2}]
+
+	mesh->polygons.reserve(delaunay.triangles.size());
+	for(int K = 0; K < delaunay.triangles.size(); K += 3) {
+		pcl::Vertices v;
+		v.vertices.resize(3);
+		for(int L = 0; L < 3; ++L)
+			v.vertices[L] = delaunay.triangles[K + L];
+		if(triangle_max_edge(nube, v) < max_edge_size)
+			mesh->polygons.push_back(v);
+	}
+	pcl::toPCLPointCloud2(*nube, mesh->cloud);
+
+	return mesh;
+}
+

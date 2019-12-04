@@ -140,10 +140,12 @@ namespace nih {
 		}
 
 		// puntos cercanos a muertos
+#if 0
 		{
-			auto aux = kill_near(*puntos_malos, nube, 1.5 * model_resolution);
+			auto aux = kill_near(*puntos_malos, nube, near_dist);
 			puntos_malos->insert(puntos_malos->end(), aux.begin(), aux.end());
 		}
+#endif
 		std::sort(puntos_malos->begin(), puntos_malos->end());
 		puntos_malos->erase(
 			std::unique(puntos_malos->begin(), puntos_malos->end()),
