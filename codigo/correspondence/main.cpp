@@ -219,6 +219,11 @@ int main(int argc, char **argv){
 			normal_target->push_back((*nube_target.normals)[nih::get_index(p, kd_target)]);
 	}
 
+	{
+		std::ofstream output(filename+"_angles.out");
+		for(const auto &a: angles)
+			output << a << '\n';
+	}
 	auto [angle_mean, angle_stddev] = interquartil_stats(angles);
 	stats(angles);
 
@@ -240,7 +245,7 @@ int main(int argc, char **argv){
 	{
 		std::ofstream output(filename+"_translations.out");
 		for(const auto &v: translations)
-			output << v.transpose() << '\n';
+			output << v.transpose()/resolution_orig << '\n';
 	}
 
 	auto trans_mean = nih::mean(translations.begin(), translations.end());
@@ -248,14 +253,13 @@ int main(int argc, char **argv){
 	trans_mean(1) = 0;
 	std::cout << "Transformación estimada\n";
 	std::cout << "Eje Y, ángulo: " << nih::rad2deg(angle_mean) << '\n';
-	std::cout << "Translación: " << trans_mean.transpose() << '\n';
-
+	std::cout << "Translación: " << trans_mean.transpose()/resolution_orig << '\n';
 
 	nih::transformation rot(Eigen::AngleAxisf(angle_mean, Eigen::Vector3f::UnitY()));
 	// alineación estimada
 	auto aligned = boost::make_shared<nih::cloud>();
 	nih::transformation total;
-	total = Eigen::Translation3f(trans_mean) * rot;
+	total = transf_a * Eigen::Translation3f(trans_mean) * rot;
 	pcl::transformPointCloud(*nube_source.points, *aligned, total);
 
 
@@ -587,8 +591,10 @@ nih::cloud::Ptr keypoints_iss(
 bool valid_angle(const Eigen::Matrix3f &r, double &angle){
 	Eigen::AngleAxisf aa;
 	aa.fromRotationMatrix(r);
+	double doty = aa.axis()(1);
 	angle = aa.angle();
-	return 1-abs(aa.axis()(1)) < 0.2; //cerca al eje y
+
+	return 1-std::abs(doty) < 0.2; //cerca al eje y
 }
 
 
