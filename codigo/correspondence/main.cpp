@@ -2,6 +2,8 @@
 #include "../fusion_3d.hpp"
 #include "../util.hpp"
 
+#include <pcl/filters/uniform_sampling.h>
+#include <pcl/filters/random_sample.h>
 #include <pcl/features/fpfh.h>
 #include <pcl/keypoints/harris_3d.h>
 #include <pcl/keypoints/iss_3d.h>
@@ -23,6 +25,12 @@ nih::cloud::Ptr keypoints_harris3(
     nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
 nih::cloud::Ptr keypoints_iss(
     nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+
+nih::cloud::Ptr keypoints_uniform(
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double radio);
+nih::cloud::Ptr keypoints_random(
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double ratio);
+
 pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
     nih::cloud::Ptr input,
     nih::cloud::Ptr surface,
@@ -39,23 +47,6 @@ distance_fpfh(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b) {
 		d += nih::square(a.histogram[K] - b.histogram[K]) / sum;
 	}
 	return d;
-
-	/*
-	//euclidean (no considera cubetas cercanas o rango)
-	for(int K = 0; K < a.descriptorSize(); ++K)
-		d += nih::square(a.histogram[K] - b.histogram[K]);
-	return d/33;
-	//correlación
-	double ha_mean = nih::mean(a.histogram, a.histogram+a.descriptorSize());
-	double hb_mean = nih::mean(b.histogram, b.histogram+b.descriptorSize());
-	double numerador = 0, desvioa = 0, desviob = 0;
-	for(int K = 0; K < a.descriptorSize(); ++K){
-		numerador += (a.histogram[K]-ha_mean) * (b.histogram[K]-hb_mean);
-		desvioa += nih::square(a.histogram[K]-ha_mean);
-		desviob += nih::square(b.histogram[K]-hb_mean);
-	}
-	return numerador / sqrt(desvioa * desviob);
-	*/
 }
 
 void show_axis_angle(const nih::transformation &t);
@@ -109,19 +100,18 @@ int main(int argc, char **argv){
 	double radio = 8*resolution_orig;
 
 	//keypoints
-	//auto key_source = keypoints_iss(nube_source.points, nube_source.normals, resolution_orig);
-	//auto key_target = keypoints_iss(nube_target.points, nube_target.normals, resolution_orig);
-	auto key_source = boost::make_shared<nih::cloud>();
-	auto key_target = boost::make_shared<nih::cloud>();
+	//auto key_source = boost::make_shared<nih::cloud>();
+	//auto key_target = boost::make_shared<nih::cloud>();
 
-	for(int K=0; K<nube_source.points->size(); K+=4)
-		key_source->push_back( (*nube_source.points)[K] );
-	for(int K=0; K<nube_target.points->size(); K+=4)
-		key_target->push_back( (*nube_target.points)[K] );
+	//for(int K=0; K<nube_source.points->size(); K+=4)
+	//	key_source->push_back( (*nube_source.points)[K] );
+	//for(int K=0; K<nube_target.points->size(); K+=4)
+	//	key_target->push_back( (*nube_target.points)[K] );
 
-	//key_source = nube_source.points->makeShared();
-	//key_target = nube_target.points->makeShared();
+	auto key_source = keypoints_random(nube_source.points, nube_source.normals, 10);
+	auto key_target = keypoints_random(nube_target.points, nube_target.normals, 10);
 
+	std::cerr << "Points: " << nube_source.points->size() << ' ' << nube_target.points->size() << '\n';
 	std::cerr << "Keypoints: " << key_source->size() << ' ' << key_target->size() << '\n';
 
 	//features
@@ -552,4 +542,29 @@ void stats(const std::vector<double> &v){
 	int quart = v.size()/4;
 	std::cout << "Promedio: " << nih::mean(v.begin()+quart, v.end()-quart) << '\n';
 	std::cout << "stddev: " << stddev(v.begin()+quart, v.end()-quart) << '\n';
+}
+
+nih::cloud::Ptr keypoints_uniform(
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double radio) {
+	auto keypoints = boost::make_shared<nih::cloud>();
+	pcl::UniformSampling<nih::point> uniform;
+	uniform.setRadiusSearch(radio);
+
+	uniform.setInputCloud(nube);
+	uniform.filter(*keypoints);
+
+	return keypoints;
+}
+
+nih::cloud::Ptr keypoints_random(
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double ratio){
+	auto keypoints = boost::make_shared<nih::cloud>();
+	pcl::RandomSample<nih::point> random;
+	random.setSample(nube->size() / ratio);
+	random.setSeed(std::time(NULL));
+
+	random.setInputCloud(nube);
+	random.filter(*keypoints);
+
+	return keypoints;
 }

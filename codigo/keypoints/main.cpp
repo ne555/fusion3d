@@ -8,6 +8,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 
 #include <pcl/filters/uniform_sampling.h>
+#include <pcl/filters/random_sample.h>
 #include <pcl/keypoints/agast_2d.h>
 #include <pcl/keypoints/brisk_2d.h>
 #include <pcl/keypoints/harris_3d.h>
@@ -21,6 +22,7 @@
 
 #include <iostream>
 #include <string>
+#include <ctime>
 
 void usage(const char *program) {
 	std::cerr << program << " directory "
@@ -48,7 +50,7 @@ nih::cloud::Ptr keypoints_trajkovic(
 nih::cloud::Ptr keypoints_uniform(
     nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
 nih::cloud::Ptr keypoints_random(
-    nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double ratio);
 
 nih::transformation align_icp(nih::cloud::Ptr source, nih::cloud::Ptr target);
 
@@ -90,10 +92,10 @@ int main(int argc, char **argv) {
 	auto nube_source = nih::preprocess(orig_b);
 
 	// detección de keypoints
-	auto key_source = keypoints_uniform(
-	    nube_source.points, nube_source.normals, resolution_orig);
-	auto key_target = keypoints_uniform(
-	    nube_target.points, nube_target.normals, resolution_orig);
+	auto key_source = keypoints_random(
+	    nube_source.points, nube_source.normals, 5);
+	auto key_target = keypoints_random(
+	    nube_target.points, nube_target.normals, 5);
 
 	// alineación (con ground truth)
 	pcl::transformPointCloud(
@@ -207,9 +209,23 @@ nih::cloud::Ptr keypoints_uniform(
     nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution) {
 	auto keypoints = boost::make_shared<nih::cloud>();
 	pcl::UniformSampling<nih::point> uniform;
-	uniform.setInputCloud(nube);
 	uniform.setRadiusSearch(8 * resolution);
+
+	uniform.setInputCloud(nube);
 	uniform.filter(*keypoints);
+
+	return keypoints;
+}
+
+nih::cloud::Ptr keypoints_random(
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double ratio){
+	auto keypoints = boost::make_shared<nih::cloud>();
+	pcl::RandomSample<nih::point> random;
+	random.setSample(nube->size() / ratio);
+	random.setSeed(std::time(NULL));
+
+	random.setInputCloud(nube);
+	random.filter(*keypoints);
 
 	return keypoints;
 }
