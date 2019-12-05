@@ -47,6 +47,8 @@ nih::cloud::Ptr keypoints_trajkovic(
     nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
 nih::cloud::Ptr keypoints_uniform(
     nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+nih::cloud::Ptr keypoints_random(
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
 
 nih::transformation align_icp(nih::cloud::Ptr source, nih::cloud::Ptr target);
 
@@ -88,9 +90,9 @@ int main(int argc, char **argv) {
 	auto nube_source = nih::preprocess(orig_b);
 
 	// detección de keypoints
-	auto key_source = keypoints_iss(
+	auto key_source = keypoints_uniform(
 	    nube_source.points, nube_source.normals, resolution_orig);
-	auto key_target = keypoints_iss(
+	auto key_target = keypoints_uniform(
 	    nube_target.points, nube_target.normals, resolution_orig);
 
 	// alineación (con ground truth)
@@ -388,7 +390,7 @@ nih::cloud::Ptr keypoints_iss(
 	iss_detector.setNormals(normales);
 	// ¿qué valores son buenos?
 	iss_detector.setSalientRadius(8 * resolution);
-	iss_detector.setNonMaxRadius(6 * resolution);
+	iss_detector.setNonMaxRadius(3 * resolution);
 	iss_detector.setBorderRadius(1.5 * resolution);
 	iss_detector.setAngleThreshold(nih::deg2rad(80));
 	iss_detector.setThreshold21(0.975);

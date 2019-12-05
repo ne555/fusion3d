@@ -9,6 +9,9 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
+#include <vector>
+#include <algorithm>
+
 void usage(const char *program) {
 	std::cerr << program << " directory "
 	          << "conf_file\n";
@@ -29,9 +32,30 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
 double
 distance_fpfh(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b) {
 	double d = 0;
+	//chi cuadrado
+	for(int K = 0; K < a.descriptorSize(); ++K){
+		double sum = a.histogram[K]+b.histogram[K];
+		if(sum == 0) continue;
+		d += nih::square(a.histogram[K] - b.histogram[K]) / sum;
+	}
+	return d;
+
+	/*
+	//euclidean (no considera cubetas cercanas o rango)
 	for(int K = 0; K < a.descriptorSize(); ++K)
 		d += nih::square(a.histogram[K] - b.histogram[K]);
 	return d/33;
+	//correlación
+	double ha_mean = nih::mean(a.histogram, a.histogram+a.descriptorSize());
+	double hb_mean = nih::mean(b.histogram, b.histogram+b.descriptorSize());
+	double numerador = 0, desvioa = 0, desviob = 0;
+	for(int K = 0; K < a.descriptorSize(); ++K){
+		numerador += (a.histogram[K]-ha_mean) * (b.histogram[K]-hb_mean);
+		desvioa += nih::square(a.histogram[K]-ha_mean);
+		desviob += nih::square(b.histogram[K]-hb_mean);
+	}
+	return numerador / sqrt(desvioa * desviob);
+	*/
 }
 
 void show_axis_angle(const nih::transformation &t);
@@ -60,6 +84,9 @@ best_reciprocal_matches(Feature source, Feature target);
 void show_rotation(const Eigen::Matrix3f &r);
 void show_rotation(const nih::transformation &source, const nih::transformation &target);
 
+bool valid_angle(const Eigen::Matrix3f &r, double &angle);
+void stats(const std::vector<double> &v);
+
 int main(int argc, char **argv){
 	if(argc < 3) {
 		usage(argv[0]);
@@ -82,10 +109,20 @@ int main(int argc, char **argv){
 	double radio = 8*resolution_orig;
 
 	//keypoints
-	auto key_source = keypoints_iss(nube_source.points, nube_source.normals, resolution_orig);
-	auto key_target = keypoints_iss(nube_target.points, nube_target.normals, resolution_orig);
-	auto key_source_orig = key_source->makeShared();
-	auto key_target_orig = key_target->makeShared();
+	//auto key_source = keypoints_iss(nube_source.points, nube_source.normals, resolution_orig);
+	//auto key_target = keypoints_iss(nube_target.points, nube_target.normals, resolution_orig);
+	auto key_source = boost::make_shared<nih::cloud>();
+	auto key_target = boost::make_shared<nih::cloud>();
+
+	for(int K=0; K<nube_source.points->size(); K+=4)
+		key_source->push_back( (*nube_source.points)[K] );
+	for(int K=0; K<nube_target.points->size(); K+=4)
+		key_target->push_back( (*nube_target.points)[K] );
+
+	//key_source = nube_source.points->makeShared();
+	//key_target = nube_target.points->makeShared();
+
+	std::cerr << "Keypoints: " << key_source->size() << ' ' << key_target->size() << '\n';
 
 	//features
 	auto feature_source = feature_fpfh(key_source, nube_source.points, nube_source.normals, radio);
@@ -93,6 +130,7 @@ int main(int argc, char **argv){
 
 	//correspondencias
 	auto correspondencias = best_reciprocal_matches(feature_source, feature_target);
+	//auto correspondencias = best_matches(feature_source, feature_target);
 
 	{
 		//capturar sólo los puntos que corresponden
@@ -103,6 +141,9 @@ int main(int argc, char **argv){
 		for(auto K: *correspondencias){
 			auto ps = (*key_source)[K.index_query];
 			auto pt = (*key_target)[K.index_match];
+
+			//si la distancia vertical es muy grande, no considerar los puntos
+			if(abs(ps.y-pt.y) > radio) continue;
 
 			key_s->push_back(ps);
 			key_t->push_back(pt);
@@ -119,28 +160,50 @@ int main(int argc, char **argv){
 		key_target = key_t;
 		correspondencias = corr;
 	}
+	std::cerr << "Correspondencias: " << correspondencias->size() << '\n';
 
-#if 0
+#if 1
 	//marco de referencia
+	std::vector<double> angles;
 	{
+		auto key_s = boost::make_shared<nih::cloud>();
+		auto key_t = boost::make_shared<nih::cloud>();
+		auto corr = boost::make_shared<pcl::Correspondences>();
+		int n=0;
 		pcl::KdTreeFLANN<nih::point> kd_source, kd_target;
 		kd_source.setInputCloud(nube_source.points);
 		kd_target.setInputCloud(nube_target.points);
 		for(auto c: *correspondencias){
-			auto f_source = compute_reference_frame(nube_source.points, (*key_source)[c.index_query], radio, kd_source);
-			auto f_target = compute_reference_frame(nube_target.points, (*key_target)[c.index_match], radio, kd_target);
+			auto ps = (*key_source)[c.index_query];
+			auto pt = (*key_target)[c.index_match];
+			auto f_source = compute_reference_frame(nube_source.points, ps, radio, kd_source);
+			auto f_target = compute_reference_frame(nube_target.points, pt, radio, kd_target);
 			auto f_target_prima = resolver_ambiguedad(f_target);
 
 			auto r1 = compute_rotation(f_source, f_target);
 			auto r2 = compute_rotation(f_source, f_target_prima);
 
-			std::cout << "distancia " << c.distance << '\n';
-			std::cout << "r1 ";
-			show_rotation(r1);
-			std::cout << "r2 ";
-			show_rotation(r2);
+			//std::cout << "distancia " << c.distance << '\n';
+			//std::cout << "r1 ";
+			//show_rotation(r1);
+			//std::cout << "r2 ";
+			//show_rotation(r2);
+
+			double angle;
+			if(valid_angle(r1, angle) or valid_angle(r2, angle)){
+				angles.push_back(angle);
+
+				key_s->push_back(ps);
+				key_t->push_back(pt);
+				corr->push_back( pcl::Correspondence(n, n, c.distance) );
+				++n;
+			}
 		}
+		key_source = key_s;
+		key_target = key_t;
+		correspondencias = corr;
 	}
+	std::cerr << "Valid ref frames: " << angles.size() << '\n';
 #endif
 
 	auto normal_source = boost::make_shared<nih::normal>();
@@ -156,8 +219,18 @@ int main(int argc, char **argv){
 			normal_target->push_back((*nube_target.normals)[nih::get_index(p, kd_target)]);
 	}
 
-	std::cerr << "Keypoints: " << key_source_orig->size() << ' ' << key_target_orig->size() << '\n';
-	std::cerr << "Correspondencias: " << correspondencias->size() << '\n';
+
+	{
+	std::ofstream output("angles.out");
+	std::sort(angles.begin(), angles.end());
+	for(auto &angle: angles){
+		angle = nih::rad2deg(angle);
+		output << angle << ' ';
+		//std::cerr << angle << ' ';
+	}
+	std::cerr << '\n';
+	}
+	stats(angles);
 
 
 
@@ -168,13 +241,12 @@ int main(int argc, char **argv){
 	    *nube_target.points, *nube_target.points, transf_a);
 	pcl::transformPointCloud(*key_source, *key_source, transf_b);
 	pcl::transformPointCloud(*key_target, *key_target, transf_a);
-	pcl::transformPointCloud(*key_source_orig, *key_source_orig, transf_b);
-	pcl::transformPointCloud(*key_target_orig, *key_target_orig, transf_a);
 
 	show_rotation(transf_b, transf_a);
 
 
 
+#if 0
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("correspondences");
 
@@ -182,7 +254,6 @@ int main(int argc, char **argv){
 	view->addPointCloud(nube_target.points, "target");
 	view->addPointCloud(key_source, "key_source");
 	view->addPointCloud(key_target, "key_target");
-	//graficar las normales en los key_points
 
 	view->setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_source");
@@ -191,23 +262,6 @@ int main(int argc, char **argv){
 	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1,0,0, "key_source");
 	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0,0.7,0, "key_target");
 
-
-	/*
-	view->addPointCloudNormals<pcl::PointXYZ, pcl::Normal>(
-		key_source,
-		normal_source,
-		1,
-		0.01,
-		"mundo"
-	);
-	view->addPointCloudNormals<pcl::PointXYZ, pcl::Normal>(
-		key_source,
-		normal_target,
-		1,
-		0.01,
-		"hola"
-	);
-	*/
 
 	view->addCorrespondences<pcl::PointXYZ>(
 	    key_source,
@@ -221,19 +275,10 @@ int main(int argc, char **argv){
 		"correspondence"
 	);
 
-	view->addSphere((*key_source_orig)[0], radio, "esfera");
-	int asdf = 0;
 	while(!view->wasStopped()){
-		asdf = asdf%key_source_orig->size();
-		view->removeShape ("esfera");
-		view->addSphere((*key_source_orig)[asdf], radio, "esfera");
-		view->setShapeRenderingProperties(
-			pcl::visualization::PCL_VISUALIZER_COLOR,
-			0, 1, 1,
-			"esfera");
-		++asdf;
 		view->spinOnce(100);
 	}
+#endif
 
 	return 0;
 }
@@ -480,4 +525,31 @@ nih::cloud::Ptr keypoints_iss(
 	auto iss_keypoints = boost::make_shared<nih::cloud>();
 	iss_detector.compute(*iss_keypoints);
 	return iss_keypoints;
+}
+
+bool valid_angle(const Eigen::Matrix3f &r, double &angle){
+	Eigen::AngleAxisf aa;
+	aa.fromRotationMatrix(r);
+	angle = aa.angle();
+	return 1-abs(aa.axis()(1)) < 0.2; //cerca al eje y
+}
+
+
+template <class T>
+double stddev(T beg, T end) {
+	double promedio = nih::mean(beg, end);
+	double result = 0;
+	for(T iter = beg; iter not_eq end; ++iter)
+		result += nih::square(*iter - promedio);
+	return sqrt(result / std::distance(beg, end));
+}
+
+void stats(const std::vector<double> &v){
+	std::cout << "Promedio: " << nih::mean(v.begin(), v.end()) << '\n';
+	std::cout << "stddev: " << stddev(v.begin(), v.end()) << '\n';
+
+	std::cout << "filtrado primer y cuarto cuartil\n";
+	int quart = v.size()/4;
+	std::cout << "Promedio: " << nih::mean(v.begin()+quart, v.end()-quart) << '\n';
+	std::cout << "stddev: " << stddev(v.begin()+quart, v.end()-quart) << '\n';
 }

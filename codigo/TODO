@@ -26,6 +26,7 @@ submuestreo de la entrada
 		MultiscaleFeaturePersistence of fpfh to find keypoints
 			** revisar esto **
 		** No considerar puntos de borde **
+		-- espaciado uniforme, que resuelva las features
 
 	subdivisión de la malla
 
