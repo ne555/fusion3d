@@ -11,8 +11,12 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
-#include <vector>
 #include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <limits>
+#include <utility>
+#include <vector>
 
 void usage(const char *program) {
 	std::cerr << program << " directory "
@@ -76,7 +80,11 @@ void show_rotation(const Eigen::Matrix3f &r);
 void show_rotation(const nih::transformation &source, const nih::transformation &target);
 
 bool valid_angle(const Eigen::Matrix3f &r, double &angle);
-void stats(const std::vector<double> &v);
+
+std::tuple<double, double>
+interquartil_stats(std::vector<double> v);
+
+void stats(std::vector<double> v);
 
 int main(int argc, char **argv){
 	if(argc < 3) {
@@ -112,6 +120,7 @@ int main(int argc, char **argv){
 	auto key_target = keypoints_random(nube_target.points, nube_target.normals, 10);
 
 	std::cerr << "Points: " << nube_source.points->size() << ' ' << nube_target.points->size() << '\n';
+	std::cerr << "Resolution: " << resolution_orig << '\n';
 	std::cerr << "Keypoints: " << key_source->size() << ' ' << key_target->size() << '\n';
 
 	//features
@@ -180,6 +189,7 @@ int main(int argc, char **argv){
 			//show_rotation(r2);
 
 			double angle;
+			//supone rotación cercana al eje y (base giratoria)
 			if(valid_angle(r1, angle) or valid_angle(r2, angle)){
 				angles.push_back(angle);
 
@@ -209,19 +219,44 @@ int main(int argc, char **argv){
 			normal_target->push_back((*nube_target.normals)[nih::get_index(p, kd_target)]);
 	}
 
-
-	{
-	std::ofstream output("angles.out");
-	std::sort(angles.begin(), angles.end());
-	for(auto &angle: angles){
-		angle = nih::rad2deg(angle);
-		output << angle << ' ';
-		//std::cerr << angle << ' ';
-	}
-	std::cerr << '\n';
-	}
+	auto [angle_mean, angle_stddev] = interquartil_stats(angles);
 	stats(angles);
 
+	// búsqueda de la translación
+	// para los puntos que hayan dado un ángulo cercano al estimado
+	// calcular una translación
+	std::vector<Eigen::Vector3f> translations;
+	for(int K=0; K<angles.size(); ++K){
+		if(std::abs(angles[K]-angle_mean) > angle_stddev) continue;
+		auto c = (*correspondencias)[K];
+		auto ps = (*key_source)[c.index_query];
+		auto pt = (*key_target)[c.index_match];
+
+		nih::transformation rot(Eigen::AngleAxisf(angle_mean, Eigen::Vector3f::UnitY()));
+		auto aligned = rot * nih::p2v(ps);
+
+		translations.push_back(nih::p2v(pt) - aligned);
+	}
+	{
+		std::ofstream output(filename+"_translations.out");
+		for(const auto &v: translations)
+			output << v.transpose() << '\n';
+	}
+
+	auto trans_mean = nih::mean(translations.begin(), translations.end());
+	//FIXME: trans_mean(1) = NaN
+	trans_mean(1) = 0;
+	std::cout << "Transformación estimada\n";
+	std::cout << "Eje Y, ángulo: " << nih::rad2deg(angle_mean) << '\n';
+	std::cout << "Translación: " << trans_mean.transpose() << '\n';
+
+
+	nih::transformation rot(Eigen::AngleAxisf(angle_mean, Eigen::Vector3f::UnitY()));
+	// alineación estimada
+	auto aligned = boost::make_shared<nih::cloud>();
+	nih::transformation total;
+	total = Eigen::Translation3f(trans_mean) * rot;
+	pcl::transformPointCloud(*nube_source.points, *aligned, total);
 
 
 	// alineación (con ground truth)
@@ -235,6 +270,38 @@ int main(int argc, char **argv){
 	show_rotation(transf_b, transf_a);
 
 
+	auto view =
+	    boost::make_shared<pcl::visualization::PCLVisualizer>("correspondences");
+	int v1;
+	int v2;
+	view->createViewPort(0, 0.0, 0.5, 1.0, v1);
+	view->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
+	view->setBackgroundColor(0, 0, 0, v1);
+	view->setBackgroundColor(0, 0, 0, v2);
+
+	auto diff_align_gt = cloud_diff_with_threshold(nube_source.points, aligned, 10*resolution_orig);
+	auto diff_align_target = cloud_diff_with_threshold(nube_target.points, aligned, 10*resolution_orig);
+	for(auto &p: diff_align_gt->points)
+		p.intensity /= resolution_orig;
+	for(auto &p: diff_align_target->points)
+		p.intensity /= resolution_orig;
+
+	view->addPointCloud(nube_source.points, "source1", v1);
+	view->addPointCloud(aligned, "aligned1", v1);
+
+	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> point_cloud_color_handler(diff_align_gt, "intensity");
+	view->addPointCloud< pcl::PointXYZI >(diff_align_gt, point_cloud_color_handler, "diff_gt", v1);
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "diff_gt");
+
+	view->addPointCloud(nube_target.points, "target", v2);
+	view->addPointCloud(aligned, "aligned2", v2);
+
+	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> point_cloud_color_handler2(diff_align_target, "intensity");
+	view->addPointCloud< pcl::PointXYZI >(diff_align_target, point_cloud_color_handler2, "diff_target", v2);
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "diff_target");
+
+	while(!view->wasStopped())
+		view->spinOnce(100);
 
 #if 0
 	auto view =
@@ -534,14 +601,15 @@ double stddev(T beg, T end) {
 	return sqrt(result / std::distance(beg, end));
 }
 
-void stats(const std::vector<double> &v){
-	std::cout << "Promedio: " << nih::mean(v.begin(), v.end()) << '\n';
-	std::cout << "stddev: " << stddev(v.begin(), v.end()) << '\n';
+void stats(std::vector<double> v){
+	std::sort(v.begin(), v.end());
+	std::cout << "Promedio: " << nih::rad2deg(nih::mean(v.begin(), v.end())) << '\n';
+	std::cout << "stddev: " << nih::rad2deg(stddev(v.begin(), v.end())) << '\n';
 
 	std::cout << "filtrado primer y cuarto cuartil\n";
 	int quart = v.size()/4;
-	std::cout << "Promedio: " << nih::mean(v.begin()+quart, v.end()-quart) << '\n';
-	std::cout << "stddev: " << stddev(v.begin()+quart, v.end()-quart) << '\n';
+	std::cout << "Promedio: " << nih::rad2deg(nih::mean(v.begin()+quart, v.end()-quart)) << '\n';
+	std::cout << "stddev: " << nih::rad2deg(stddev(v.begin()+quart, v.end()-quart)) << '\n';
 }
 
 nih::cloud::Ptr keypoints_uniform(
@@ -567,4 +635,12 @@ nih::cloud::Ptr keypoints_random(
 	random.filter(*keypoints);
 
 	return keypoints;
+}
+
+std::tuple<double, double> interquartil_stats(std::vector<double> v) {
+	std::sort(v.begin(), v.end());
+	int quart = v.size() / 4;
+	return std::make_tuple(
+	    nih::mean(v.begin() + quart, v.end() - quart),
+	    nih::stddev(v.begin() + quart, v.end() - quart));
 }

@@ -68,7 +68,8 @@ namespace nih {
 		pcl::KdTreeFLANN<nih::point> kdtree;
 		kdtree.setInputCloud(b);
 
-		for(const auto &p: a->points){
+		//por cada punto en a
+		for(const auto &p: b->points){
 			pcl::PointXYZI pi;
 			pi.x = p.x;
 			pi.y = p.y;

@@ -3,6 +3,7 @@
 #define UTIL_HPP
 
 #include <iterator>
+#include <cmath>
 
 namespace nih{
 template <class T>
@@ -22,10 +23,22 @@ template <class T>
 inline
 typename std::iterator_traits<T>::value_type
 mean(T beg, T end) {
-	typename std::iterator_traits<T>::value_type result = 0;
+	typename std::iterator_traits<T>::value_type result{};
 	for(T iter = beg; iter not_eq end; ++iter)
 		result += *iter;
 	return result / std::distance(beg, end);
+}
+
+template <class T>
+typename std::iterator_traits<T>::value_type
+stddev(T beg, T end) {
+	typename std::iterator_traits<T>::value_type
+		promedio = nih::mean(beg, end),
+		result{};
+
+	for(T iter = beg; iter not_eq end; ++iter)
+		result += nih::square(*iter - promedio);
+	return std::sqrt(result / std::distance(beg, end));
 }
 
 }
