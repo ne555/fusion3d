@@ -41,7 +41,10 @@ alineación
 	SampleConsensusInitialAlignment
 	Levenberg-Marquardt
 	marco de referencia con los eigenvectors de la covarianza de la matriz de dispersión
-		weighted k-means on the correspondences to find the rotation
+		algo para matar outliers
+			weighted k-means on the correspondences to find the rotation
+			k-means on translation
+			normal fitting on translation
 
 leer .ply con estructura
 escribir .ply con estructura

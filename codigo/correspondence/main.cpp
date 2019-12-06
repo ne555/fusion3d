@@ -86,6 +86,14 @@ interquartil_stats(std::vector<double> v);
 
 void stats(std::vector<double> v);
 
+std::ofstream output_corr("corr.out");
+template<class Container>
+void print_corr(const Container &c){
+	for(auto K: c)
+		output_corr << K.distance << ' ';
+	output_corr << '\n';
+}
+
 int main(int argc, char **argv){
 	if(argc < 3) {
 		usage(argv[0]);
@@ -108,24 +116,24 @@ int main(int argc, char **argv){
 	double radio = 8*resolution_orig;
 
 	//keypoints
-	//auto key_source = boost::make_shared<nih::cloud>();
-	//auto key_target = boost::make_shared<nih::cloud>();
+	auto key_source = boost::make_shared<nih::cloud>();
+	auto key_target = boost::make_shared<nih::cloud>();
 
-	//for(int K=0; K<nube_source.points->size(); K+=4)
-	//	key_source->push_back( (*nube_source.points)[K] );
-	//for(int K=0; K<nube_target.points->size(); K+=4)
-	//	key_target->push_back( (*nube_target.points)[K] );
+	for(int K=0; K<nube_source.points->size(); K+=4)
+		key_source->push_back( (*nube_source.points)[K] );
+	for(int K=0; K<nube_target.points->size(); K+=4)
+		key_target->push_back( (*nube_target.points)[K] );
 
-	auto key_source = keypoints_random(nube_source.points, nube_source.normals, 10);
-	auto key_target = keypoints_random(nube_target.points, nube_target.normals, 10);
+	//auto key_source = keypoints_random(nube_source.points, nube_source.normals, 4);
+	//auto key_target = keypoints_random(nube_target.points, nube_target.normals, 4);
 
 	std::cerr << "Points: " << nube_source.points->size() << ' ' << nube_target.points->size() << '\n';
 	std::cerr << "Resolution: " << resolution_orig << '\n';
 	std::cerr << "Keypoints: " << key_source->size() << ' ' << key_target->size() << '\n';
 
 	//features
-	auto feature_source = feature_fpfh(key_source, nube_source.points, nube_source.normals, radio);
-	auto feature_target = feature_fpfh(key_target, nube_target.points, nube_target.normals, radio);
+	auto feature_source = feature_fpfh(key_source, nube_source.points, nube_source.normals, 8*resolution_orig);
+	auto feature_target = feature_fpfh(key_target, nube_target.points, nube_target.normals, 8*resolution_orig);
 
 	//correspondencias
 	auto correspondencias = best_reciprocal_matches(feature_source, feature_target);
@@ -160,6 +168,7 @@ int main(int argc, char **argv){
 		correspondencias = corr;
 	}
 	std::cerr << "Correspondencias: " << correspondencias->size() << '\n';
+	print_corr(*correspondencias);
 
 #if 1
 	//marco de referencia
@@ -203,21 +212,9 @@ int main(int argc, char **argv){
 		key_target = key_t;
 		correspondencias = corr;
 	}
-	std::cerr << "Valid ref frames: " << angles.size() << '\n';
+	std::cerr << "Ref frames (giro en y): " << angles.size() << '\n';
+	print_corr(*correspondencias);
 #endif
-
-	auto normal_source = boost::make_shared<nih::normal>();
-	auto normal_target = boost::make_shared<nih::normal>();
-	{
-		pcl::KdTreeFLANN<nih::point> kd_source, kd_target;
-		kd_source.setInputCloud(nube_source.points);
-		kd_target.setInputCloud(nube_target.points);
-
-		for(auto p: key_source->points)
-			normal_source->push_back((*nube_source.normals)[nih::get_index(p, kd_source)]);
-		for(auto p: key_target->points)
-			normal_target->push_back((*nube_target.normals)[nih::get_index(p, kd_target)]);
-	}
 
 	{
 		std::ofstream output(filename+"_angles.out");
@@ -231,17 +228,24 @@ int main(int argc, char **argv){
 	// para los puntos que hayan dado un ángulo cercano al estimado
 	// calcular una translación
 	std::vector<Eigen::Vector3f> translations;
-	for(int K=0; K<angles.size(); ++K){
-		if(std::abs(angles[K]-angle_mean) > angle_stddev) continue;
-		auto c = (*correspondencias)[K];
-		auto ps = (*key_source)[c.index_query];
-		auto pt = (*key_target)[c.index_match];
+	{
+		auto corr = boost::make_shared<pcl::Correspondences>();
+		for(int K=0; K<angles.size(); ++K){
+			if(std::abs(angles[K]-angle_mean) > 2*angle_stddev) continue;
+			corr->push_back((*correspondencias)[K]);
+			auto c = (*correspondencias)[K];
+			auto ps = (*key_source)[c.index_query];
+			auto pt = (*key_target)[c.index_match];
 
-		nih::transformation rot(Eigen::AngleAxisf(angle_mean, Eigen::Vector3f::UnitY()));
-		auto aligned = rot * nih::p2v(ps);
+			nih::transformation rot(Eigen::AngleAxisf(angle_mean, Eigen::Vector3f::UnitY()));
+			auto aligned = rot * nih::p2v(ps);
 
-		translations.push_back(nih::p2v(pt) - aligned);
+			translations.push_back(nih::p2v(pt) - aligned);
+		}
+		correspondencias = corr;
 	}
+	std::cerr << "Ángulos cercanos: " << translations.size() << '\n';
+	print_corr(*correspondencias);
 	{
 		std::ofstream output(filename+"_translations.out");
 		for(const auto &v: translations)
@@ -251,6 +255,8 @@ int main(int argc, char **argv){
 	auto trans_mean = nih::mean(translations.begin(), translations.end());
 	//FIXME: trans_mean(1) = NaN
 	trans_mean(1) = 0;
+	{//eliminar outliers
+	}
 	std::cout << "Transformación estimada\n";
 	std::cout << "Eje Y, ángulo: " << nih::rad2deg(angle_mean) << '\n';
 	std::cout << "Translación: " << trans_mean.transpose()/resolution_orig << '\n';
@@ -264,14 +270,16 @@ int main(int argc, char **argv){
 
 
 	// alineación (con ground truth)
-	pcl::transformPointCloud(
-	    *nube_source.points, *nube_source.points, transf_b);
+	auto the_source_cloud = nube_source.points->makeShared();
+	pcl::transformPointCloud(*nube_source.points, *nube_source.points, transf_b);
 	pcl::transformPointCloud(
 	    *nube_target.points, *nube_target.points, transf_a);
 	pcl::transformPointCloud(*key_source, *key_source, transf_b);
 	pcl::transformPointCloud(*key_target, *key_target, transf_a);
 
+	std::cout << "Ground Truth\n";
 	show_rotation(transf_b, transf_a);
+	std::cout << "translation: " << (transf_b.translation() - transf_a.translation()).transpose()/resolution_orig << '\n';
 
 
 	auto view =
@@ -283,29 +291,55 @@ int main(int argc, char **argv){
 	view->setBackgroundColor(0, 0, 0, v1);
 	view->setBackgroundColor(0, 0, 0, v2);
 
-	auto diff_align_gt = cloud_diff_with_threshold(nube_source.points, aligned, 10*resolution_orig);
+	auto diff_gt = cloud_diff_with_threshold(nube_target.points, nube_source.points, 10*resolution_orig);
 	auto diff_align_target = cloud_diff_with_threshold(nube_target.points, aligned, 10*resolution_orig);
-	for(auto &p: diff_align_gt->points)
+	for(auto &p: diff_gt->points)
 		p.intensity /= resolution_orig;
 	for(auto &p: diff_align_target->points)
 		p.intensity /= resolution_orig;
 
 	view->addPointCloud(nube_source.points, "source1", v1);
-	view->addPointCloud(aligned, "aligned1", v1);
+	view->addPointCloud(nube_target.points, "target1", v1);
 
-	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> point_cloud_color_handler(diff_align_gt, "intensity");
-	view->addPointCloud< pcl::PointXYZI >(diff_align_gt, point_cloud_color_handler, "diff_gt", v1);
+	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> point_cloud_color_handler(diff_gt, "intensity");
+	view->addPointCloud< pcl::PointXYZI >(diff_gt, point_cloud_color_handler, "diff_gt", v1);
 	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "diff_gt");
 
-	view->addPointCloud(nube_target.points, "target", v2);
+	view->addPointCloud(nube_target.points, "target2", v2);
 	view->addPointCloud(aligned, "aligned2", v2);
 
 	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> point_cloud_color_handler2(diff_align_target, "intensity");
 	view->addPointCloud< pcl::PointXYZI >(diff_align_target, point_cloud_color_handler2, "diff_target", v2);
 	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "diff_target");
 
-	while(!view->wasStopped())
-		view->spinOnce(100);
+	double x, z;
+	x = trans_mean(0)/resolution_orig;
+	z = trans_mean(2)/resolution_orig;
+	do {
+		trans_mean(0) = x * resolution_orig;
+		trans_mean(2) = z * resolution_orig;
+
+		nih::transformation total;
+		total = transf_a * Eigen::Translation3f(trans_mean) * rot;
+		pcl::transformPointCloud(*the_source_cloud, *aligned, total);
+		auto diff_align_target = cloud_diff_with_threshold(
+			nube_target.points, aligned, 10 * resolution_orig);
+		for(auto &p: diff_align_target->points)
+			p.intensity /= resolution_orig;
+
+		view->removePointCloud("aligned2", v2);
+		view->addPointCloud(aligned, "aligned2", v2);
+		view->removePointCloud("diff_target", v2);
+
+		pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> point_cloud_color_handler2(diff_align_target, "intensity");
+		view->addPointCloud< pcl::PointXYZI >(diff_align_target, point_cloud_color_handler2, "diff_target", v2);
+		view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "diff_target");
+
+		while(!view->wasStopped())
+			view->spinOnce(100);
+		view->resetStoppedFlag();
+		std::cout << "translación manual: ";
+	} while(std::cin >> x >> z);
 
 #if 0
 	auto view =
