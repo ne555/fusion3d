@@ -11,6 +11,8 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
+#include <pcl/registration/icp.h>
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -94,6 +96,34 @@ void print_corr(const Container &c){
 	output_corr << '\n';
 }
 
+void intersection(
+	nih::cloud::Ptr a,
+	nih::cloud::Ptr b,
+	nih::cloud::Ptr result_a,
+	nih::cloud::Ptr result_b,
+	double threshold
+){
+	pcl::KdTreeFLANN<nih::point> kdtree_a;
+	kdtree_a.setInputCloud(a);
+	pcl::KdTreeFLANN<nih::point> kdtree_b;
+	kdtree_b.setInputCloud(b);
+	result_a->clear();
+	result_b->clear();
+
+	for(const auto &p: a->points){
+		int b_index = nih::get_index(p, kdtree_b);
+		double d = nih::distance(p, (*b)[b_index]);
+		if(d<threshold)
+			result_b->push_back(p);
+	}
+	for(const auto &p: b->points){
+		int a_index = nih::get_index(p, kdtree_a);
+		double d = nih::distance(p, (*a)[a_index]);
+		if(d<threshold)
+			result_a->push_back(p);
+	}
+}
+
 int main(int argc, char **argv){
 	if(argc < 3) {
 		usage(argv[0]);
@@ -103,16 +133,16 @@ int main(int argc, char **argv){
 	std::ifstream input(config);
 	std::string filename;
 	input >> filename;
-	auto orig_a = nih::load_cloud_ply(directory + filename);
-	auto transf_a = nih::get_transformation(input);
+	auto orig_target = nih::load_cloud_ply(directory + filename);
+	auto transf_target = nih::get_transformation(input);
 	input >> filename;
-	auto orig_b = nih::load_cloud_ply(directory + filename);
-	auto transf_b = nih::get_transformation(input);
+	auto orig_source = nih::load_cloud_ply(directory + filename);
+	auto transf_source = nih::get_transformation(input);
 
-	double resolution_orig = nih::get_resolution(orig_a);
+	double resolution_orig = nih::get_resolution(orig_target);
 	// preproceso
-	auto nube_target = nih::preprocess(orig_a);
-	auto nube_source = nih::preprocess(orig_b);
+	auto nube_target = nih::preprocess(orig_target);
+	auto nube_source = nih::preprocess(orig_source);
 	double radio = 8*resolution_orig;
 
 	//keypoints
@@ -170,7 +200,6 @@ int main(int argc, char **argv){
 	std::cerr << "Correspondencias: " << correspondencias->size() << '\n';
 	print_corr(*correspondencias);
 
-#if 1
 	//marco de referencia
 	std::vector<double> angles;
 	{
@@ -214,7 +243,6 @@ int main(int argc, char **argv){
 	}
 	std::cerr << "Ref frames (giro en y): " << angles.size() << '\n';
 	print_corr(*correspondencias);
-#endif
 
 	{
 		std::ofstream output(filename+"_angles.out");
@@ -230,19 +258,29 @@ int main(int argc, char **argv){
 	std::vector<Eigen::Vector3f> translations;
 	{
 		auto corr = boost::make_shared<pcl::Correspondences>();
+		auto key_s = boost::make_shared<nih::cloud>();
+		auto key_t = boost::make_shared<nih::cloud>();
+		int n = 0;
 		for(int K=0; K<angles.size(); ++K){
 			if(std::abs(angles[K]-angle_mean) > 2*angle_stddev) continue;
-			corr->push_back((*correspondencias)[K]);
 			auto c = (*correspondencias)[K];
 			auto ps = (*key_source)[c.index_query];
 			auto pt = (*key_target)[c.index_match];
 
 			nih::transformation rot(Eigen::AngleAxisf(angle_mean, Eigen::Vector3f::UnitY()));
 			auto aligned = rot * nih::p2v(ps);
-
 			translations.push_back(nih::p2v(pt) - aligned);
+
+			key_s->push_back(ps);
+			key_t->push_back(pt);
+			c.index_query = n;
+			c.index_match = n;
+			corr->push_back(c);
+			n++;
 		}
 		correspondencias = corr;
+		key_source = key_s;
+		key_target = key_t;
 	}
 	std::cerr << "Ángulos cercanos: " << translations.size() << '\n';
 	print_corr(*correspondencias);
@@ -265,21 +303,74 @@ int main(int argc, char **argv){
 	// alineación estimada
 	auto aligned = boost::make_shared<nih::cloud>();
 	nih::transformation total;
-	total = transf_a * Eigen::Translation3f(trans_mean) * rot;
+	total = transf_target * Eigen::Translation3f(trans_mean) * rot;
 	pcl::transformPointCloud(*nube_source.points, *aligned, total);
 
 
 	// alineación (con ground truth)
 	auto the_source_cloud = nube_source.points->makeShared();
-	pcl::transformPointCloud(*nube_source.points, *nube_source.points, transf_b);
+	pcl::transformPointCloud(*nube_source.points, *nube_source.points, transf_source);
 	pcl::transformPointCloud(
-	    *nube_target.points, *nube_target.points, transf_a);
-	pcl::transformPointCloud(*key_source, *key_source, transf_b);
-	pcl::transformPointCloud(*key_target, *key_target, transf_a);
+	    *nube_target.points, *nube_target.points, transf_target);
+//	pcl::transformPointCloud(*key_source, *key_source, transf_source);
+//	pcl::transformPointCloud(*key_target, *key_target, transf_target);
 
 	std::cout << "Ground Truth\n";
-	show_rotation(transf_b, transf_a);
-	std::cout << "translation: " << (transf_b.translation() - transf_a.translation()).transpose()/resolution_orig << '\n';
+	show_rotation(transf_source, transf_target);
+	std::cout << "translation: " << (transf_source.translation() - transf_target.translation()).transpose()/resolution_orig << '\n';
+
+	auto result_icp = boost::make_shared<nih::cloud>();
+	nih::transformation icp_transf;
+	{
+		auto solapado_source = boost::make_shared<nih::cloud>();
+		auto solapado_target = boost::make_shared<nih::cloud>();
+		pcl::transformPointCloud(*key_source, *key_source, total);
+
+		intersection(key_source, key_target, solapado_source, solapado_target, 5*resolution_orig);
+		std::cerr << "*** " << solapado_source->size() << ' ' << solapado_target->size() << '\n';
+
+#if 0
+		solapado_source = keypoints_random(solapado_source, boost::make_shared<nih::normal>(), solapado_source->size()/10);
+		pcl::KdTreeFLANN<nih::point> kdtree;
+		kdtree.setInputCloud(solapado_target);
+		{
+			auto aux = boost::make_shared<nih::cloud>();
+			for(const auto &p: solapado_source->points){
+				int index = nih::get_index(p, kdtree);
+				aux->push_back((*solapado_target)[index]);
+			}
+			solapado_target = aux;
+		}
+#endif
+
+		//alineación con ICP
+		pcl::IterativeClosestPoint<nih::point, nih::point> icp;
+		//try IterativeClosestPointWithNormals
+		icp.setInputSource(solapado_source);
+		icp.setInputTarget(solapado_target);
+		icp.setMaxCorrespondenceDistance(5*resolution_orig);
+		icp.setUseReciprocalCorrespondences(true);
+
+		icp.align(*solapado_source);
+		icp_transf = icp.getFinalTransformation();
+		pcl::transformPointCloud(*the_source_cloud, *result_icp, icp_transf*total);
+		auto view =
+			boost::make_shared<pcl::visualization::PCLVisualizer>("solapado");
+		view->setBackgroundColor(0, 0, 0);
+		view->addPointCloud(solapado_source, "source");
+		view->addPointCloud(solapado_target, "target");
+
+		view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1,0,0, "source");
+		view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0,.7,0, "target");
+		view->spinOnce(100);
+	}
+
+	std::cout << "First alignment\n";
+	show_rotation(total, transf_target);
+	std::cout << "translation: " << (total.translation() - transf_target.translation()).transpose()/resolution_orig << '\n';
+	std::cout << "ICP\n";
+	show_rotation(icp_transf*total, transf_target);
+	std::cout << "translation: " << ((icp_transf*total).translation() - transf_target.translation()).transpose()/resolution_orig << '\n';
 
 
 	auto view =
@@ -293,17 +384,20 @@ int main(int argc, char **argv){
 
 	auto diff_gt = cloud_diff_with_threshold(nube_target.points, nube_source.points, 10*resolution_orig);
 	auto diff_align_target = cloud_diff_with_threshold(nube_target.points, aligned, 10*resolution_orig);
+	auto diff_icp = cloud_diff_with_threshold(nube_target.points, result_icp, 10*resolution_orig);
+	for(auto &p: diff_icp->points)
+		p.intensity /= resolution_orig;
 	for(auto &p: diff_gt->points)
 		p.intensity /= resolution_orig;
 	for(auto &p: diff_align_target->points)
 		p.intensity /= resolution_orig;
 
-	view->addPointCloud(nube_source.points, "source1", v1);
+	view->addPointCloud(result_icp, "source1", v1);
 	view->addPointCloud(nube_target.points, "target1", v1);
 
-	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> point_cloud_color_handler(diff_gt, "intensity");
-	view->addPointCloud< pcl::PointXYZI >(diff_gt, point_cloud_color_handler, "diff_gt", v1);
-	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "diff_gt");
+	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> point_cloud_color_handler(diff_icp, "intensity");
+	view->addPointCloud< pcl::PointXYZI >(diff_icp, point_cloud_color_handler, "diff_icp", v1);
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "diff_icp");
 
 	view->addPointCloud(nube_target.points, "target2", v2);
 	view->addPointCloud(aligned, "aligned2", v2);
@@ -320,7 +414,7 @@ int main(int argc, char **argv){
 		trans_mean(2) = z * resolution_orig;
 
 		nih::transformation total;
-		total = transf_a * Eigen::Translation3f(trans_mean) * rot;
+		total = transf_target * Eigen::Translation3f(trans_mean) * rot;
 		pcl::transformPointCloud(*the_source_cloud, *aligned, total);
 		auto diff_align_target = cloud_diff_with_threshold(
 			nube_target.points, aligned, 10 * resolution_orig);
@@ -338,8 +432,9 @@ int main(int argc, char **argv){
 		while(!view->wasStopped())
 			view->spinOnce(100);
 		view->resetStoppedFlag();
-		std::cout << "translación manual: ";
-	} while(std::cin >> x >> z);
+		//std::cout << "translación manual:";
+	//} while(std::cin >> x >> z);
+	}while(false);
 
 #if 0
 	auto view =
@@ -468,13 +563,13 @@ void show_axis_angle(const nih::transformation &t){
 void show_axis_angle(const Eigen::Matrix3f &rotation){
 	Eigen::AngleAxisf aa;
 	aa.fromRotationMatrix(rotation);
-	if(1-abs(aa.axis().dot(Eigen::Vector3f::UnitY())) < 0.2){
+	//if(1-abs(aa.axis().dot(Eigen::Vector3f::UnitY())) < 0.2){
 		std::cout << "angle: " << aa.angle()*180/M_PI << '\t';
 		std::cout << "axis: " << aa.axis().transpose() << '\t';
 		std::cout << "dist_y: " << 1-abs(aa.axis().dot(Eigen::Vector3f::UnitY())) << '\n';
-	}
-	else
-		std::cout << "---\n";
+	//}
+	//else
+	//	std::cout << "---\n";
 }
 
 

@@ -152,7 +152,7 @@ namespace nih {
 			puntos_malos->end());
 
 		// matar puntos con normales ortogonales
-		auto normales = compute_normals(nube, 3 * model_resolution);
+		auto normales = compute_normals(nube, 4 * model_resolution);
 		{
 			nih::vector eye(0, 0, 1);
 			for(int K = 0; K < normales->size(); ++K) {

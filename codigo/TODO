@@ -35,6 +35,7 @@ features
 		usar diferencia respecto a la media para elegir sobresalientes
 		agrupar regiones de "saliencia" similar (todo un grupo debería definirse por un punto)
 		revisar cálculo de histograma, que cada punto sume de forma proporcional en cada cubeta
+	shot
 
 alineación
 	icp

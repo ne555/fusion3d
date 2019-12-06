@@ -56,7 +56,7 @@ nih::transformation align_icp(nih::cloud::Ptr source, nih::cloud::Ptr target);
 
 struct harris_parameters{
 	//float radius, threshold;
-	int method;
+	int method; //HARRIS=0 	NOBLE=1 	LOWE=2 	TOMASI=3 	CURVATURE=4 	
 	pcl::HarrisKeypoint3D<pcl::PointXYZI, pcl::PointXYZI>::ResponseMethod get_method() const{
 		int aux = (method%5) + 1;
 		return
@@ -66,14 +66,15 @@ struct harris_parameters{
 
 pcl::PolygonMesh::Ptr triangulate2(nih::cloud::Ptr nube, double max_edge_size);
 
+double global_resolution;
+double ratio;
+double umbral;
+
 int main(int argc, char **argv) {
 	if(argc < 3) {
 		usage(argv[0]);
 		return 1;
 	}
-	//std::cin >> param.method;
-	param.method = 4; //curvature
-	// lectura de datos de entrada
 	std::string directory = argv[1], config = argv[2];
 	std::ifstream input(config);
 	std::string filename;
@@ -84,18 +85,27 @@ int main(int argc, char **argv) {
 	auto orig_b = nih::load_cloud_ply(directory + filename);
 	auto transf_b = nih::get_transformation(input);
 
+	//param.method = 4; //curvature
+	// lectura de datos de entrada
+	//HARRIS=0 	NOBLE=1 	LOWE=2 	TOMASI=3 	CURVATURE=4 
+	while(std::cout << "params: " and std::cin>>ratio>>umbral>>param.method){
+
 	double resolution_orig = nih::get_resolution(orig_a);
 	double radio = 3*resolution_orig;
 
 	// preproceso
-	auto nube_target = nih::preprocess(orig_a);
-	auto nube_source = nih::preprocess(orig_b);
+	auto nube_target = nih::preprocess(orig_a->makeShared());
+	auto nube_source = nih::preprocess(orig_b->makeShared());
 
+	//TODO: buscar sólo en el área solapada
+
+	global_resolution = resolution_orig;
 	// detección de keypoints
-	auto key_source = keypoints_random(
-	    nube_source.points, nube_source.normals, 5);
-	auto key_target = keypoints_random(
-	    nube_target.points, nube_target.normals, 5);
+	auto key_source = keypoints_harris3(
+	    nube_source.points, nube_source.normals, radio);
+	auto key_target = keypoints_harris3(
+	    nube_target.points, nube_target.normals, radio);
+
 
 	// alineación (con ground truth)
 	pcl::transformPointCloud(
@@ -119,7 +129,7 @@ int main(int argc, char **argv) {
 		for(auto K : *correspondencias) {
 			double d = nih::distance(
 			    (*key_source)[K.index_query], (*key_target)[K.index_match]);
-			if(d / resolution_orig < 3) {
+			if(d / resolution_orig < 4) {
 				key_s->push_back((*key_source)[K.index_query]);
 				key_t->push_back((*key_target)[K.index_match]);
 			}
@@ -145,8 +155,8 @@ int main(int argc, char **argv) {
 	//view->addPointCloud(nube_source.points, "source", v1);
 	//view->addPointCloud(nube_target.points, "target", v2);
 	view->addPolygonMesh(*source_mesh, "source1", v1);
-	view->addPolygonMesh(*target_mesh, "target1", v1);
-	view->addPolygonMesh(*source_mesh, "source2", v2);
+	//view->addPolygonMesh(*target_mesh, "target1", v1);
+	//view->addPolygonMesh(*source_mesh, "source2", v2);
 	view->addPolygonMesh(*target_mesh, "target2", v2);
 
 	view->addPointCloud(key_source, "key_source1", v1);
@@ -155,17 +165,17 @@ int main(int argc, char **argv) {
 	view->addPointCloud(key_s, "key_source2", v2);
 	view->addPointCloud(key_t, "key_target2", v2);
 
-	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_source1");
-	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_source2");
-	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_target1");
-	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "key_target2");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "key_source1");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "key_source2");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "key_target1");
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "key_target2");
 	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1,0,0, "key_source1");
 	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1,0,0, "key_source2");
 	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0,.7,0, "key_target1");
 	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0,.7,0, "key_target2");
 
 
-	view->addSphere((*key_source)[0], 8*resolution_orig, "esfera",v2);
+	view->addSphere((*key_source)[0], ratio*resolution_orig, "esfera",v2);
 	int asdf = 0;
 	while(!view->wasStopped()){
 		asdf = asdf%key_source->size();
@@ -177,6 +187,8 @@ int main(int argc, char **argv) {
 			"esfera");
 		++asdf;
 		view->spinOnce(100);
+	}
+	view->close();
 	}
 
 	return 0;
@@ -329,11 +341,15 @@ nih::cloud::Ptr keypoints_harris3(
 	}
 
 	pcl::HarrisKeypoint3D<pcl::PointXYZI, pcl::PointXYZI> harris3;
+	harris3.setRadius(ratio*global_resolution);
+	harris3.setNonMaxSupression(true);
+	harris3.setThreshold(umbral);
 	harris3.setInputCloud(nube_con_intensidad);
 	harris3.setNormals(normales);
 	harris3.setMethod(param.get_method());
 
 	harris3.compute(*keypoints_con_intensidad);
+	std::cerr << "Harris keypoints intensity:\n";
 	for(const auto &pi : keypoints_con_intensidad->points) {
 		nih::point p;
 		p.x = pi.x;
@@ -341,7 +357,9 @@ nih::cloud::Ptr keypoints_harris3(
 		p.z = pi.z;
 
 		keypoints->push_back(p);
+		std::cerr << pi.intensity << ' ';
 	}
+	std::cerr << '\n';
 
 	return keypoints;
 }
