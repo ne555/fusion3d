@@ -7,6 +7,7 @@
 #include <pcl/registration/correspondence_estimation.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
+#include <pcl/surface/mls.h>
 #include <pcl/filters/uniform_sampling.h>
 #include <pcl/filters/random_sample.h>
 #include <pcl/keypoints/agast_2d.h>
@@ -38,7 +39,7 @@ nih::cloud::Ptr keypoints_agast(
 nih::cloud::Ptr keypoints_brisk(
     nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
 nih::cloud::Ptr keypoints_harris3(
-    nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution, std::string filename);
 nih::cloud::Ptr keypoints_harris6(
     nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution);
 nih::cloud::Ptr keypoints_sift(
@@ -85,12 +86,37 @@ int main(int argc, char **argv) {
 	auto orig_b = nih::load_cloud_ply(directory + filename);
 	auto transf_b = nih::get_transformation(input);
 
+	double resolution_orig = nih::get_resolution(orig_a);
+
+		pcl::MovingLeastSquares<nih::point, nih::point> mls;
+		mls.setComputeNormals(false);
+		// mls.setPolynomialFit(true);
+		mls.setPolynomialOrder(3);
+		mls.setSearchRadius(6 * resolution_orig);
+		mls.setSqrGaussParam(nih::square(6 * resolution_orig));
+		mls.setUpsamplingMethod(
+			pcl::MovingLeastSquares<nih::point, nih::point>::
+			NONE 	
+			//DISTINCT_CLOUD 	
+			//RANDOM_UNIFORM_DENSITY 	
+			//VOXEL_GRID_DILATION
+		);
+		auto smooth_a = boost::make_shared<nih::cloud>();
+		auto smooth_b = boost::make_shared<nih::cloud>();
+
+		mls.setInputCloud(orig_a);
+		mls.process(*smooth_a);
+		mls.setInputCloud(orig_b);
+		mls.process(*smooth_b);
+
+		orig_a = smooth_a;
+		orig_b = smooth_b;
+
 	//param.method = 4; //curvature
 	// lectura de datos de entrada
 	//HARRIS=0 	NOBLE=1 	LOWE=2 	TOMASI=3 	CURVATURE=4 
 	while(std::cout << "params: " and std::cin>>ratio>>umbral>>param.method){
 
-	double resolution_orig = nih::get_resolution(orig_a);
 	double radio = 3*resolution_orig;
 
 	// preproceso
@@ -102,9 +128,9 @@ int main(int argc, char **argv) {
 	global_resolution = resolution_orig;
 	// detección de keypoints
 	auto key_source = keypoints_harris3(
-	    nube_source.points, nube_source.normals, radio);
+	    nube_source.points, nube_source.normals, radio, "intensidad.source");
 	auto key_target = keypoints_harris3(
-	    nube_target.points, nube_target.normals, radio);
+	    nube_target.points, nube_target.normals, radio,  "intensidad.target");
 
 
 	// alineación (con ground truth)
@@ -324,7 +350,7 @@ nih::cloud::Ptr keypoints_brisk(
 }
 
 nih::cloud::Ptr keypoints_harris3(
-    nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution) {
+    nih::cloud::Ptr nube, nih::normal::Ptr normales, double resolution, std::string filename) {
 	auto keypoints = boost::make_shared<nih::cloud>();
 	auto keypoints_con_intensidad =
 	    boost::make_shared<pcl::PointCloud<pcl::PointXYZI> >();
@@ -349,7 +375,8 @@ nih::cloud::Ptr keypoints_harris3(
 	harris3.setMethod(param.get_method());
 
 	harris3.compute(*keypoints_con_intensidad);
-	std::cerr << "Harris keypoints intensity:\n";
+
+	std::ofstream output(filename);
 	for(const auto &pi : keypoints_con_intensidad->points) {
 		nih::point p;
 		p.x = pi.x;
@@ -357,9 +384,8 @@ nih::cloud::Ptr keypoints_harris3(
 		p.z = pi.z;
 
 		keypoints->push_back(p);
-		std::cerr << pi.intensity << ' ';
+		output << pi.intensity << ' ';
 	}
-	std::cerr << '\n';
 
 	return keypoints;
 }

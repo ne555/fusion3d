@@ -46,6 +46,9 @@ alineación
 			weighted k-means on the correspondences to find the rotation
 			k-means on translation
 			normal fitting on translation
+	alineación inicial
+		encontrar área solapada
+			erosionar una de las áreas para lograr Source incluido en Target
 
 leer .ply con estructura
 escribir .ply con estructura

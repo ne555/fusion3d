@@ -5,6 +5,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/registration/icp.h>
 #include <pcl/surface/mls.h>
+#include <pcl/filters/bilateral.h>
 
 #include <iostream>
 #include <string>
@@ -68,7 +69,10 @@ int main(int argc, char **argv) {
 	int orden; //6
 
 	auto original_mesh = triangulate2(original, 3 * resolution);
-	while(std::cout << "Radio y orden: " and std::cin >> radio >> orden) {
+	//while(std::cout << "Radio y orden: " and std::cin >> radio >> orden) {
+	radio = 6;
+	orden = 3;
+	{
 		pcl::MovingLeastSquares<nih::point, nih::point> mls;
 		mls.setComputeNormals(false);
 		// mls.setPolynomialFit(true);
@@ -76,20 +80,39 @@ int main(int argc, char **argv) {
 		mls.setSearchRadius(radio * resolution);
 		mls.setSqrGaussParam(nih::square(radio * resolution));
 		mls.setUpsamplingMethod(
-			pcl::MovingLeastSquares<nih::point, nih::point>::NONE);
+			pcl::MovingLeastSquares<nih::point, nih::point>::
+			//NONE 	
+			//DISTINCT_CLOUD 	
+			SAMPLE_LOCAL_PLANE 	
+			//RANDOM_UNIFORM_DENSITY 	
+			//VOXEL_GRID_DILATION
+		);
+		mls.setUpsamplingRadius(resolution);
+		mls.setUpsamplingStepSize(resolution);
 		mls.setInputCloud(original);
 
 		auto smooth = boost::make_shared<nih::cloud>();
 		mls.process(*smooth);
 
+
+		pcl::BilateralFilter<nih::point> fbFilter; 
+		fbFilter.setHalfSize(1.0);
+		fbFilter.setStdDev(0.2);
+		fbFilter.setInputCloud(smooth); 
+			auto bilateral = boost::make_shared<nih::cloud>();
+			fbFilter.filter(*bilateral);
+
+
 		auto smooth_mesh = triangulate2(smooth, 3 * resolution);
+		auto bilateral_mesh = triangulate2(bilateral, 3 * resolution);
 
 		auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("smooth");
 		view->setBackgroundColor(0, 0, 0);
 		int v1, v2;
 		view->createViewPort(0, 0.0, 0.5, 1.0, v1);
 		view->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
-		view->addPolygonMesh(*original_mesh, "original", v1);
+		//view->addPolygonMesh(*original_mesh, "original", v1);
+		view->addPolygonMesh(*bilateral_mesh, "bilateral", v1);
 		view->addPolygonMesh(*smooth_mesh, "smooth", v2);
 
 		while(!view->wasStopped())

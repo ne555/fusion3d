@@ -2,6 +2,8 @@
 #include "../fusion_3d.hpp"
 #include "../util.hpp"
 
+#include <pcl/surface/mls.h>
+
 #include <pcl/filters/uniform_sampling.h>
 #include <pcl/filters/random_sample.h>
 #include <pcl/features/fpfh.h>
@@ -124,6 +126,34 @@ void intersection(
 	}
 }
 
+nih::cloud::Ptr mls(nih::cloud::Ptr nube) {
+	double resolution = nih::get_resolution(nube);
+	int orden = 3;
+	double radio = 6*resolution;
+	pcl::MovingLeastSquares<nih::point, nih::point> mls;
+	mls.setComputeNormals(false);
+	mls.setPolynomialOrder(orden);
+	mls.setSearchRadius(radio);
+	mls.setSqrGaussParam(nih::square(radio));
+	mls.setUpsamplingMethod(
+	    pcl::MovingLeastSquares<nih::point, nih::point>::NONE
+	);
+	auto smooth = boost::make_shared<nih::cloud>();
+
+	mls.setInputCloud(nube);
+	mls.process(*smooth);
+
+	return smooth;
+}
+
+std::tuple< double, Eigen::Vector3F >
+estimar_angulo_translacion(
+	std::vector<double> angles, //del marco de referencia ISS
+	nih::cloud::Ptr source,
+	nih::cloud::Ptr target,
+	pcl::Correspondences correspondences
+);
+
 int main(int argc, char **argv){
 	if(argc < 3) {
 		usage(argv[0]);
@@ -141,8 +171,8 @@ int main(int argc, char **argv){
 
 	double resolution_orig = nih::get_resolution(orig_target);
 	// preproceso
-	auto nube_target = nih::preprocess(orig_target);
-	auto nube_source = nih::preprocess(orig_source);
+	auto nube_target = nih::preprocess(mls(orig_target));
+	auto nube_source = nih::preprocess(mls(orig_source));
 	double radio = 8*resolution_orig;
 
 	//keypoints
@@ -249,48 +279,60 @@ int main(int argc, char **argv){
 		for(const auto &a: angles)
 			output << a << '\n';
 	}
-	auto [angle_mean, angle_stddev] = interquartil_stats(angles);
-	stats(angles);
 
-	// búsqueda de la translación
-	// para los puntos que hayan dado un ángulo cercano al estimado
-	// calcular una translación
-	std::vector<Eigen::Vector3f> translations;
+	//estimación de la transformación
+	//iterar clustering de ángulos y translaciones
+	auto [angle_mean, trans_mean] = estimar_angulo_translacion(
+		angles,
+		key_source,
+		key_target,
+		correspondencias
+	);
+
 	{
-		auto corr = boost::make_shared<pcl::Correspondences>();
-		auto key_s = boost::make_shared<nih::cloud>();
-		auto key_t = boost::make_shared<nih::cloud>();
-		int n = 0;
-		for(int K=0; K<angles.size(); ++K){
-			if(std::abs(angles[K]-angle_mean) > 2*angle_stddev) continue;
-			auto c = (*correspondencias)[K];
-			auto ps = (*key_source)[c.index_query];
-			auto pt = (*key_target)[c.index_match];
+		auto [angle_mean, angle_stddev] = interquartil_stats(angles);
+		stats(angles);
 
-			nih::transformation rot(Eigen::AngleAxisf(angle_mean, Eigen::Vector3f::UnitY()));
-			auto aligned = rot * nih::p2v(ps);
-			translations.push_back(nih::p2v(pt) - aligned);
+		// búsqueda de la translación
+		// para los puntos que hayan dado un ángulo cercano al estimado
+		// calcular una translación
+		std::vector<Eigen::Vector3f> translations;
+		{
+			auto corr = boost::make_shared<pcl::Correspondences>();
+			auto key_s = boost::make_shared<nih::cloud>();
+			auto key_t = boost::make_shared<nih::cloud>();
+			int n = 0;
+			for(int K=0; K<angles.size(); ++K){
+				if(std::abs(angles[K]-angle_mean) > 2*angle_stddev) continue;
+				auto c = (*correspondencias)[K];
+				auto ps = (*key_source)[c.index_query];
+				auto pt = (*key_target)[c.index_match];
 
-			key_s->push_back(ps);
-			key_t->push_back(pt);
-			c.index_query = n;
-			c.index_match = n;
-			corr->push_back(c);
-			n++;
+				nih::transformation rot(Eigen::AngleAxisf(angle_mean, Eigen::Vector3f::UnitY()));
+				auto aligned = rot * nih::p2v(ps);
+				translations.push_back(nih::p2v(pt) - aligned);
+
+				key_s->push_back(ps);
+				key_t->push_back(pt);
+				c.index_query = n;
+				c.index_match = n;
+				corr->push_back(c);
+				n++;
+			}
+			correspondencias = corr;
+			key_source = key_s;
+			key_target = key_t;
 		}
-		correspondencias = corr;
-		key_source = key_s;
-		key_target = key_t;
-	}
-	std::cerr << "Ángulos cercanos: " << translations.size() << '\n';
-	print_corr(*correspondencias);
-	{
-		std::ofstream output(filename+"_translations.out");
-		for(const auto &v: translations)
-			output << v.transpose()/resolution_orig << '\n';
-	}
+		std::cerr << "Ángulos cercanos: " << translations.size() << '\n';
+		print_corr(*correspondencias);
+		{
+			std::ofstream output(filename+"_translations.out");
+			for(const auto &v: translations)
+				output << v.transpose()/resolution_orig << '\n';
+		}
 
-	auto trans_mean = nih::mean(translations.begin(), translations.end());
+		auto trans_mean = nih::mean(translations.begin(), translations.end());
+	}
 	//FIXME: trans_mean(1) = NaN
 	trans_mean(1) = 0;
 	{//eliminar outliers
@@ -324,9 +366,8 @@ int main(int argc, char **argv){
 	{
 		auto solapado_source = boost::make_shared<nih::cloud>();
 		auto solapado_target = boost::make_shared<nih::cloud>();
-		pcl::transformPointCloud(*key_source, *key_source, total);
 
-		intersection(key_source, key_target, solapado_source, solapado_target, 5*resolution_orig);
+		intersection(aligned, nube_target.points, solapado_source, solapado_target, 5*resolution_orig);
 		std::cerr << "*** " << solapado_source->size() << ' ' << solapado_target->size() << '\n';
 
 #if 0
@@ -351,17 +392,26 @@ int main(int argc, char **argv){
 		icp.setMaxCorrespondenceDistance(5*resolution_orig);
 		icp.setUseReciprocalCorrespondences(true);
 
-		icp.align(*solapado_source);
+		auto aux = boost::make_shared<nih::cloud>();
+		icp.align(*aux); //para obtener la transformación
 		icp_transf = icp.getFinalTransformation();
 		pcl::transformPointCloud(*the_source_cloud, *result_icp, icp_transf*total);
 		auto view =
 			boost::make_shared<pcl::visualization::PCLVisualizer>("solapado");
 		view->setBackgroundColor(0, 0, 0);
-		view->addPointCloud(solapado_source, "source");
-		view->addPointCloud(solapado_target, "target");
+		int v1;
+		int v2;
+		view->createViewPort(0, 0.0, 0.5, 1.0, v1);
+		view->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
+		view->addPointCloud(solapado_source, "source", v1);
+		view->addPointCloud(aligned, "aligned", v1);
+		view->addPointCloud(solapado_target, "solap_target", v2);
+		view->addPointCloud(nube_target.points, "target", v2);
 
 		view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1,0,0, "source");
-		view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0,.7,0, "target");
+		view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0,.7,0, "solap_target");
+		view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "source");
+		view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "solap_target");
 		view->spinOnce(100);
 	}
 
@@ -778,4 +828,12 @@ std::tuple<double, double> interquartil_stats(std::vector<double> v) {
 	return std::make_tuple(
 	    nih::mean(v.begin() + quart, v.end() - quart),
 	    nih::stddev(v.begin() + quart, v.end() - quart));
+}
+
+std::tuple<double, Eigen::Vector3F> estimar_angulo_translacion(
+    std::vector<double> angles, // del marco de referencia ISS
+    nih::cloud::Ptr source,
+    nih::cloud::Ptr target,
+    pcl::Correspondences correspondences) {
+
 }
