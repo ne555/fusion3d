@@ -146,7 +146,7 @@ nih::cloud::Ptr mls(nih::cloud::Ptr nube) {
 	return smooth;
 }
 
-std::tuple< double, Eigen::Vector3F >
+std::tuple< double, Eigen::Vector3f >
 estimar_angulo_translacion(
 	std::vector<double> angles, //del marco de referencia ISS
 	nih::cloud::Ptr source,
@@ -286,53 +286,9 @@ int main(int argc, char **argv){
 		angles,
 		key_source,
 		key_target,
-		correspondencias
+		*correspondencias
 	);
 
-	{
-		auto [angle_mean, angle_stddev] = interquartil_stats(angles);
-		stats(angles);
-
-		// búsqueda de la translación
-		// para los puntos que hayan dado un ángulo cercano al estimado
-		// calcular una translación
-		std::vector<Eigen::Vector3f> translations;
-		{
-			auto corr = boost::make_shared<pcl::Correspondences>();
-			auto key_s = boost::make_shared<nih::cloud>();
-			auto key_t = boost::make_shared<nih::cloud>();
-			int n = 0;
-			for(int K=0; K<angles.size(); ++K){
-				if(std::abs(angles[K]-angle_mean) > 2*angle_stddev) continue;
-				auto c = (*correspondencias)[K];
-				auto ps = (*key_source)[c.index_query];
-				auto pt = (*key_target)[c.index_match];
-
-				nih::transformation rot(Eigen::AngleAxisf(angle_mean, Eigen::Vector3f::UnitY()));
-				auto aligned = rot * nih::p2v(ps);
-				translations.push_back(nih::p2v(pt) - aligned);
-
-				key_s->push_back(ps);
-				key_t->push_back(pt);
-				c.index_query = n;
-				c.index_match = n;
-				corr->push_back(c);
-				n++;
-			}
-			correspondencias = corr;
-			key_source = key_s;
-			key_target = key_t;
-		}
-		std::cerr << "Ángulos cercanos: " << translations.size() << '\n';
-		print_corr(*correspondencias);
-		{
-			std::ofstream output(filename+"_translations.out");
-			for(const auto &v: translations)
-				output << v.transpose()/resolution_orig << '\n';
-		}
-
-		auto trans_mean = nih::mean(translations.begin(), translations.end());
-	}
 	//FIXME: trans_mean(1) = NaN
 	trans_mean(1) = 0;
 	{//eliminar outliers
@@ -830,10 +786,48 @@ std::tuple<double, double> interquartil_stats(std::vector<double> v) {
 	    nih::stddev(v.begin() + quart, v.end() - quart));
 }
 
-std::tuple<double, Eigen::Vector3F> estimar_angulo_translacion(
+std::tuple<double, Eigen::Vector3f> estimar_angulo_translacion(
     std::vector<double> angles, // del marco de referencia ISS
     nih::cloud::Ptr source,
     nih::cloud::Ptr target,
-    pcl::Correspondences correspondences) {
+    pcl::Correspondences correspondencias) {
+	{
+		auto [angle_mean, angle_stddev] = interquartil_stats(angles);
 
+		// búsqueda de la translación
+		// para los puntos que hayan dado un ángulo cercano al estimado
+		// calcular una translación
+		std::vector<Eigen::Vector3f> translations;
+		{
+			pcl::Correspondences corr;
+			for(int K=0; K<angles.size(); ++K){
+				if(std::abs(angles[K]-angle_mean) > 2*angle_stddev) continue;
+				auto c = correspondencias[K];
+				auto ps = (*source)[c.index_query];
+				auto pt = (*target)[c.index_match];
+
+				nih::transformation rot(Eigen::AngleAxisf(angle_mean, Eigen::Vector3f::UnitY()));
+				auto aligned = rot * nih::p2v(ps);
+				translations.push_back(nih::p2v(pt) - aligned);
+
+				corr.push_back(c);
+			}
+			correspondencias = std::move(corr);
+		}
+		//log
+		{
+			std::ofstream output("angles.out");
+			for(const auto &a: angles)
+				output << a << '\n';
+		}
+		{
+			std::ofstream output("translations.out");
+			for(const auto &v: translations)
+				output << v.transpose() << '\n';
+		}
+
+		auto trans_mean = nih::mean(translations.begin(), translations.end());
+
+		return std::make_tuple(angle_mean, trans_mean);
+	}
 }
