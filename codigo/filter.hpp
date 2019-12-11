@@ -21,9 +21,11 @@ namespace nih {
 
 	class cloud_with_normal {
 	public:
-		cloud::Ptr points;
-		normal::Ptr normals;
-		double resolution;
+		cloud_with_normal() : transformation_(transformation::Identity()) {}
+		typedef boost::shared_ptr<cloud_with_normal> Ptr;
+		cloud::Ptr points_;
+		normal::Ptr normals_;
+		transformation transformation_;
 	};
 	// returns isolated vertices
 	inline std::vector<int> delete_big_edges(TMesh mesh, cloud::Ptr nube, double threshold);
@@ -187,9 +189,8 @@ namespace nih {
 
 		// armar el resultado
 		cloud_with_normal result;
-		result.points = puntos_validos;
-		result.normals = normales;
-		result.resolution = model_resolution;
+		result.points_ = puntos_validos;
+		result.normals_ = normales;
 
 		return result;
 	}

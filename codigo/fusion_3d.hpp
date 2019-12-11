@@ -24,6 +24,8 @@ namespace nih {
 	typedef pcl::PointXYZ point;
 	typedef Eigen::Transform<float, 3, Eigen::Affine> transformation;
 	typedef Eigen::Vector3f vector;
+	typedef pcl::PointCloud<pcl::FPFHSignature33> signature;
+	typedef boost::shared_ptr<pcl::Correspondences> correspondences;
 
 	inline cloud::Ptr load_cloud_ply(std::string filename);
 	inline transformation get_transformation(std::ifstream &input);
