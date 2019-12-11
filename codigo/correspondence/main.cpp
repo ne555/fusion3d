@@ -2,6 +2,8 @@
 #include "../fusion_3d.hpp"
 #include "../util.hpp"
 
+#include <dkm.hpp> //kmeans
+
 #include <pcl/surface/mls.h>
 
 #include <pcl/filters/uniform_sampling.h>
@@ -786,22 +788,61 @@ std::tuple<double, double> interquartil_stats(std::vector<double> v) {
 	    nih::stddev(v.begin() + quart, v.end() - quart));
 }
 
+template<class Iter>
+typename Iter::value_type moda(Iter begin, Iter end) {
+	std::map<typename Iter::value_type, uint32_t> contador;
+	for(Iter K = begin; K not_eq end; ++K)
+		++contador[*K];
+
+	typename Iter::value_type big =
+	    std::max_element(
+	        contador.begin(),
+	        contador.end(),
+	        [](const auto &a, const auto &b) { return a.second < b.second; })
+	        ->first;
+
+	return big;
+}
+
+std::vector<std::array<double, 1>>
+to_vec_array(const std::vector<double> &v) {
+	std::vector<std::array<double, 1>> data(v.size());
+	for(int K=0; K<v.size(); ++K)
+		data[K][0] = v[K];
+	return data;
+}
+std::vector<std::array<float, 3>>
+to_vec_array(const std::vector<Eigen::Vector3f> &v) {
+	std::vector<std::array<float, 3>> data(v.size());
+	for(int K=0; K<v.size(); ++K)
+		for(int L=0; L<3; ++L)
+			data[K][L] = v[K](L);
+	return data;
+}
+
 std::tuple<double, Eigen::Vector3f> estimar_angulo_translacion(
     std::vector<double> angles, // del marco de referencia ISS
     nih::cloud::Ptr source,
     nih::cloud::Ptr target,
     pcl::Correspondences correspondencias) {
+	double angle_mean;
+	Eigen::Vector3f trans_mean;
+	int n_clusters = 3;
+	for(int iter=0; iter<3; ++iter)
 	{
-		auto [angle_mean, angle_stddev] = interquartil_stats(angles);
+		auto [ang_centros, ang_etiquetas] = dkm::kmeans_lloyd(to_vec_array(angles), n_clusters);
+		int ang_big = moda(ang_etiquetas.begin(), ang_etiquetas.end());
+		angle_mean = ang_centros[ang_big][0];
 
-		// búsqueda de la translación
-		// para los puntos que hayan dado un ángulo cercano al estimado
-		// calcular una translación
+		//estimación de la translación
 		std::vector<Eigen::Vector3f> translations;
 		{
 			pcl::Correspondences corr;
+			std::vector<double> angles_used;
 			for(int K=0; K<angles.size(); ++K){
-				if(std::abs(angles[K]-angle_mean) > 2*angle_stddev) continue;
+				if(ang_etiquetas[K] not_eq ang_big) continue;
+				angles_used.push_back(angles[K]);
+
 				auto c = correspondencias[K];
 				auto ps = (*source)[c.index_query];
 				auto pt = (*target)[c.index_match];
@@ -813,21 +854,24 @@ std::tuple<double, Eigen::Vector3f> estimar_angulo_translacion(
 				corr.push_back(c);
 			}
 			correspondencias = std::move(corr);
+			angles = std::move(angles_used);
 		}
 		//log
 		{
-			std::ofstream output("angles.out");
+			std::ofstream output(std::to_string(iter)+"_angles.out");
 			for(const auto &a: angles)
 				output << a << '\n';
 		}
 		{
-			std::ofstream output("translations.out");
+			std::ofstream output(std::to_string(iter)+"_translations.out");
 			for(const auto &v: translations)
 				output << v.transpose() << '\n';
 		}
 
-		auto trans_mean = nih::mean(translations.begin(), translations.end());
-
-		return std::make_tuple(angle_mean, trans_mean);
+		auto [t_centro, t_etiqueta]= dkm::kmeans_lloyd(to_vec_array(translations), n_clusters);
+		int t_big = moda(t_etiqueta.begin(), t_etiqueta.end());
+		for(int K=0; K<3; ++K)
+			trans_mean(K) = t_centro[t_big][K];
 	}
+	return std::make_tuple(angle_mean, trans_mean);
 }
