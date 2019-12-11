@@ -21,11 +21,17 @@ namespace nih {
 		struct anchor {
 			cloud::Ptr keypoints_;
 			signature::Ptr features_;
-			cloud_with_normal::Ptr cloud_;
+			cloud_with_normal &cloud_;
+			anchor(cloud_with_normal &cloud): cloud_(cloud){}
 		};
 
 		anchor source_, target_;
 		correspondences correspondences_;
+
+		public:
+			alignment(cloud_with_normal &source, cloud_with_normal &target):
+				source_(source), target_(target) {}
+			transformation get_transformation();
 	};
 
 	class reference_frame {
@@ -57,7 +63,15 @@ int main(int argc, char **argv) {
 		auto source_orig = nih::load_cloud_ply(directory + filename);
 		auto source = nih::preprocess(nih::moving_least_squares(source_orig, 6*resolution));
 		auto &target = clouds.back();
+
+		nih::alignment align(source, target);
+		//set parameters...
+		target.transformation_ = align.get_transformation();
+		clouds.emplace_back(std::move(target));
 	}
+
+	for(auto K: clouds)
+		std::cout << K.transformation_.matrix() << '\n';
 	return 0;
 }
 
