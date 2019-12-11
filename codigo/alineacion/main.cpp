@@ -43,10 +43,14 @@ namespace nih {
 		anchor source_, target_;
 		correspondences correspondences_;
 
+		//functions
+		void filter_y_threshold();
+
 		//parameters
 		double sample_ratio_;
 		double feature_radio_;
 		double resolution_;
+		double y_threshold_;
 
 		public:
 			alignment();
@@ -54,6 +58,7 @@ namespace nih {
 			void set_sample_ratio(double sample_ratio);
 			void set_feature_radio(double feature_radio);
 			void set_resolution(double resolution);
+			void set_y_threshold_(double y_threshold);
 	};
 
 	class reference_frame {
@@ -89,7 +94,6 @@ int main(int argc, char **argv) {
 		auto source = nih::preprocess(nih::moving_least_squares(source_orig, 6*resolution));
 		auto &target = clouds.back();
 
-		(source, target);
 		//set parameters...
 		target.transformation_ = align.align(source, target);
 		clouds.emplace_back(std::move(target));
@@ -194,9 +198,30 @@ namespace nih {
 
 	transformation alignment::align(cloud_with_normal &source, cloud_with_normal &target) {
 		source_.initialise(source, sample_ratio_, feature_radio_*resolution_);
-		target_.initialise(source, sample_ratio_, feature_radio_*resolution_);
+		target_.initialise(target, sample_ratio_, feature_radio_*resolution_);
 
 		correspondences_ = best_reciprocal_matches(source_.features_, target_.features_);
+		//features_ no longer needed
+
+		filter_y_threshold();
+	}
+
+	void alignment::filter_y_threshold(){
+		//the points should not change too much on the y axis
+		correspondences corr;
+		int n = 0;
+		auto source = source_.keypoints_;
+		auto target = target_.keypoints_;
+		for(auto K: correspondences_){
+			auto ps = (*source)[K.index_query];
+			auto pt = (*target)[K.index_match];
+
+			//reject the points
+			if(abs(ps.y-pt.y) > y_threshold_) continue;
+
+			corr.push_back(K);
+		}
+		correspondences_ = std::move(corr);
 	}
 
 	// class anchor
@@ -240,5 +265,8 @@ namespace nih {
 	}
 	void alignment::set_resolution(double resolution){
 		resolution_ = resolution;
+	}
+	void alignment::set_y_threshold_(double y_threshold){
+		y_threshold_ = y_threshold;
 	}
 } // namespace nih
