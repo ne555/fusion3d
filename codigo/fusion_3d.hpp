@@ -25,7 +25,7 @@ namespace nih {
 	typedef Eigen::Transform<float, 3, Eigen::Affine> transformation;
 	typedef Eigen::Vector3f vector;
 	typedef pcl::PointCloud<pcl::FPFHSignature33> signature;
-	typedef boost::shared_ptr<pcl::Correspondences> correspondences;
+	typedef pcl::Correspondences correspondences;
 
 	template <class T>
 	inline boost::shared_ptr<T> create();
@@ -73,7 +73,7 @@ namespace nih {
 	pcl::PointCloud<pcl::PointXYZI>::Ptr
 	cloud_diff_with_threshold(nih::cloud::Ptr a, nih::cloud::Ptr b, double threshold){
 		//almacena distancia |a - b| clampeado a `clamp'
-		auto result = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+		auto result = create<pcl::PointCloud<pcl::PointXYZI>>();
 		pcl::KdTreeFLANN<nih::point> kdtree;
 		kdtree.setInputCloud(b);
 
@@ -93,12 +93,10 @@ namespace nih {
 		return result;
 	}
 	normal::Ptr compute_normals(cloud::Ptr nube, double distance) {
-		auto normales = boost::make_shared<nih::normal>();
+		auto normales = create<nih::normal>();
 
 		pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
 		ne.setViewPoint(0, 0, 1); // proyección z
-		auto kdtree = boost::make_shared<pcl::search::KdTree<pcl::PointXYZ> >();
-		ne.setSearchMethod(kdtree);
 		ne.setRadiusSearch(distance);
 		ne.setInputCloud(nube);
 		ne.compute(*normales);
@@ -107,7 +105,7 @@ namespace nih {
 	}
 	cloud::Ptr load_cloud_ply(std::string filename) {
 		pcl::PLYReader reader;
-		auto nube = boost::make_shared<cloud>();
+		auto nube = create<cloud>();
 		reader.read(filename, *nube);
 
 		// remove NaN
@@ -171,7 +169,7 @@ namespace nih {
 			alfa * model_resolution,
 			alfa * model_resolution);
 
-		auto filtrada = boost::make_shared<cloud>();
+		auto filtrada = create<cloud>();
 		muestreo.filter(*filtrada);
 		return filtrada;
 	}

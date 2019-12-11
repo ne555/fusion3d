@@ -19,6 +19,12 @@ void usage(const char *program) {
 
 namespace nih {
 	cloud::Ptr index_sampling(cloud::Ptr cloud, double ratio);
+	template <class Feature>
+	correspondences best_reciprocal_matches(Feature source, Feature target);
+	template <class Feature>
+	correspondences best_matches(Feature source, Feature target);
+
+	double distance(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b);
 
 	class alignment {
 		struct anchor {
@@ -95,6 +101,7 @@ int main(int argc, char **argv) {
 }
 
 namespace nih {
+	//free functions
 	cloud::Ptr moving_least_squares(cloud::Ptr nube, double radio) {
 		int orden = 3;
 		pcl::MovingLeastSquares<nih::point, nih::point> mls;
@@ -104,12 +111,73 @@ namespace nih {
 		mls.setSqrGaussParam(square(radio));
 		mls.setUpsamplingMethod(
 		    pcl::MovingLeastSquares<nih::point, nih::point>::NONE);
-		auto smooth = boost::make_shared<nih::cloud>();
+		auto smooth = create<cloud>();
 
 		mls.setInputCloud(nube);
 		mls.process(*smooth);
 
 		return smooth;
+	}
+
+	template <class Feature>
+	correspondences
+	best_matches(Feature source, Feature target) {
+		correspondences matches;
+		for(int K=0; K<source->size(); ++K){
+			double min_distance = std::numeric_limits<double>::infinity();
+			pcl::Correspondence corresp;
+			corresp.index_query = K;
+
+			for(int L = 0; L < target->size(); ++L) {
+				double d = distance((*source)[K], (*target)[L]);
+				if(d < min_distance) {
+					min_distance = d;
+					corresp.index_match = L;
+					corresp.distance = d;
+				}
+			}
+			if(min_distance < std::numeric_limits<double>::infinity())
+				matches.push_back(corresp);
+		}
+
+		return matches;
+	}
+
+	template <class Feature>
+	correspondences
+	best_reciprocal_matches(Feature source, Feature target) {
+		auto a2b = best_matches(source, target);
+		auto b2a = best_matches(target, source);
+		correspondences matches;
+
+		for(auto K: a2b){
+			int from = K.index_query;
+			int to = K.index_match;
+			bool same = false;
+			for(auto L: b2a){
+				if(L.index_query == to){
+					same = L.index_match==from;
+					break;
+				}
+			}
+			if(same)
+				matches.push_back(K);
+		}
+
+		return matches;
+	}
+
+	double
+	distance(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b) {
+		double d = 0;
+		// chi cuadrado
+		for(int K = 0; K < a.descriptorSize(); ++K) {
+			double sum = a.histogram[K] + b.histogram[K];
+			if(sum == 0)
+				continue;
+			d += nih::square(a.histogram[K] - b.histogram[K]) / sum;
+		}
+		return d;
 	}
 
 	cloud::Ptr index_sampling(cloud::Ptr cloud_, double ratio) {
@@ -122,16 +190,13 @@ namespace nih {
 	}
 
 	// class alignment
-	alignment::alignment()
-		:
-		  sample_ratio_(0.25),
-		  feature_radio_(6) {}
+	alignment::alignment() : sample_ratio_(0.25), feature_radio_(6) {}
 
 	transformation alignment::align(cloud_with_normal &source, cloud_with_normal &target) {
 		source_.initialise(source, sample_ratio_, feature_radio_*resolution_);
 		target_.initialise(source, sample_ratio_, feature_radio_*resolution_);
 
-		//auto correspondencias = best_reciprocal_matches(feature_source, feature_target);
+		correspondences_ = best_reciprocal_matches(source_.features_, target_.features_);
 	}
 
 	// class anchor
