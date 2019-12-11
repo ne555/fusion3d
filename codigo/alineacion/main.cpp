@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include <pcl/surface/mls.h>
+#include <pcl/features/fpfh.h>
 
 void usage(const char *program) {
 	std::cerr << program << " directory "
@@ -17,29 +18,36 @@ void usage(const char *program) {
 }
 
 namespace nih {
-	cloud::Ptr sampling(cloud::Ptr cloud, double ratio);
+	cloud::Ptr index_sampling(cloud::Ptr cloud, double ratio);
 
 	class alignment {
 		struct anchor {
 			cloud::Ptr keypoints_;
 			signature::Ptr features_;
-			cloud_with_normal &cloud_;
-			anchor(cloud_with_normal &cloud): cloud_(cloud){}
+			const cloud_with_normal *cloud_;
+			anchor();
+			void initialise(cloud_with_normal &cloud, double sample_ratio, double feature_radio);
+
+			private:
 			void sampling(double ratio);
+			void redirect(cloud_with_normal &cloud);
+			void compute_features(double radio);
 		};
-
-
 
 		anchor source_, target_;
 		correspondences correspondences_;
 
 		//parameters
 		double sample_ratio_;
+		double feature_radio_;
+		double resolution_;
 
 		public:
-			alignment(cloud_with_normal &source, cloud_with_normal &target);
-			transformation get_transformation();
+			alignment();
+			transformation align(cloud_with_normal &source, cloud_with_normal &target);
 			void set_sample_ratio(double sample_ratio);
+			void set_feature_radio(double feature_radio);
+			void set_resolution(double resolution);
 	};
 
 	class reference_frame {
@@ -67,14 +75,17 @@ int main(int argc, char **argv) {
 
 	std::vector<nih::cloud_with_normal> clouds;
 	clouds.emplace_back(nih::preprocess(nih::moving_least_squares(first, 6*resolution)));
+
+	nih::alignment align;
+	align.set_resolution(resolution);
 	while(input >> filename){
 		auto source_orig = nih::load_cloud_ply(directory + filename);
 		auto source = nih::preprocess(nih::moving_least_squares(source_orig, 6*resolution));
 		auto &target = clouds.back();
 
-		nih::alignment align(source, target);
+		(source, target);
 		//set parameters...
-		target.transformation_ = align.get_transformation();
+		target.transformation_ = align.align(source, target);
 		clouds.emplace_back(std::move(target));
 	}
 
@@ -101,7 +112,7 @@ namespace nih {
 		return smooth;
 	}
 
-	cloud::Ptr sampling(cloud::Ptr cloud_, double ratio) {
+	cloud::Ptr index_sampling(cloud::Ptr cloud_, double ratio) {
 		auto result = create<cloud>();
 		int step = 1 / ratio;
 		for(int K = 0; K < cloud_->size(); K += step)
@@ -111,22 +122,58 @@ namespace nih {
 	}
 
 	// class alignment
-	alignment::alignment(cloud_with_normal &source, cloud_with_normal &target)
-	    : source_(source), target_(target), sample_ratio_(0.25) {}
+	alignment::alignment()
+		:
+		  sample_ratio_(0.25),
+		  feature_radio_(6) {}
 
-	transformation alignment::get_transformation() {
-		source_.sampling(sample_ratio_);
-		target_.sampling(sample_ratio_);
+	transformation alignment::align(cloud_with_normal &source, cloud_with_normal &target) {
+		source_.initialise(source, sample_ratio_, feature_radio_*resolution_);
+		target_.initialise(source, sample_ratio_, feature_radio_*resolution_);
+
+		//auto correspondencias = best_reciprocal_matches(feature_source, feature_target);
 	}
 
 	// class anchor
+
+	alignment::anchor::anchor():
+		cloud_(nullptr){}
+
 	void alignment::anchor::sampling(double ratio) {
-		keypoints_ = nih::sampling(cloud_.points_, ratio);
+		keypoints_ = index_sampling(cloud_->points_, ratio);
+	}
+
+	void alignment::anchor::redirect(cloud_with_normal &cloud){
+		keypoints_->clear();
+		features_->clear();
+		cloud_ = &cloud;
+	}
+
+	void alignment::anchor::initialise(cloud_with_normal &cloud, double sample_ratio, double feature_radio){
+		redirect(cloud);
+		sampling(sample_ratio);
+		compute_features(feature_radio);
+	}
+
+	void alignment::anchor::compute_features(double radio) {
+		pcl::FPFHEstimation<point, pcl::Normal, pcl::FPFHSignature33> fpfh;
+
+		fpfh.setInputCloud(keypoints_);
+		fpfh.setInputNormals(cloud_->normals_);
+		fpfh.setSearchSurface(cloud_->points_);
+
+		fpfh.setRadiusSearch(radio);
+		fpfh.compute(*features_);
 	}
 
 	// parameters
 	void alignment::set_sample_ratio(double sample_ratio) {
 		sample_ratio_ = sample_ratio;
 	}
-
+	void alignment::set_feature_radio(double feature_radio){
+		feature_radio_ = feature_radio;
+	}
+	void alignment::set_resolution(double resolution){
+		resolution_ = resolution;
+	}
 } // namespace nih
