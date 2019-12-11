@@ -27,6 +27,8 @@ namespace nih {
 	typedef pcl::PointCloud<pcl::FPFHSignature33> signature;
 	typedef boost::shared_ptr<pcl::Correspondences> correspondences;
 
+	template <class T>
+	inline boost::shared_ptr<T> create();
 	inline cloud::Ptr load_cloud_ply(std::string filename);
 	inline transformation get_transformation(std::ifstream &input);
 	normal::Ptr compute_normals(cloud::Ptr nube, double distance);
@@ -52,6 +54,11 @@ namespace nih {
 
 // implementation
 namespace nih {
+	template <class T>
+	inline boost::shared_ptr<T> create(){
+		return boost::make_shared<T>();
+	}
+
 	double distance(const point &a, const point &b){
 		return (p2v(a) - p2v(b)).norm();
 	}
