@@ -259,9 +259,17 @@ namespace nih {
 
 		return angles;
 	}
+	bool alignment::valid_angle(const Eigen::Matrix3f &rotation, double &angle){
+		//near y axis
+		Eigen::AngleAxisf aa;
+		aa.fromRotationMatrix(rotation);
+		double doty = aa.axis()(1);
+		angle = aa.angle();
+
+		return 1-std::abs(doty) < axis_threshold_;
+	}
 
 	// class anchor
-
 	alignment::anchor::anchor():
 		cloud_(nullptr){}
 
@@ -335,6 +343,21 @@ namespace nih {
 		return f;
 	}
 
+	//reference_frame
+	alignment::reference_frame alignment::reference_frame::solve_ambiguity() const{
+		//rotate pi on z axis
+		reference_frame result = *this;
+
+		nih::transformation rotation;
+		rotation = Eigen::AngleAxisf(M_PI, eigenvectors_.col(2));
+		result.eigenvectors_.col(0) = rotation * eigenvectors_.col(0);
+		result.eigenvectors_.col(1) = rotation * eigenvectors_.col(1);
+		return result;
+	}
+
+	Eigen::Matrix3f alignment::reference_frame::compute_rotation(const reference_frame &target) const{
+		return eigenvectors_.transpose() * target.eigenvectors_;
+	}
 
 	// parameters
 	void alignment::set_sample_ratio(double sample_ratio) {
