@@ -319,6 +319,8 @@ int main(int argc, char **argv){
 	show_rotation(transf_source, transf_target);
 	std::cout << "translation: " << (transf_source.translation() - transf_target.translation()).transpose()/resolution_orig << '\n';
 
+	pcl::io::savePNGFile("nube.png", aligned, "z");
+
 	auto result_icp = boost::make_shared<nih::cloud>();
 	nih::transformation icp_transf;
 	{

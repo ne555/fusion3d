@@ -52,6 +52,8 @@ namespace nih {
 	template <class Iter>
 	typename Iter::value_type mode(Iter begin, Iter end);
 
+	void show_rotation(const Eigen::Matrix3f &rotation, std::ostream &out = std::cout);
+	void show_transformation(const transformation &t, std::ostream &out = std::cout);
 	class alignment {
 		struct reference_frame {
 			Eigen::Matrix3f eigenvectors_; // column order
@@ -68,12 +70,12 @@ namespace nih {
 			pcl::KdTreeFLANN<point> kdtree;
 			anchor();
 			void initialise(
-			    cloud_with_normal &cloud,
+			    const cloud_with_normal &cloud,
 			    double sample_ratio,
 			    double feature_radius);
 
 			void sampling(double ratio);
-			void redirect(cloud_with_normal &cloud);
+			void redirect(const cloud_with_normal &cloud);
 			void compute_features(double radius);
 			reference_frame
 			compute_reference_frame(int index, double radius) const;
@@ -104,7 +106,7 @@ namespace nih {
 	public:
 		alignment();
 		transformation
-		align(cloud_with_normal &source, cloud_with_normal &target);
+		align(const cloud_with_normal &source, const cloud_with_normal &target);
 		void set_sample_ratio(double sample_ratio);
 		void set_feature_radius(double feature_radius);
 		void set_resolution(double resolution);
@@ -147,11 +149,13 @@ int main(int argc, char **argv) {
 		// set parameters...
 
 		source.transformation_ = align.align(source, target);
+		nih::show_transformation(source.transformation_, std::cerr);
+		//source.transformation_ = target.transformation_ * source.transformation_;
 		clouds.emplace_back(std::move(source));
 	}
 
 	for(auto K : clouds)
-		std::cout << K.transformation_.matrix() << '\n';
+		nih::show_transformation(K.transformation_);
 	return 0;
 }
 
@@ -304,6 +308,19 @@ namespace nih {
 
 		return big;
 	}
+	void show_transformation(const transformation &t, std::ostream &out){
+		Eigen::Matrix3f rotation, scale;
+		t.computeRotationScaling(&rotation, &scale);
+		show_rotation(rotation, out);
+		out << t.translation().transpose() << '\n';
+	}
+	void show_rotation(const Eigen::Matrix3f &rotation, std::ostream &out){
+		Eigen::AngleAxisf aa;
+		aa.fromRotationMatrix(rotation);
+		out << "angle: " << aa.angle()*180/M_PI << '\t';
+		out << "axis: " << aa.axis().transpose() << '\t';
+		out << "dist_y: " << 1-abs(aa.axis().dot(Eigen::Vector3f::UnitY())) << '\n';
+	}
 
 	// class alignment
 	alignment::alignment()
@@ -315,7 +332,7 @@ namespace nih {
 	      max_iterations_(3),
 	      n_clusters_(3) {}
 	transformation
-	alignment::align(cloud_with_normal &source, cloud_with_normal &target) {
+	alignment::align(const cloud_with_normal &source, const cloud_with_normal &target) {
 		if(resolution_ == 0)
 			resolution_ = get_resolution(source.points_);
 		source_.initialise(
@@ -329,6 +346,9 @@ namespace nih {
 
 		filter_y_threshold();
 		std::vector<double> angles = filter_rotation_axis();
+		for(auto &K: angles)
+			std::cerr << rad2deg(K) << ' ';
+		std::cerr << '\n';
 		// iterate clustering
 		double angle_result = 0;
 		vector translation_result(0, 0, 0);
@@ -418,13 +438,13 @@ namespace nih {
 		keypoints_ = index_sampling(cloud_->points_, ratio);
 	}
 
-	void alignment::anchor::redirect(cloud_with_normal &cloud) {
+	void alignment::anchor::redirect(const cloud_with_normal &cloud) {
 		cloud_ = &cloud;
 		kdtree.setInputCloud(cloud_->points_);
 	}
 
 	void alignment::anchor::initialise(
-	    cloud_with_normal &cloud, double sample_ratio, double feature_radius) {
+	    const cloud_with_normal &cloud, double sample_ratio, double feature_radius) {
 		redirect(cloud);
 		sampling(sample_ratio);
 		compute_features(feature_radius);
