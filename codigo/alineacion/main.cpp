@@ -26,7 +26,15 @@ namespace nih {
 
 	double distance(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b);
 
+
 	class alignment {
+		struct reference_frame {
+			Eigen::Matrix3f eigenvectors_;
+			float eigenvalues_[3];
+			reference_frame solve_ambiguity() const;
+			Eigen::Matrix3f compute_rotation(const reference_frame &target) const;
+		};
+
 		struct anchor {
 			cloud::Ptr keypoints_;
 			signature::Ptr features_;
@@ -34,10 +42,10 @@ namespace nih {
 			anchor();
 			void initialise(cloud_with_normal &cloud, double sample_ratio, double feature_radio);
 
-			private:
 			void sampling(double ratio);
 			void redirect(cloud_with_normal &cloud);
 			void compute_features(double radio);
+			reference_frame compute_reference_frame(int index, double radio) const;
 		};
 
 		anchor source_, target_;
@@ -45,12 +53,15 @@ namespace nih {
 
 		//functions
 		void filter_y_threshold();
+		std::vector<double> filter_rotation_axis();
+		bool valid_angle(const Eigen::Matrix3f &rotation, double &angle);
 
 		//parameters
 		double sample_ratio_;
 		double feature_radio_;
 		double resolution_;
 		double y_threshold_;
+		double axis_threshold_;
 
 		public:
 			alignment();
@@ -59,13 +70,9 @@ namespace nih {
 			void set_feature_radio(double feature_radio);
 			void set_resolution(double resolution);
 			void set_y_threshold_(double y_threshold);
+			void set_axis_threshold_(double axis_threshold);
 	};
 
-	class reference_frame {
-	public:
-		Eigen::Matrix3f eigenvectors_;
-		float eigenvalues_[3];
-	};
 
 	cloud::Ptr moving_least_squares(cloud::Ptr nube, double radio);
 } // namespace nih
@@ -204,6 +211,7 @@ namespace nih {
 		//features_ no longer needed
 
 		filter_y_threshold();
+		filter_rotation_axis();
 	}
 
 	void alignment::filter_y_threshold(){
@@ -222,6 +230,33 @@ namespace nih {
 			corr.push_back(K);
 		}
 		correspondences_ = std::move(corr);
+	}
+
+	std::vector<double> alignment::filter_rotation_axis() {
+		//compute rotation transformation
+		//reject those too far from y axis
+		//returns the rotation angles
+		std::vector<double> angles;
+		correspondences corr;
+
+		int n = 0;
+		for(auto K : correspondences_) {
+			auto f_source = source_.compute_reference_frame(K.index_query, feature_radio_);
+			auto f_target = target_.compute_reference_frame(K.index_query, feature_radio_);
+			auto f_target_prima = f_target.solve_ambiguity();
+
+			auto r1 = f_source.compute_rotation(f_target);
+			auto r2 = f_source.compute_rotation(f_target_prima);
+
+			double angle;
+			if(valid_angle(r1, angle) or valid_angle(r2, angle)) {
+				angles.push_back(angle);
+				corr.push_back(K);
+			}
+		}
+		correspondences_ = std::move(corr);
+
+		return angles;
 	}
 
 	// class anchor
@@ -256,6 +291,7 @@ namespace nih {
 		fpfh.compute(*features_);
 	}
 
+
 	// parameters
 	void alignment::set_sample_ratio(double sample_ratio) {
 		sample_ratio_ = sample_ratio;
@@ -268,5 +304,8 @@ namespace nih {
 	}
 	void alignment::set_y_threshold_(double y_threshold){
 		y_threshold_ = y_threshold;
+	}
+	void alignment::set_axis_threshold_(double axis_threshold){
+		axis_threshold_ = axis_threshold;
 	}
 } // namespace nih

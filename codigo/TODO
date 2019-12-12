@@ -1,6 +1,14 @@
 colorear error en la malla
 generar un histograma del error
 
+preproceso
+	suavizado de la superfice
+		moving least squares
+		filtro bilineal
+	eliminación de outliers
+		erosión de parches
+		equivalente de erosión niveles de gris
+
 triangulación de la entrada
 	proyectar a z=0
 	triangular por cercanía
