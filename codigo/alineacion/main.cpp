@@ -145,8 +145,9 @@ int main(int argc, char **argv) {
 		auto &target = clouds.back();
 
 		// set parameters...
-		target.transformation_ = align.align(source, target);
-		clouds.emplace_back(std::move(target));
+
+		source.transformation_ = align.align(source, target);
+		clouds.emplace_back(std::move(source));
 	}
 
 	for(auto K : clouds)
@@ -315,6 +316,8 @@ namespace nih {
 	      n_clusters_(3) {}
 	transformation
 	alignment::align(cloud_with_normal &source, cloud_with_normal &target) {
+		if(resolution_ == 0)
+			resolution_ = get_resolution(source.points_);
 		source_.initialise(
 		    source, sample_ratio_, feature_radius_ * resolution_);
 		target_.initialise(
@@ -416,8 +419,6 @@ namespace nih {
 	}
 
 	void alignment::anchor::redirect(cloud_with_normal &cloud) {
-		keypoints_->clear();
-		features_->clear();
 		cloud_ = &cloud;
 		kdtree.setInputCloud(cloud_->points_);
 	}
@@ -431,6 +432,7 @@ namespace nih {
 
 	void alignment::anchor::compute_features(double radius) {
 		pcl::FPFHEstimation<point, pcl::Normal, pcl::FPFHSignature33> fpfh;
+		features_ = create<signature>();
 
 		fpfh.setInputCloud(keypoints_);
 		fpfh.setInputNormals(cloud_->normals_);
