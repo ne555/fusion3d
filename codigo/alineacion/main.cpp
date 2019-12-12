@@ -6,6 +6,7 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <utility>
 
 #include <pcl/surface/mls.h>
 #include <pcl/features/fpfh.h>
@@ -25,7 +26,15 @@ namespace nih {
 	correspondences best_matches(Feature source, Feature target);
 
 	double distance(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b);
+	transformation create_transformation(double angle, vector axis, vector translation);
 
+	std::tuple<double, std::vector<bool>>
+	biggest_cluster(std::vector<double> v, int n_clusters);
+	std::tuple<vector, std::vector<bool>>
+	biggest_cluster(std::vector<vector> v, int n_clusters);
+
+	template <class Container>
+	void filter(Container &c, std::vector<bool> survivor);
 
 	class alignment {
 		struct reference_frame {
@@ -47,6 +56,7 @@ namespace nih {
 			void redirect(cloud_with_normal &cloud);
 			void compute_features(double radius);
 			reference_frame compute_reference_frame(int index, double radius) const;
+			std::vector<vector> compute_translations(double angle, const anchor &target);
 		};
 
 		anchor source_, target_;
@@ -63,6 +73,8 @@ namespace nih {
 		double resolution_;
 		double y_threshold_;
 		double axis_threshold_;
+		int max_iterations_;
+		int n_clusters_;
 
 		public:
 			alignment();
@@ -71,7 +83,9 @@ namespace nih {
 			void set_feature_radius(double feature_radius);
 			void set_resolution(double resolution);
 			void set_y_threshold_(double y_threshold);
-			void set_axis_threshold_(double axis_threshold);
+			void set_axis_threshold_(double axis_threshold); //angle in radians
+			void set_max_iterations_cluster(int max_iterations);
+			void set_n_clusters(int n_clusters);
 	};
 
 
@@ -200,9 +214,20 @@ namespace nih {
 
 		return result;
 	}
+	transformation create_transformation(double angle, vector axis, vector translation){
+		return Eigen::Translation3f(translation) * Eigen::AngleAxisf(angle, axis);
+	}
 
 	// class alignment
-	alignment::alignment() : sample_ratio_(0.25), feature_radius_(6) {}
+	alignment::alignment() :
+		sample_ratio_(0.25),
+		feature_radius_(6),
+		resolution_(0),
+		y_threshold_(8),
+		axis_threshold_(0.2),
+		max_iterations_(3),
+		n_clusters_(3)
+	{}
 
 	transformation alignment::align(cloud_with_normal &source, cloud_with_normal &target) {
 		source_.initialise(source, sample_ratio_, feature_radius_*resolution_);
@@ -212,7 +237,22 @@ namespace nih {
 		//features_ no longer needed
 
 		filter_y_threshold();
-		filter_rotation_axis();
+		std::vector<double> angles = filter_rotation_axis();
+		//iterate clustering
+		double angle_result = 0;
+		vector translation_result(0,0,0);
+		std::vector<bool> angle_label, trans_label;
+		for(int K=0; K<max_iterations_; ++K){
+			std::tie(angle_result, angle_label) = biggest_cluster(angles, n_clusters_);
+			filter(correspondences_, angle_label);
+			filter(angles, angle_label);
+			std::vector<vector> translations = source_.compute_translations(angle_result, target_);
+			std::tie(translation_result, trans_label) = biggest_cluster(translations, n_clusters_);
+			filter(correspondences_, trans_label);
+			filter(angles, trans_label);
+		}
+
+		return create_transformation(angle_result, {0, 1, 0}, translation_result);
 	}
 
 	void alignment::filter_y_threshold(){
@@ -373,6 +413,12 @@ namespace nih {
 		y_threshold_ = y_threshold;
 	}
 	void alignment::set_axis_threshold_(double axis_threshold){
-		axis_threshold_ = axis_threshold;
+		axis_threshold_ = std::cos(axis_threshold);
+	}
+	void alignment::set_max_iterations_cluster(int max_iterations){
+		max_iterations_ = max_iterations;
+	}
+	void alignment::set_n_clusters(int n_clusters){
+		n_clusters_ = n_clusters;
 	}
 } // namespace nih
