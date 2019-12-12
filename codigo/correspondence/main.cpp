@@ -156,6 +156,12 @@ estimar_angulo_translacion(
 	pcl::Correspondences correspondences
 );
 
+void log(pcl::Correspondences c, std::ostream &output){
+	for(auto K: c)
+		output << K.index_query << ' ' << K.index_match << '\n';
+	output << '\n';
+}
+
 int main(int argc, char **argv){
 	if(argc < 3) {
 		usage(argv[0]);
@@ -197,10 +203,14 @@ int main(int argc, char **argv){
 	auto feature_source = feature_fpfh(key_source, nube_source.points, nube_source.normals, 8*resolution_orig);
 	auto feature_target = feature_fpfh(key_target, nube_target.points, nube_target.normals, 8*resolution_orig);
 
+	std::ofstream log_corr("correspondencias.log");
 	//correspondencias
 	auto correspondencias = best_reciprocal_matches(feature_source, feature_target);
 	//auto correspondencias = best_matches(feature_source, feature_target);
+	log_corr << "matches\n";
+	log(*correspondencias, log_corr);
 
+	log_corr << "\nthreshold y\n";
 	{
 		//capturar sólo los puntos que corresponden
 		auto key_s = boost::make_shared<nih::cloud>();
@@ -213,6 +223,8 @@ int main(int argc, char **argv){
 
 			//si la distancia vertical es muy grande, no considerar los puntos
 			if(abs(ps.y-pt.y) > radio) continue;
+
+			log_corr << K.index_query << ' ' << K.index_match << '\n';
 
 			key_s->push_back(ps);
 			key_t->push_back(pt);
@@ -354,6 +366,8 @@ int main(int argc, char **argv){
 		icp.align(*aux); //para obtener la transformación
 		icp_transf = icp.getFinalTransformation();
 		pcl::transformPointCloud(*the_source_cloud, *result_icp, icp_transf*total);
+
+#if 0
 		auto view =
 			boost::make_shared<pcl::visualization::PCLVisualizer>("solapado");
 		view->setBackgroundColor(0, 0, 0);
@@ -371,6 +385,7 @@ int main(int argc, char **argv){
 		view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "source");
 		view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "solap_target");
 		view->spinOnce(100);
+#endif
 	}
 
 	std::cout << "First alignment\n";
@@ -381,6 +396,7 @@ int main(int argc, char **argv){
 	std::cout << "translation: " << ((icp_transf*total).translation() - transf_target.translation()).transpose()/resolution_orig << '\n';
 
 
+#if 0
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("correspondences");
 	int v1;
@@ -443,6 +459,7 @@ int main(int argc, char **argv){
 		//std::cout << "translación manual:";
 	//} while(std::cin >> x >> z);
 	}while(false);
+#endif
 
 #if 0
 	auto view =
