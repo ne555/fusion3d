@@ -47,6 +47,9 @@ namespace nih {
 	template <class Container>
 	void filter(Container &c, std::vector<bool> survivor);
 
+	template<class Iter>
+	typename Iter::value_type mode(Iter begin, Iter end);
+
 	class alignment {
 		struct reference_frame {
 			Eigen::Matrix3f eigenvectors_; //column order
@@ -155,7 +158,6 @@ namespace nih {
 
 		return smooth;
 	}
-
 	template <class Container>
 	void filter(Container &c, std::vector<bool> survivor){
 		Container aux;
@@ -167,7 +169,6 @@ namespace nih {
 		}
 		c = std::move(aux);
 	}
-
 	template <class Feature>
 	correspondences
 	best_matches(Feature source, Feature target) {
@@ -191,7 +192,6 @@ namespace nih {
 
 		return matches;
 	}
-
 	template <class Feature>
 	correspondences
 	best_reciprocal_matches(Feature source, Feature target) {
@@ -215,7 +215,6 @@ namespace nih {
 
 		return matches;
 	}
-
 	double
 	distance(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b) {
 		double d = 0;
@@ -228,7 +227,6 @@ namespace nih {
 		}
 		return d;
 	}
-
 	cloud::Ptr index_sampling(cloud::Ptr cloud_, double ratio) {
 		auto result = create<cloud>();
 		int step = 1 / ratio;
@@ -240,7 +238,6 @@ namespace nih {
 	transformation create_transformation(double angle, vector axis, vector translation){
 		return Eigen::Translation3f(translation) * Eigen::AngleAxisf(angle, axis);
 	}
-
 	template <class T>
 	std::tuple<T, std::vector<bool>>
 	biggest_cluster(std::vector<T> v, int n_clusters){
@@ -276,6 +273,21 @@ namespace nih {
 	double from_vec_array(const std::array<double, 1> &v){
 		return v[0];
 	}
+	template<class Iter>
+	typename Iter::value_type mode(Iter begin, Iter end) {
+		std::map<typename Iter::value_type, uint32_t> contador;
+		for(Iter K = begin; K not_eq end; ++K)
+			++contador[*K];
+
+		typename Iter::value_type big =
+			std::max_element(
+				contador.begin(),
+				contador.end(),
+				[](const auto &a, const auto &b) { return a.second < b.second; })
+				->first;
+
+		return big;
+	}
 
 	// class alignment
 	alignment::alignment() :
@@ -287,7 +299,6 @@ namespace nih {
 		max_iterations_(3),
 		n_clusters_(3)
 	{}
-
 	transformation alignment::align(cloud_with_normal &source, cloud_with_normal &target) {
 		source_.initialise(source, sample_ratio_, feature_radius_*resolution_);
 		target_.initialise(target, sample_ratio_, feature_radius_*resolution_);
@@ -464,7 +475,6 @@ namespace nih {
 		result.eigenvectors_.col(1) = rotation * eigenvectors_.col(1);
 		return result;
 	}
-
 	Eigen::Matrix3f alignment::reference_frame::compute_rotation(const reference_frame &target) const{
 		return eigenvectors_.transpose() * target.eigenvectors_;
 	}
