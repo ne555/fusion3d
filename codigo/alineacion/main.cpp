@@ -145,6 +145,18 @@ namespace nih {
 		return smooth;
 	}
 
+	template <class Container>
+	void filter(Container &c, std::vector<bool> survivor){
+		Container aux;
+		auto current = c.begin();
+		for(auto status: survivor){
+			if (status)
+				aux.push_back(*current);
+			++current;
+		}
+		c = std::move(aux);
+	}
+
 	template <class Feature>
 	correspondences
 	best_matches(Feature source, Feature target) {
