@@ -29,7 +29,7 @@ namespace nih {
 
 	class alignment {
 		struct reference_frame {
-			Eigen::Matrix3f eigenvectors_;
+			Eigen::Matrix3f eigenvectors_; //column order
 			float eigenvalues_[3];
 			reference_frame solve_ambiguity() const;
 			Eigen::Matrix3f compute_rotation(const reference_frame &target) const;
@@ -39,13 +39,14 @@ namespace nih {
 			cloud::Ptr keypoints_;
 			signature::Ptr features_;
 			const cloud_with_normal *cloud_;
+			pcl::KdTreeFLANN<point> kdtree;
 			anchor();
-			void initialise(cloud_with_normal &cloud, double sample_ratio, double feature_radio);
+			void initialise(cloud_with_normal &cloud, double sample_ratio, double feature_radius);
 
 			void sampling(double ratio);
 			void redirect(cloud_with_normal &cloud);
-			void compute_features(double radio);
-			reference_frame compute_reference_frame(int index, double radio) const;
+			void compute_features(double radius);
+			reference_frame compute_reference_frame(int index, double radius) const;
 		};
 
 		anchor source_, target_;
@@ -58,7 +59,7 @@ namespace nih {
 
 		//parameters
 		double sample_ratio_;
-		double feature_radio_;
+		double feature_radius_;
 		double resolution_;
 		double y_threshold_;
 		double axis_threshold_;
@@ -67,14 +68,14 @@ namespace nih {
 			alignment();
 			transformation align(cloud_with_normal &source, cloud_with_normal &target);
 			void set_sample_ratio(double sample_ratio);
-			void set_feature_radio(double feature_radio);
+			void set_feature_radius(double feature_radius);
 			void set_resolution(double resolution);
 			void set_y_threshold_(double y_threshold);
 			void set_axis_threshold_(double axis_threshold);
 	};
 
 
-	cloud::Ptr moving_least_squares(cloud::Ptr nube, double radio);
+	cloud::Ptr moving_least_squares(cloud::Ptr nube, double radius);
 } // namespace nih
 
 int main(int argc, char **argv) {
@@ -113,13 +114,13 @@ int main(int argc, char **argv) {
 
 namespace nih {
 	//free functions
-	cloud::Ptr moving_least_squares(cloud::Ptr nube, double radio) {
+	cloud::Ptr moving_least_squares(cloud::Ptr nube, double radius) {
 		int orden = 3;
 		pcl::MovingLeastSquares<nih::point, nih::point> mls;
 		mls.setComputeNormals(false);
 		mls.setPolynomialOrder(orden);
-		mls.setSearchRadius(radio);
-		mls.setSqrGaussParam(square(radio));
+		mls.setSearchRadius(radius);
+		mls.setSqrGaussParam(square(radius));
 		mls.setUpsamplingMethod(
 		    pcl::MovingLeastSquares<nih::point, nih::point>::NONE);
 		auto smooth = create<cloud>();
@@ -201,11 +202,11 @@ namespace nih {
 	}
 
 	// class alignment
-	alignment::alignment() : sample_ratio_(0.25), feature_radio_(6) {}
+	alignment::alignment() : sample_ratio_(0.25), feature_radius_(6) {}
 
 	transformation alignment::align(cloud_with_normal &source, cloud_with_normal &target) {
-		source_.initialise(source, sample_ratio_, feature_radio_*resolution_);
-		target_.initialise(target, sample_ratio_, feature_radio_*resolution_);
+		source_.initialise(source, sample_ratio_, feature_radius_*resolution_);
+		target_.initialise(target, sample_ratio_, feature_radius_*resolution_);
 
 		correspondences_ = best_reciprocal_matches(source_.features_, target_.features_);
 		//features_ no longer needed
@@ -241,8 +242,8 @@ namespace nih {
 
 		int n = 0;
 		for(auto K : correspondences_) {
-			auto f_source = source_.compute_reference_frame(K.index_query, feature_radio_);
-			auto f_target = target_.compute_reference_frame(K.index_query, feature_radio_);
+			auto f_source = source_.compute_reference_frame(K.index_query, feature_radius_);
+			auto f_target = target_.compute_reference_frame(K.index_query, feature_radius_);
 			auto f_target_prima = f_target.solve_ambiguity();
 
 			auto r1 = f_source.compute_rotation(f_target);
@@ -272,23 +273,66 @@ namespace nih {
 		keypoints_->clear();
 		features_->clear();
 		cloud_ = &cloud;
+		kdtree.setInputCloud(cloud_->points_);
 	}
 
-	void alignment::anchor::initialise(cloud_with_normal &cloud, double sample_ratio, double feature_radio){
+	void alignment::anchor::initialise(cloud_with_normal &cloud, double sample_ratio, double feature_radius){
 		redirect(cloud);
 		sampling(sample_ratio);
-		compute_features(feature_radio);
+		compute_features(feature_radius);
 	}
 
-	void alignment::anchor::compute_features(double radio) {
+	void alignment::anchor::compute_features(double radius) {
 		pcl::FPFHEstimation<point, pcl::Normal, pcl::FPFHSignature33> fpfh;
 
 		fpfh.setInputCloud(keypoints_);
 		fpfh.setInputNormals(cloud_->normals_);
 		fpfh.setSearchSurface(cloud_->points_);
 
-		fpfh.setRadiusSearch(radio);
+		fpfh.setRadiusSearch(radius);
 		fpfh.compute(*features_);
+	}
+
+	alignment::reference_frame
+	alignment::anchor::compute_reference_frame(int index, double radius) const {
+		// based on pcl::ISSKeypoint3D::getScatterMatrix
+		const auto &center = (*keypoints_)[index];
+		std::vector<int> indices;
+		std::vector<float> distances;
+		kdtree.radiusSearch(center, radius, indices, distances);
+
+		Eigen::Matrix3f covarianza = Eigen::Matrix3f::Zero();
+		for(int K = 0; K < indices.size(); K++) {
+			const point &p = (*cloud_->points_)[indices[K]];
+
+			for(int L = 0; L < 3; ++L)
+				for(int M = 0; M < 3; ++M)
+					covarianza(L, M) +=
+						(p.data[L] - center.data[L]) * (p.data[M] - center.data[M]);
+		}
+
+		// compute eigenvales and eigenvectors
+		Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> solver(covarianza);
+
+		reference_frame f;
+		for(int K = 0; K < 3; ++K)
+			f.eigenvalues_[K] = solver.eigenvalues()[3 - (K + 1)];
+		f.eigenvectors_ = solver.eigenvectors();
+
+		// to always have right-hand rule
+		f.eigenvectors_.col(2) =
+			f.eigenvectors_.col(0).cross(f.eigenvectors_.col(1));
+
+		// make sure that vector `z' points to outside screen {0, 0, 1}
+		if(f.eigenvectors_(2, 2) < 0) {
+			// rotate 180 over f.x
+			transformation rotation;
+			rotation = Eigen::AngleAxisf(M_PI, f.eigenvectors_.col(0));
+			for(int K = 1; K < 3; ++K)
+				f.eigenvectors_.col(K) = rotation * f.eigenvectors_.col(K);
+		}
+
+		return f;
 	}
 
 
@@ -296,8 +340,8 @@ namespace nih {
 	void alignment::set_sample_ratio(double sample_ratio) {
 		sample_ratio_ = sample_ratio;
 	}
-	void alignment::set_feature_radio(double feature_radio){
-		feature_radio_ = feature_radio;
+	void alignment::set_feature_radius(double feature_radius){
+		feature_radius_ = feature_radius;
 	}
 	void alignment::set_resolution(double resolution){
 		resolution_ = resolution;
