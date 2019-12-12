@@ -56,7 +56,7 @@ namespace nih {
 			void redirect(cloud_with_normal &cloud);
 			void compute_features(double radius);
 			reference_frame compute_reference_frame(int index, double radius) const;
-			std::vector<vector> compute_translations(double angle, const anchor &target);
+			std::vector<vector> compute_translations(double angle, const vector &axis, const anchor &target, const correspondences &correspondences_);
 		};
 
 		anchor source_, target_;
@@ -258,7 +258,7 @@ namespace nih {
 			std::tie(angle_result, angle_label) = biggest_cluster(angles, n_clusters_);
 			filter(correspondences_, angle_label);
 			filter(angles, angle_label);
-			std::vector<vector> translations = source_.compute_translations(angle_result, target_);
+			std::vector<vector> translations = source_.compute_translations(angle_result, Eigen::Vector3f::UnitY(), target_, correspondences_);
 			std::tie(translation_result, trans_label) = biggest_cluster(translations, n_clusters_);
 			filter(correspondences_, trans_label);
 			filter(angles, trans_label);
@@ -386,8 +386,7 @@ namespace nih {
 		// make sure that vector `z' points to outside screen {0, 0, 1}
 		if(f.eigenvectors_(2, 2) < 0) {
 			// rotate 180 over f.x
-			transformation rotation;
-			rotation = Eigen::AngleAxisf(M_PI, f.eigenvectors_.col(0));
+			transformation rotation( Eigen::AngleAxisf(M_PI, f.eigenvectors_.col(0)) );
 			for(int K = 1; K < 3; ++K)
 				f.eigenvectors_.col(K) = rotation * f.eigenvectors_.col(K);
 		}
@@ -395,13 +394,25 @@ namespace nih {
 		return f;
 	}
 
+	std::vector<vector> alignment::anchor::compute_translations(double angle, const vector &axis, const anchor &target, const correspondences &correspondences_){
+		std::vector<vector> result;
+		transformation rot(Eigen::AngleAxisf(angle, axis));
+		for(auto K: correspondences_){
+			auto ps = (*keypoints_)[K.index_query];
+			auto pt = (*target.keypoints_)[K.index_match];
+
+			auto aligned = rot * p2v(ps);
+			result.push_back(p2v(pt) - aligned);
+		}
+		return result;
+	}
+
 	//reference_frame
 	alignment::reference_frame alignment::reference_frame::solve_ambiguity() const{
 		//rotate pi on z axis
 		reference_frame result = *this;
 
-		nih::transformation rotation;
-		rotation = Eigen::AngleAxisf(M_PI, eigenvectors_.col(2));
+		transformation rotation( Eigen::AngleAxisf(M_PI, eigenvectors_.col(2)) );
 		result.eigenvectors_.col(0) = rotation * eigenvectors_.col(0);
 		result.eigenvectors_.col(1) = rotation * eigenvectors_.col(1);
 		return result;
