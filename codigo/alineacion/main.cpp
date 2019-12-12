@@ -1,15 +1,15 @@
-#include "fusion_3d.hpp"
 #include "filter.hpp"
+#include "fusion_3d.hpp"
 #include "util.hpp"
 
-#include <string>
-#include <vector>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <utility>
+#include <vector>
 
-#include <pcl/surface/mls.h>
 #include <pcl/features/fpfh.h>
+#include <pcl/surface/mls.h>
 
 #include <dkm.hpp> //kmeans
 
@@ -27,35 +27,38 @@ namespace nih {
 	template <class Feature>
 	correspondences best_matches(Feature source, Feature target);
 
-	double distance(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b);
-	transformation create_transformation(double angle, vector axis, vector translation);
+	double
+	distance(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b);
+	transformation
+	create_transformation(double angle, vector axis, vector translation);
 
-	//returns the center and if the element forms part of the cluster
-	template<class T>
-	std::tuple<T, std::vector<bool>>
+	// returns the center and if the element forms part of the cluster
+	template <class T>
+	std::tuple<T, std::vector<bool> >
 	biggest_cluster(std::vector<T> v, int n_clusters);
 
-	//transforms the input to be used for dkm::kmeans
-	std::vector<std::array<float, 3>>
+	// transforms the input to be used for dkm::kmeans
+	std::vector<std::array<float, 3> >
 	to_vec_array(const std::vector<vector> &v);
-	std::vector<std::array<double, 1>>
+	std::vector<std::array<double, 1> >
 	to_vec_array(const std::vector<double> &v);
-	//transforms from dkm::kmeans to types used before
+	// transforms from dkm::kmeans to types used before
 	vector from_vec_array(const std::array<float, 3> &v);
 	double from_vec_array(const std::array<double, 1> &v);
 
 	template <class Container>
 	void filter(Container &c, std::vector<bool> survivor);
 
-	template<class Iter>
+	template <class Iter>
 	typename Iter::value_type mode(Iter begin, Iter end);
 
 	class alignment {
 		struct reference_frame {
-			Eigen::Matrix3f eigenvectors_; //column order
+			Eigen::Matrix3f eigenvectors_; // column order
 			float eigenvalues_[3];
 			reference_frame solve_ambiguity() const;
-			Eigen::Matrix3f compute_rotation(const reference_frame &target) const;
+			Eigen::Matrix3f
+			compute_rotation(const reference_frame &target) const;
 		};
 
 		struct anchor {
@@ -64,24 +67,32 @@ namespace nih {
 			const cloud_with_normal *cloud_;
 			pcl::KdTreeFLANN<point> kdtree;
 			anchor();
-			void initialise(cloud_with_normal &cloud, double sample_ratio, double feature_radius);
+			void initialise(
+			    cloud_with_normal &cloud,
+			    double sample_ratio,
+			    double feature_radius);
 
 			void sampling(double ratio);
 			void redirect(cloud_with_normal &cloud);
 			void compute_features(double radius);
-			reference_frame compute_reference_frame(int index, double radius) const;
-			std::vector<vector> compute_translations(double angle, const vector &axis, const anchor &target, const correspondences &correspondences_);
+			reference_frame
+			compute_reference_frame(int index, double radius) const;
+			std::vector<vector> compute_translations(
+			    double angle,
+			    const vector &axis,
+			    const anchor &target,
+			    const correspondences &correspondences_);
 		};
 
 		anchor source_, target_;
 		correspondences correspondences_;
 
-		//functions
+		// functions
 		void filter_y_threshold();
 		std::vector<double> filter_rotation_axis();
 		bool valid_angle(const Eigen::Matrix3f &rotation, double &angle);
 
-		//parameters
+		// parameters
 		double sample_ratio_;
 		double feature_radius_;
 		double resolution_;
@@ -90,18 +101,18 @@ namespace nih {
 		int max_iterations_;
 		int n_clusters_;
 
-		public:
-			alignment();
-			transformation align(cloud_with_normal &source, cloud_with_normal &target);
-			void set_sample_ratio(double sample_ratio);
-			void set_feature_radius(double feature_radius);
-			void set_resolution(double resolution);
-			void set_y_threshold_(double y_threshold);
-			void set_axis_threshold_(double axis_threshold); //angle in radians
-			void set_max_iterations_cluster(int max_iterations);
-			void set_n_clusters(int n_clusters);
+	public:
+		alignment();
+		transformation
+		align(cloud_with_normal &source, cloud_with_normal &target);
+		void set_sample_ratio(double sample_ratio);
+		void set_feature_radius(double feature_radius);
+		void set_resolution(double resolution);
+		void set_y_threshold_(double y_threshold);
+		void set_axis_threshold_(double axis_threshold); // angle in radians
+		void set_max_iterations_cluster(int max_iterations);
+		void set_n_clusters(int n_clusters);
 	};
-
 
 	cloud::Ptr moving_least_squares(cloud::Ptr nube, double radius);
 } // namespace nih
@@ -112,7 +123,8 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	std::string directory = argv[1], config = argv[2];
-	if(directory.back() not_eq '/') directory += '/';
+	if(directory.back() not_eq '/')
+		directory += '/';
 
 	std::ifstream input(config);
 	std::string filename;
@@ -121,27 +133,29 @@ int main(int argc, char **argv) {
 	double resolution = nih::get_resolution(first);
 
 	std::vector<nih::cloud_with_normal> clouds;
-	clouds.emplace_back(nih::preprocess(nih::moving_least_squares(first, 6*resolution)));
+	clouds.emplace_back(
+	    nih::preprocess(nih::moving_least_squares(first, 6 * resolution)));
 
 	nih::alignment align;
 	align.set_resolution(resolution);
-	while(input >> filename){
+	while(input >> filename) {
 		auto source_orig = nih::load_cloud_ply(directory + filename);
-		auto source = nih::preprocess(nih::moving_least_squares(source_orig, 6*resolution));
+		auto source = nih::preprocess(
+		    nih::moving_least_squares(source_orig, 6 * resolution));
 		auto &target = clouds.back();
 
-		//set parameters...
+		// set parameters...
 		target.transformation_ = align.align(source, target);
 		clouds.emplace_back(std::move(target));
 	}
 
-	for(auto K: clouds)
+	for(auto K : clouds)
 		std::cout << K.transformation_.matrix() << '\n';
 	return 0;
 }
 
 namespace nih {
-	//free functions
+	// free functions
 	cloud::Ptr moving_least_squares(cloud::Ptr nube, double radius) {
 		int orden = 3;
 		pcl::MovingLeastSquares<nih::point, nih::point> mls;
@@ -159,21 +173,20 @@ namespace nih {
 		return smooth;
 	}
 	template <class Container>
-	void filter(Container &c, std::vector<bool> survivor){
+	void filter(Container &c, std::vector<bool> survivor) {
 		Container aux;
 		auto current = c.begin();
-		for(auto status: survivor){
-			if (status)
+		for(auto status : survivor) {
+			if(status)
 				aux.push_back(*current);
 			++current;
 		}
 		c = std::move(aux);
 	}
 	template <class Feature>
-	correspondences
-	best_matches(Feature source, Feature target) {
+	correspondences best_matches(Feature source, Feature target) {
 		correspondences matches;
-		for(int K=0; K<source->size(); ++K){
+		for(int K = 0; K < source->size(); ++K) {
 			double min_distance = std::numeric_limits<double>::infinity();
 			pcl::Correspondence corresp;
 			corresp.index_query = K;
@@ -193,19 +206,18 @@ namespace nih {
 		return matches;
 	}
 	template <class Feature>
-	correspondences
-	best_reciprocal_matches(Feature source, Feature target) {
+	correspondences best_reciprocal_matches(Feature source, Feature target) {
 		auto a2b = best_matches(source, target);
 		auto b2a = best_matches(target, source);
 		correspondences matches;
 
-		for(auto K: a2b){
+		for(auto K : a2b) {
 			int from = K.index_query;
 			int to = K.index_match;
 			bool same = false;
-			for(auto L: b2a){
-				if(L.index_query == to){
-					same = L.index_match==from;
+			for(auto L : b2a) {
+				if(L.index_query == to) {
+					same = L.index_match == from;
 					break;
 				}
 			}
@@ -235,108 +247,122 @@ namespace nih {
 
 		return result;
 	}
-	transformation create_transformation(double angle, vector axis, vector translation){
-		return Eigen::Translation3f(translation) * Eigen::AngleAxisf(angle, axis);
+	transformation
+	create_transformation(double angle, vector axis, vector translation) {
+		return Eigen::Translation3f(translation)
+		       * Eigen::AngleAxisf(angle, axis);
 	}
 	template <class T>
-	std::tuple<T, std::vector<bool>>
-	biggest_cluster(std::vector<T> v, int n_clusters){
+	std::tuple<T, std::vector<bool> >
+	biggest_cluster(std::vector<T> v, int n_clusters) {
 		auto [center, label] = dkm::kmeans_lloyd(to_vec_array(v), n_clusters);
 		std::vector<bool> member(v.size());
 		int mode_label = mode(label.begin(), label.end());
-		for(int K=0; K<member.size(); ++K)
+		for(int K = 0; K < member.size(); ++K)
 			member[K] = label[K] == mode_label;
 
 		return std::make_tuple(from_vec_array(center[0]), member);
 	}
-	std::vector<std::array<double, 1>>
+	std::vector<std::array<double, 1> >
 	to_vec_array(const std::vector<double> &v) {
-		std::vector<std::array<double, 1>> data(v.size());
-		for(int K=0; K<v.size(); ++K)
+		std::vector<std::array<double, 1> > data(v.size());
+		for(int K = 0; K < v.size(); ++K)
 			data[K][0] = v[K];
 		return data;
 	}
-	std::vector<std::array<float, 3>>
+	std::vector<std::array<float, 3> >
 	to_vec_array(const std::vector<Eigen::Vector3f> &v) {
-		std::vector<std::array<float, 3>> data(v.size());
-		for(int K=0; K<v.size(); ++K)
-			for(int L=0; L<3; ++L)
+		std::vector<std::array<float, 3> > data(v.size());
+		for(int K = 0; K < v.size(); ++K)
+			for(int L = 0; L < 3; ++L)
 				data[K][L] = v[K](L);
 		return data;
 	}
-	vector from_vec_array(const std::array<float, 3> &v){
+	vector from_vec_array(const std::array<float, 3> &v) {
 		vector result;
-		for(int K=0; K<3; ++K)
+		for(int K = 0; K < 3; ++K)
 			result(K) = v[K];
 		return result;
 	}
-	double from_vec_array(const std::array<double, 1> &v){
+	double from_vec_array(const std::array<double, 1> &v) {
 		return v[0];
 	}
-	template<class Iter>
+	template <class Iter>
 	typename Iter::value_type mode(Iter begin, Iter end) {
 		std::map<typename Iter::value_type, uint32_t> contador;
 		for(Iter K = begin; K not_eq end; ++K)
 			++contador[*K];
 
-		typename Iter::value_type big =
-			std::max_element(
-				contador.begin(),
-				contador.end(),
-				[](const auto &a, const auto &b) { return a.second < b.second; })
-				->first;
+		typename Iter::value_type big = std::max_element(
+		                                    contador.begin(),
+		                                    contador.end(),
+		                                    [](const auto &a, const auto &b) {
+			                                    return a.second < b.second;
+		                                    })
+		                                    ->first;
 
 		return big;
 	}
 
 	// class alignment
-	alignment::alignment() :
-		sample_ratio_(0.25),
-		feature_radius_(6),
-		resolution_(0),
-		y_threshold_(8),
-		axis_threshold_(0.2),
-		max_iterations_(3),
-		n_clusters_(3)
-	{}
-	transformation alignment::align(cloud_with_normal &source, cloud_with_normal &target) {
-		source_.initialise(source, sample_ratio_, feature_radius_*resolution_);
-		target_.initialise(target, sample_ratio_, feature_radius_*resolution_);
+	alignment::alignment()
+	    : sample_ratio_(0.25),
+	      feature_radius_(6),
+	      resolution_(0),
+	      y_threshold_(8),
+	      axis_threshold_(0.2),
+	      max_iterations_(3),
+	      n_clusters_(3) {}
+	transformation
+	alignment::align(cloud_with_normal &source, cloud_with_normal &target) {
+		source_.initialise(
+		    source, sample_ratio_, feature_radius_ * resolution_);
+		target_.initialise(
+		    target, sample_ratio_, feature_radius_ * resolution_);
 
-		correspondences_ = best_reciprocal_matches(source_.features_, target_.features_);
-		//features_ no longer needed
+		correspondences_ =
+		    best_reciprocal_matches(source_.features_, target_.features_);
+		// features_ no longer needed
 
 		filter_y_threshold();
 		std::vector<double> angles = filter_rotation_axis();
-		//iterate clustering
+		// iterate clustering
 		double angle_result = 0;
-		vector translation_result(0,0,0);
+		vector translation_result(0, 0, 0);
 		std::vector<bool> angle_label, trans_label;
-		for(int K=0; K<max_iterations_; ++K){
-			std::tie(angle_result, angle_label) = biggest_cluster(angles, n_clusters_);
+		for(int K = 0; K < max_iterations_; ++K) {
+			std::tie(angle_result, angle_label) =
+			    biggest_cluster(angles, n_clusters_);
 			filter(correspondences_, angle_label);
 			filter(angles, angle_label);
-			std::vector<vector> translations = source_.compute_translations(angle_result, Eigen::Vector3f::UnitY(), target_, correspondences_);
-			std::tie(translation_result, trans_label) = biggest_cluster(translations, n_clusters_);
+			std::vector<vector> translations = source_.compute_translations(
+			    angle_result,
+			    Eigen::Vector3f::UnitY(),
+			    target_,
+			    correspondences_);
+			std::tie(translation_result, trans_label) =
+			    biggest_cluster(translations, n_clusters_);
 			filter(correspondences_, trans_label);
 			filter(angles, trans_label);
 		}
 
-		return create_transformation(angle_result, {0, 1, 0}, translation_result);
+		return create_transformation(
+		    angle_result, {0, 1, 0}, translation_result);
 	}
 
-	void alignment::filter_y_threshold(){
-		//the points should not change too much on the y axis
+	void alignment::filter_y_threshold() {
+		// the points should not change too much on the y axis
 		correspondences corr;
 		int n = 0;
 		auto source = source_.keypoints_;
 		auto target = target_.keypoints_;
-		for(auto K: correspondences_){
+		for(auto K : correspondences_) {
 			auto ps = (*source)[K.index_query];
 			auto pt = (*target)[K.index_match];
 
-			//reject the points
-			if(abs(ps.y-pt.y) > y_threshold_) continue;
+			// reject the points
+			if(abs(ps.y - pt.y) > y_threshold_)
+				continue;
 
 			corr.push_back(K);
 		}
@@ -344,16 +370,18 @@ namespace nih {
 	}
 
 	std::vector<double> alignment::filter_rotation_axis() {
-		//compute rotation transformation
-		//reject those too far from y axis
-		//returns the rotation angles
+		// compute rotation transformation
+		// reject those too far from y axis
+		// returns the rotation angles
 		std::vector<double> angles;
 		correspondences corr;
 
 		int n = 0;
 		for(auto K : correspondences_) {
-			auto f_source = source_.compute_reference_frame(K.index_query, feature_radius_);
-			auto f_target = target_.compute_reference_frame(K.index_query, feature_radius_);
+			auto f_source =
+			    source_.compute_reference_frame(K.index_query, feature_radius_);
+			auto f_target =
+			    target_.compute_reference_frame(K.index_query, feature_radius_);
 			auto f_target_prima = f_target.solve_ambiguity();
 
 			auto r1 = f_source.compute_rotation(f_target);
@@ -369,32 +397,33 @@ namespace nih {
 
 		return angles;
 	}
-	bool alignment::valid_angle(const Eigen::Matrix3f &rotation, double &angle){
-		//near y axis
+	bool
+	alignment::valid_angle(const Eigen::Matrix3f &rotation, double &angle) {
+		// near y axis
 		Eigen::AngleAxisf aa;
 		aa.fromRotationMatrix(rotation);
 		double doty = aa.axis()(1);
 		angle = aa.angle();
 
-		return 1-std::abs(doty) < axis_threshold_;
+		return 1 - std::abs(doty) < axis_threshold_;
 	}
 
 	// class anchor
-	alignment::anchor::anchor():
-		cloud_(nullptr){}
+	alignment::anchor::anchor() : cloud_(nullptr) {}
 
 	void alignment::anchor::sampling(double ratio) {
 		keypoints_ = index_sampling(cloud_->points_, ratio);
 	}
 
-	void alignment::anchor::redirect(cloud_with_normal &cloud){
+	void alignment::anchor::redirect(cloud_with_normal &cloud) {
 		keypoints_->clear();
 		features_->clear();
 		cloud_ = &cloud;
 		kdtree.setInputCloud(cloud_->points_);
 	}
 
-	void alignment::anchor::initialise(cloud_with_normal &cloud, double sample_ratio, double feature_radius){
+	void alignment::anchor::initialise(
+	    cloud_with_normal &cloud, double sample_ratio, double feature_radius) {
 		redirect(cloud);
 		sampling(sample_ratio);
 		compute_features(feature_radius);
@@ -425,8 +454,8 @@ namespace nih {
 
 			for(int L = 0; L < 3; ++L)
 				for(int M = 0; M < 3; ++M)
-					covarianza(L, M) +=
-						(p.data[L] - center.data[L]) * (p.data[M] - center.data[M]);
+					covarianza(L, M) += (p.data[L] - center.data[L])
+					                    * (p.data[M] - center.data[M]);
 		}
 
 		// compute eigenvales and eigenvectors
@@ -439,12 +468,13 @@ namespace nih {
 
 		// to always have right-hand rule
 		f.eigenvectors_.col(2) =
-			f.eigenvectors_.col(0).cross(f.eigenvectors_.col(1));
+		    f.eigenvectors_.col(0).cross(f.eigenvectors_.col(1));
 
 		// make sure that vector `z' points to outside screen {0, 0, 1}
 		if(f.eigenvectors_(2, 2) < 0) {
 			// rotate 180 over f.x
-			transformation rotation( Eigen::AngleAxisf(M_PI, f.eigenvectors_.col(0)) );
+			transformation rotation(
+			    Eigen::AngleAxisf(M_PI, f.eigenvectors_.col(0)));
 			for(int K = 1; K < 3; ++K)
 				f.eigenvectors_.col(K) = rotation * f.eigenvectors_.col(K);
 		}
@@ -452,10 +482,14 @@ namespace nih {
 		return f;
 	}
 
-	std::vector<vector> alignment::anchor::compute_translations(double angle, const vector &axis, const anchor &target, const correspondences &correspondences_){
+	std::vector<vector> alignment::anchor::compute_translations(
+	    double angle,
+	    const vector &axis,
+	    const anchor &target,
+	    const correspondences &correspondences_) {
 		std::vector<vector> result;
 		transformation rot(Eigen::AngleAxisf(angle, axis));
-		for(auto K: correspondences_){
+		for(auto K : correspondences_) {
 			auto ps = (*keypoints_)[K.index_query];
 			auto pt = (*target.keypoints_)[K.index_match];
 
@@ -465,17 +499,19 @@ namespace nih {
 		return result;
 	}
 
-	//reference_frame
-	alignment::reference_frame alignment::reference_frame::solve_ambiguity() const{
-		//rotate pi on z axis
+	// reference_frame
+	alignment::reference_frame
+	alignment::reference_frame::solve_ambiguity() const {
+		// rotate pi on z axis
 		reference_frame result = *this;
 
-		transformation rotation( Eigen::AngleAxisf(M_PI, eigenvectors_.col(2)) );
+		transformation rotation(Eigen::AngleAxisf(M_PI, eigenvectors_.col(2)));
 		result.eigenvectors_.col(0) = rotation * eigenvectors_.col(0);
 		result.eigenvectors_.col(1) = rotation * eigenvectors_.col(1);
 		return result;
 	}
-	Eigen::Matrix3f alignment::reference_frame::compute_rotation(const reference_frame &target) const{
+	Eigen::Matrix3f alignment::reference_frame::compute_rotation(
+	    const reference_frame &target) const {
 		return eigenvectors_.transpose() * target.eigenvectors_;
 	}
 
@@ -483,22 +519,22 @@ namespace nih {
 	void alignment::set_sample_ratio(double sample_ratio) {
 		sample_ratio_ = sample_ratio;
 	}
-	void alignment::set_feature_radius(double feature_radius){
+	void alignment::set_feature_radius(double feature_radius) {
 		feature_radius_ = feature_radius;
 	}
-	void alignment::set_resolution(double resolution){
+	void alignment::set_resolution(double resolution) {
 		resolution_ = resolution;
 	}
-	void alignment::set_y_threshold_(double y_threshold){
+	void alignment::set_y_threshold_(double y_threshold) {
 		y_threshold_ = y_threshold;
 	}
-	void alignment::set_axis_threshold_(double axis_threshold){
+	void alignment::set_axis_threshold_(double axis_threshold) {
 		axis_threshold_ = std::cos(axis_threshold);
 	}
-	void alignment::set_max_iterations_cluster(int max_iterations){
+	void alignment::set_max_iterations_cluster(int max_iterations) {
 		max_iterations_ = max_iterations;
 	}
-	void alignment::set_n_clusters(int n_clusters){
+	void alignment::set_n_clusters(int n_clusters) {
 		n_clusters_ = n_clusters;
 	}
 } // namespace nih
