@@ -11,6 +11,8 @@
 #include <pcl/surface/mls.h>
 #include <pcl/features/fpfh.h>
 
+#include <dkm.hpp> //kmeans
+
 void usage(const char *program) {
 	std::cerr << program << " directory "
 	          << "conf_file\n";
@@ -28,10 +30,19 @@ namespace nih {
 	double distance(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b);
 	transformation create_transformation(double angle, vector axis, vector translation);
 
-	std::tuple<double, std::vector<bool>>
-	biggest_cluster(std::vector<double> v, int n_clusters);
-	std::tuple<vector, std::vector<bool>>
-	biggest_cluster(std::vector<vector> v, int n_clusters);
+	//returns the center and if the element forms part of the cluster
+	template<class T>
+	std::tuple<T, std::vector<bool>>
+	biggest_cluster(std::vector<T> v, int n_clusters);
+
+	//transforms the input to be used for dkm::kmeans
+	std::vector<std::array<float, 3>>
+	to_vec_array(const std::vector<vector> &v);
+	std::vector<std::array<double, 1>>
+	to_vec_array(const std::vector<double> &v);
+	//transforms from dkm::kmeans to types used before
+	vector from_vec_array(const std::array<float, 3> &v);
+	double from_vec_array(const std::array<double, 1> &v);
 
 	template <class Container>
 	void filter(Container &c, std::vector<bool> survivor);
@@ -228,6 +239,42 @@ namespace nih {
 	}
 	transformation create_transformation(double angle, vector axis, vector translation){
 		return Eigen::Translation3f(translation) * Eigen::AngleAxisf(angle, axis);
+	}
+
+	template <class T>
+	std::tuple<T, std::vector<bool>>
+	biggest_cluster(std::vector<T> v, int n_clusters){
+		auto [center, label] = dkm::kmeans_lloyd(to_vec_array(v), n_clusters);
+		std::vector<bool> member(v.size());
+		int mode_label = mode(label.begin(), label.end());
+		for(int K=0; K<member.size(); ++K)
+			member[K] = label[K] == mode_label;
+
+		return std::make_tuple(from_vec_array(center[0]), member);
+	}
+	std::vector<std::array<double, 1>>
+	to_vec_array(const std::vector<double> &v) {
+		std::vector<std::array<double, 1>> data(v.size());
+		for(int K=0; K<v.size(); ++K)
+			data[K][0] = v[K];
+		return data;
+	}
+	std::vector<std::array<float, 3>>
+	to_vec_array(const std::vector<Eigen::Vector3f> &v) {
+		std::vector<std::array<float, 3>> data(v.size());
+		for(int K=0; K<v.size(); ++K)
+			for(int L=0; L<3; ++L)
+				data[K][L] = v[K](L);
+		return data;
+	}
+	vector from_vec_array(const std::array<float, 3> &v){
+		vector result;
+		for(int K=0; K<3; ++K)
+			result(K) = v[K];
+		return result;
+	}
+	double from_vec_array(const std::array<double, 1> &v){
+		return v[0];
 	}
 
 	// class alignment
