@@ -260,6 +260,7 @@ namespace nih {
 	template <class T>
 	std::tuple<T, std::vector<bool> >
 	biggest_cluster(std::vector<T> v, int n_clusters) {
+		if(v.size() < n_clusters) n_clusters = 1;
 		auto [center, label] = dkm::kmeans_lloyd(to_vec_array(v), n_clusters);
 		std::vector<bool> member(v.size());
 		int mode_label = mode(label.begin(), label.end());
