@@ -153,10 +153,10 @@ namespace nih {
 		Eigen::Quaternion<float> rotation(q);
 		Eigen::Translation<float, 3> translation(t[0], t[1], t[2]);
 
-		nih::transformation transformation;
-		transformation = translation * rotation.inverse();
+		transformation transformation_;
+		transformation_ = translation * rotation.inverse();
 
-		return transformation;
+		return transformation_;
 	}
 
 	cloud::Ptr subsampling(cloud::Ptr nube, double alfa) {

@@ -59,6 +59,8 @@ alineación
 		encontrar área solapada
 			erosionar una de las áreas para lograr Source incluido en Target
 	mejorar con icp
+	**revisar clustering, ángulos negativos y ambigüedad de ref_frame
+		elegir clúster cuyo centro sea el más cercano a la media
 
 leer .ply con estructura
 escribir .ply con estructura
