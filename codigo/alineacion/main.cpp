@@ -144,12 +144,12 @@ int main(int argc, char **argv) {
 		auto source_orig = nih::load_cloud_ply(directory + filename);
 		auto source = nih::preprocess(
 		    nih::moving_least_squares(source_orig, 6 * resolution));
-		auto &target = clouds.back();
+		const auto &target = clouds.back();
 
 		// set parameters...
 
 		source.transformation_ = align.align(source, target);
-		nih::show_transformation(source.transformation_, std::cerr);
+		//nih::show_transformation(source.transformation_, std::cerr);
 		//source.transformation_ = target.transformation_ * source.transformation_;
 		clouds.emplace_back(std::move(source));
 	}
@@ -325,7 +325,7 @@ namespace nih {
 	// class alignment
 	alignment::alignment()
 	    : sample_ratio_(0.25),
-	      feature_radius_(6),
+	      feature_radius_(8),
 	      resolution_(0),
 	      y_threshold_(8),
 	      axis_threshold_(0.2),
@@ -384,7 +384,7 @@ namespace nih {
 			auto pt = (*target)[K.index_match];
 
 			// reject the points
-			if(abs(ps.y - pt.y) > y_threshold_)
+			if(std::abs(ps.y - pt.y) > y_threshold_*resolution_)
 				continue;
 
 			corr.push_back(K);
@@ -402,9 +402,9 @@ namespace nih {
 		int n = 0;
 		for(auto K : correspondences_) {
 			auto f_source =
-			    source_.compute_reference_frame(K.index_query, feature_radius_);
+			    source_.compute_reference_frame(K.index_query, feature_radius_*resolution_);
 			auto f_target =
-			    target_.compute_reference_frame(K.index_query, feature_radius_);
+			    target_.compute_reference_frame(K.index_match, feature_radius_*resolution_);
 			auto f_target_prima = f_target.solve_ambiguity();
 
 			auto r1 = f_source.compute_rotation(f_target);
@@ -484,9 +484,10 @@ namespace nih {
 		Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> solver(covarianza);
 
 		reference_frame f;
-		for(int K = 0; K < 3; ++K)
+		for(int K = 0; K < 3; ++K){
 			f.eigenvalues_[K] = solver.eigenvalues()[3 - (K + 1)];
-		f.eigenvectors_ = solver.eigenvectors();
+			f.eigenvectors_.col(K) = solver.eigenvectors().col(3-(K+1));
+		}
 
 		// to always have right-hand rule
 		f.eigenvectors_.col(2) =
