@@ -1,12 +1,14 @@
 #include "filter.hpp"
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <Eigen/Eigen>
 
 void usage(const char *program) {
 	std::cerr << program << "conf_file\n";
-	std::cerr << "stdout: total transformation\n";
-	std::cerr << "stderr: relative transformation\n";
+	std::cerr << "total transformation conf_total.angleaxis";
+	std::cerr << "partial transformation conf_partial.angleaxis";
+	std::cerr << "partial transformation conf_partial.quaternion";
 }
 
 namespace nih{
@@ -19,10 +21,17 @@ namespace nih{
 	}
 
 	void show_transformation(const transformation &t, std::ostream &out){
-		Eigen::Matrix3f rotation, scale;
-		t.computeRotationScaling(&rotation, &scale);
+		//Eigen::Matrix3f rotation, scale;
+		//t.computeRotationScaling(&rotation, &scale);
+		Eigen::Matrix3f rotation(t.rotation());
 		show_rotation(rotation, out);
 		out << t.translation().transpose() << '\n';
+	}
+
+	void show_transformation_quat(const transformation &t, std::ostream &out){
+		out << t.translation().transpose();
+		Eigen::Quaternionf rotation(t.rotation());
+		out << rotation.vec().transpose() << ' ' << rotation.w() << '\n';
 	}
 }
 
@@ -32,7 +41,13 @@ int main(int argc, char **argv){
 		return 1;
 	}
 	std::string config = argv[1];
+	std::string basename = config.substr(0, config.find_last_of('.'));
 	std::ifstream input(config);
+	std::ofstream total_angleaxis(basename + "_total.angleaxis");
+	std::ofstream total_quaternion(basename + "_total.quaternion");
+	std::ofstream partial_angleaxis(basename + "_partial.angleaxis");
+	std::ofstream partial_quaternion(basename + "_partial.quaternion");
+
 	std::string filename;
 	input >> filename;
 	auto first = nih::get_transformation(input);
@@ -40,10 +55,14 @@ int main(int argc, char **argv){
 	while(input >> filename){
 		auto t = nih::get_transformation(input);
 
-		std::cout << filename << '\n';
-		nih::show_transformation(t, std::cout);
-		std::cerr << filename << '\n';
-		nih::show_transformation(t*first.inverse(), std::cerr);
+		total_angleaxis << filename << '\n';
+		nih::show_transformation(t, total_angleaxis);
+		total_quaternion << filename << ' ';
+		nih::show_transformation_quat(t, total_quaternion);
+		partial_angleaxis << filename << '\n';
+		nih::show_transformation(t*first.inverse(), partial_angleaxis);
+		partial_quaternion << filename << ' ';
+		nih::show_transformation_quat(t*first.inverse(), partial_quaternion);
 		first = t;
 	}
 
