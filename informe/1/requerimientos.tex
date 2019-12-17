@@ -3,5 +3,102 @@
 \author{Walter Bedrij}
 \date{\today}
 
+\newcommand{\Requerimiento}[2]{
+	{\bfseries #1}\\
+	#2
+}
+
 \begin{document}
+	\maketitle
+	\tableofcontents
+	\section{Introducción}
+	El presente documento tiene como propósito definir las especificaciones
+	funcionales y no funcionales para el desarrollo de una biblioteca de
+	software que proveerá implementaciones de técnicas de registración, fusión
+	y relleno de huecos de mallas tridimensionales.
+
+	\section{Descripción}
+		Se dispone de un sistema cámara-superficie giratoria, cuyas posiciones
+		se encuentran fijas en el espacio, y estando alineado el eje de giro de
+		la superficie con el eje vertical del dispositivo de captura.
+		El objeto de interés se ubicará sobre la superficie giratoria, y se
+		realizarán capturas a intervalos de giro regulares
+		hasta totalizar una vuelta completa (360\textdegree).
+
+		A partir de estas restricciones, se desarrollarán algoritmos de
+		registración de las capturas parciales,
+		fusión de las mallas resultantes
+		y relleno de huecos para conseguir una superficie cerrada.
+
+		Las entradas serán nubes de puntos con valores de posición (x,y,z).
+		No se dispondrá de información de textura, normales o conectividades.
+
+		Como salida se tendrá una superficie cerrada triangulada.
+
+		\subsection{Interfaces con software}
+			Se utilizará la \emph{Point Cloud Library} (PCL)
+			para realizar las operaciones sobre las mallas y nubes de puntos.
+			Debido a esto, se utilizará el lenguaje de programación C++.
+
+		\subsection{Funciones del producto}
+			Registración de mallas:
+				El usuario dispondrá de funciones para
+				determinar la transformación que lleve una malla
+				a su alineación en el espacio de otra.
+
+			Métricas:
+				El usuario dispondrá de funciones para
+				la obtención de métricas que le permitan
+				evaluar el resultado de una registración
+
+			Corrección de bucle:
+				El usuario dispondrá de funciones para
+				corregir el error propagado durante la registración.
+
+			Reconstrucción de la superficie:
+				El usuario dispondrá de funciones para 
+				obtener una triangulación a partir de mallas alienadas.
+
+			Relleno de huecos:
+				El usuario dispondrá de funciones para 
+				estimar la superficie en zonas carente de datos observados.
+
+		\subsection{Restricciones}
+			El ángulo máximo entre dos mallas no podrá exceder los 60\textdegree.
+
+			La cámara no se encontrará demasiado elevada respecto a la
+			superficie giratoria, en ningún caso deberá superar el punto más alto del objeto.
+
+	\section{Requerimientos}
+		\Requerimiento
+			{Outliers}
+			{Funciones para la detección y eliminación de puntos considerados
+			outliers.}
+
+		\Requerimiento
+			{Registración Inicial}
+			{Se debe disponer de funciones que dadas dos mallas calculen una
+			transformación que las acerque lo suficiente como para poder
+			utilizar luego ICP}
+
+		\Requerimiento
+			{Área solapada}
+			{Funciones que establezcan los puntos en común (o una buena
+			aproximación) entre dos mallas ya alineadas burdamente}
+
+		\Requerimiento
+			{Ajuste de puntos}
+			{Funciones para ajustar los puntos y sus normales según la
+			información de cada malla de donde provengan}
+
+		\Requerimiento
+			{Triangulación}
+			{Funciones para obtener una triangulación dada una nube de puntos tridimensional}
+
+		\Requerimiento
+			{Relleno}
+			{Funciones para lograr que una triangulación sea cerrada. Se
+			estimará una superficie en las zonas donde se carezca de
+			información.}
+
 \end{document}
