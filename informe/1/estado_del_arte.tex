@@ -4,4 +4,168 @@
 \date{\today}
 
 \begin{document}
+%FIXME: alineación / registración
+%\section{Informe bibliográfico}
+	\section{General}
+
+	\section{Herramientas}
+		\subsection{C++}
+			PCL se encuentra disponible para ser usada en c++
+			Existen proyectos para portarla a python y java,
+			pero no se encuentran suficientemente avanzados.
+		\subsection{Open Source Computer Vision Library (OpenCV)}
+			Es una biblioteca de código abierto de
+			visión computacional y aprendizaje maquinal.
+			Cuenta con módulos de
+			procesamiento de imágenes de profundidad
+			y registración
+
+			%No usé OpenCV porque eran imágenes rgb-d
+			%y yo recibía nube de puntos
+			%queda PCL
+
+		\subsection{The Point Cloud Library (PCL)}
+			\url{http://www.pointclouds.org}
+			Es un framework de código abierto multiplataforma para el procesado de imágenes 2D/3D y nubes de puntos.
+			Provee numerosos algoritmos state-of-the-art %%FIXME
+			para reducción de ruido, extracción de puntos salientes,
+			cálculo de descriptores, registración,
+			reconstrucción de superficies, entre otros.
+
+			La documentación incluye tutoriales para cada módulo de la biblioteca
+			y además se cuenta con listas de correos
+			y canales de IRC para brindar soporte.
+
+
+
+			%Registration with the Point Cloud Library A Modular Framework for Aligning in 3-D
+			%3d_is_here_point_cloud_library_pcl.txt
+		\subsection{CloudCompare, Meshlab}
+			Son programas de procesamiento y edición de mallas de puntos 3D.
+			Presentan herramientas de registración semiautomática (a partir de
+			puntos seleccionados por el usuario), y cuentan con una
+			implementación de \cite{poisson-reconstruction} para reconstrucción
+			de superficies.
+
+			Se utilizarán especialmente para visualización
+			y comparación de resultados.
+
+		\subsection{The Stanford 3D Scanning Repository}
+			\url{http://graphics.stanford.edu/data/3Dscanrep/}
+
+			%FIXME
+			%The purpose of this repository is to make some
+			%range data and detailed reconstructions available to the public.
+			Repositorio público de escaneos y sus reconstrucciones 3D.
+			Las capturas se realizaron mediante un escáner de barrido,
+			el cual brinda información de las conectividades de los puntos.
+			Sin embargo, esta información se descartó ya que
+			\cite{Pancho} no la provee.
+
+			Se utilizarán 5 modelos: armadillo, bunny, dragon, drill y happy.
+			Estos cuentan con las transformaciones necesarias para la registración de cada captura y con reconstrucciones libres de ruido a diversas resoluciones y con método zippered %citar
+			y volumétrico
+
+			%the scanner typically examines a high-resolution image of the
+			%reflected laser line, deciding from its profile in this image
+			%whether two adjacent vertices should be connected by a surface or
+			%not. Cyberware laser scanners do this. Thus, if you discard mesh
+			%connectivity, you are discarding real and possibly useful
+			%information about the underlying surface.
+
+
+		%TODO
+		kinfu:
+		kinectfusion:
+
+	\section{Preproceso}
+
+	\section{Alineación}
+	%Sacar de PCL_Registration_Tutorial.pdf
+		La registración entre dos nubes de puntos se suele resolver mediante
+		alguna de las variantes del algoritmo Iterative Closest Point (ICP).
+		%citar, citar, citar
+		Sin embargo, para evitar caer en mínimos locales,
+		se debe contar con una buena aproximación inicial. %citar
+		Este trabajo buscará algorimos para conseguir esta aproximación inicial.
+
+		%TODO:
+			pipeline: keypoints -> features -> correspondences -> restrictions -> estimation
+		%Iterative closest point:
+
+		Keypoints:
+			no buscar saliencias: Uniforme, random,
+			basado en procesamiento de imágenes: harris, brisk
+			persistencia multiescala:
+
+		Features:
+			Intrinsic shape signatures:
+				Por keypoint se tiene
+				una representación independiente de la vista,
+					lo cual nos permite establecer las correspondencias;
+				y un marco de referencia, que nos permite calcular la transformación.
+
+		Correción del bucle:
+			Debido a que la registración se hace de a pares el error aumenta
+			con cada nueva malla, se tendrá entonces un corrimiento de los
+			bordes que deberían cerrar el bucle.
+				ajusta según el corrimiento, y propaga el ajuste a las alineaciones anteriores
+				%in-hand_scanning_with_online_loop_closure.pdf
+				%embedded_deformation_for_shape_manipulation.pdf
+
+	\section{Resolver bucle}
+		Debido a que la registración se realiza entre pares de nubes de puntos,
+		el error es propagado en una dirección, por lo cual es necesario distribuírlo sobre todas las registraciones
+		%Embedded Deformation for Shape Manipulation
+		%in-hand_scanning_with_online_loop_closure.txt
+
+	\section{Fusión}
+		Volumetric: superficie implícita%a_volumetric_method_for_building_complex_models_from_range_images.txt
+			usado por kinectfusion
+			arreglo de vóxeles (en gpu kf)
+			raycasting desde la cámara hacia la superficie,
+				rellenando con valores de distancia a la superficie
+			extraer superficie D=0
+
+			rellena huecos automáticamente
+			%pcl::TSDFVolume
+		Zippered: %zippered_polygon_meshes_from_range_images.txt
+			malla poligonal
+			en dos pasos:
+				1. aproximar la topología: reducir el área solapada eligiendo puntos de una de las mallas
+				2. refinar mediante un promedio ponderado: mover por la normal, pesar según *confianza*
+
+		Surfel: %in-hand_scanning_with_online_loop_closure.txt
+			representación de discos en los vértices
+			facilidad de actualización / agregado / eliminación de puntos (sobre malla poligonal, asegura consistencia)
+			manejo de algunos outliers
+			%ver diferencia con zippered
+		Poisson: %poisson_surface_reconstruction.pdf
+			requiere de puntos y normales
+			transforma el problema en una ecuación de Poisson %(¿soporte local, fem?)
+			sensible al ruido
+			rellena huecos
+			implementado en pcl, también en cloudcompare
+			usar para comparar con el propio
+
+
+	\section{Relleno de huecos}
+		volumetric rellena huecos automáticamente
+			hueco: frontera entre unseen - empty
+			backdrop %(¿en la adquisición?)
+			%filling_holes_in_comple_surfaces_using_volumetric_diffusion
+			convertir a una versión volumétrica y realizar una difusión
+				utilizar línea de vista
+		Surface fitting
+		Poisson rellena huecos automáticamente
+			%poisson_surface_reconstruction.pdf
+		Adhoc
+
+\section{Bibliografía}
+
+% ¿esto estaba?
+%Definiciones de las técnicas de
+%	alineación
+%	y fusión de mallas
+%	y rellenado de huecos.
 \end{document}
