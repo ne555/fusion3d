@@ -7,81 +7,6 @@
 	\maketitle
 	\section{General}
 
-	\section{Herramientas}
-		\subsection{Open Source Computer Vision Library (OpenCV)}
-			Es una biblioteca de código abierto de
-			visión computacional y aprendizaje maquinal.
-			Cuenta con módulos de
-			procesamiento de imágenes de profundidad
-			y registración.
-
-			%No usé OpenCV porque eran imágenes rgb-d
-			%y yo recibía nube de puntos
-			%además de que tampoco tenían color
-			%queda PCL
-
-		\subsection{The Point Cloud Library (PCL)}
-			\url{http://www.pointclouds.org}
-			Es un framework de código abierto multiplataforma para el procesado de imágenes 2D/3D y nubes de puntos.
-			Provee numerosos algoritmos state-of-the-art %FIXME
-			para reducción de ruido, extracción de puntos salientes,
-			cálculo de descriptores, registración,
-			reconstrucción de superficies, entre otros.
-
-			La documentación incluye tutoriales para cada módulo de la biblioteca
-			y además se cuenta con listas de correos
-			y canales de IRC para brindar soporte.
-			%Registration with the Point Cloud Library A Modular Framework for Aligning in 3-D
-			%3d_is_here_point_cloud_library_pcl.txt
-
-			PCL se encuentra disponible para ser usada en C++.
-			Existen proyectos para portarla a Python y Java,
-			pero no se encuentran suficientemente avanzados.
-
-		\subsection{CloudCompare, Meshlab}
-			Son programas de procesamiento y edición de mallas de puntos 3D.
-			Presentan herramientas de registración semiautomática (a partir de
-			puntos seleccionados por el usuario), y cuentan con una
-			implementación del algoritmo \emph{Poisson Surface Reconstruction}
-			para reconstrucción de superficies.
-
-			Se utilizarán especialmente para visualización
-			y comparación de resultados.
-
-		\subsection{The Stanford 3D Scanning Repository}
-			\url{http://graphics.stanford.edu/data/3Dscanrep/}
-
-			Este proyecto surge debido a la falta de disponibilidad
-			por parte de los investigadores
-			de acceso a modelos poligonales densos
-				o a la infraestructura para obtener los mismos.
-			Por lo cual se crea un repositorio público de
-			escaneos tridimensionales y sus correspondientes reconstrucciones.
-
-			Los modelos fueron escaneados mediante un escáner Cyberware 3030~MS,
-			el cual es un escáner láser de barrido.
-			Se provee de un archivo de configuración que lista por cada captura
-			las transformaciones necesarias para alinearla en un sistema de
-			referencia global.
-
-			Las capturas fueron combinadas para producir una única malla
-			triangular utilizando el método de \emph{zippering} o bien
-			\emph{volumetric merging}, ambos métodos desarrollados en Stanford.
-
-
-			Se seleccinonarion estos 5 modelos para ser utilizados: armadillo, bunny, dragon, drill y happy.
-
-		\subsection{KinectFusion}
-			%kinectfusion_real-time_3d_reconstruction_and_interaction_using_a_moving_depth_camera
-			Debido a que uno de los objetivos era lograr
-			una implementación en tiempo real,
-			el algoritmo de registración requiere de
-			poca variación entre capturas de
-			la posición relativa cámara-objeto.
-
-			Para realizar la combinación utiliza una variación del método de
-			\emph{volumetric merging} sobre GPU.
-
 	\section{Registración}
 		%PCL_Registration_Tutorial
 		La registración entre dos nubes de puntos se suele resolver mediante
@@ -148,55 +73,176 @@
 			se tendrá entonces un corrimiento de los
 			bordes que deberían cerrar el bucle.
 
+			Estas perturbaciones provocarán una deformación de la malla.
 			%in-hand_scanning_with_online_loop_closure
-			%embedded_deformation_for_shape_manipulation
-			Realizan las correcciones "de la forma más rígida posible"
+			se plantea un algoritmo para el cálculo
+			y la propagación de estas perturbaciones.
+			%FIXME
+			%de modo que la deformación sea "lo más rígida posible".
 
 	\section{Fusión}
-		Volumetric: superficie implícita %a_volumetric_method_for_building_complex_models_from_range_images.txt
-			usado por kinectfusion
-			arreglo de vóxeles (en gpu kf)
-			raycasting desde la cámara hacia la superficie,
-				rellenando con valores de distancia a la superficie
-			extraer superficie D=0
+		Una vez alineadas las superficies éstas deben combinarse en una única malla resultante
 
-			rellena huecos automáticamente
+		\subsection{Volumetric merge}
+		%a_volumetric_method_for_building_complex_models_from_range_images.txt
+		Se divide el espacio en un arreglo de vóxeles que contienen la
+		distancia con signo desde el centro del vóxel a la superficie (la
+		distancia será positiva si el vóxel se encuentra en la parte exterior y
+		negativa si se encuentra en el interior). De esta forma, en los vóxeles
+		donde la distancia es 0, se tiene definida de forma implícita a la
+		superficie, la cual puede extraerse con, por ejemplo, \emph{marching cubes}.
 
-			%ver implementación pcl::TSDFVolume
-		Zippered: %zippered_polygon_meshes_from_range_images.txt
-			malla poligonal
-			en dos pasos:
-				1. aproximar la topología: reducir el área solapada eligiendo puntos de una de las mallas
-				2. refinar mediante un promedio ponderado: mover por la normal, pesar según *confianza*
-			La confianza depende de la distancia del punto al centro de la nube, y del ángulo de su normal respecto al del eye-target de la cámara
+		En cada nueva registración se actualizarán las distancias de los
+		vóxeles mediante raycasting
+		desde la posición estimada de la cámara hacia la superficie,
+		realizando un promedio ponderado con los valores anteriormente calculados.
+		Debido a que sólo nos interesan las zonas donde la distancia es cercana a 0 es posible utilizar una representación rala para los vóxeles.
+		% large-scale_multi-resolution_surface_reconstruction_from_rgb-d_sequences
 
-		Surfel: %in-hand_scanning_with_online_loop_closure.txt
-			en lugar de triángulos, representación de discos en los vértices
-			facilidad de actualización / agregado / eliminación de puntos
-			propone manejo de algunos outliers
+		PCL provee la clase TSDFVolume para las operaciones sobre el arreglo de vóxeles.
 
-		Poisson: %poisson_surface_reconstruction
-			requiere de puntos y normales
-			transforma el problema en una ecuación de Poisson %(soporte local, ¿fem?)
-			sensible al ruido
-			rellena huecos
+		\subsection{Zippered}
+		%zippered_polygon_meshes_from_range_images.txt
+		Se obtendrá como resultado una malla poligonal.
 
-			implementado en cloudcompare
-			% ver implementación pcl::Poisson
+		El algoritmo trabaja en dos pasos:
+		\begin{enumerate}
+			\item Aproximación de la topología: se reduce el área solapada
+				entre las mallas seleccionando una de las representaciones para
+				cada punto en común.
+			\item Refinado: se ajusta la posición de cada punto moviéndolo
+				según su normal mediante un promedio ponderado dependiente del
+				nivel de \emph{confianza} que posee el punto en cada vista.
+		\end{enumerate}
+
+		\subsection{Representación de surfel}
+		%in-hand_scanning_with_online_loop_closure.txt
+		En lugar de realizar una triangulación, en cada punto se establece un disco de radio variable orientado según la normal.
+		Esto facilita la actualización, el agregado y la eliminación de puntos en cada nueva registración y además permite detectar ciertos \emph{outliers}.
+
+		\subsection{Reconstrucción Poisson}
+		%poisson_surface_reconstruction
+		Utiliza una función indicadora $\chi$ que recibe el valor 1 para puntos
+		dentros del modelo y 0 para puntos en el exterior.
+		La superficie del objeto queda determinada por la frontera entre estos
+		valores, y el gradiente de la función indicadora se corresponde con las
+		normales de los puntos del objeto $\vec{n}$.
+
+		El problema consiste en encontrar la function $\chi$ cuyo gradiente
+		aproxime el campo vectorial definido por las normales. Aplicando el
+		operador de divergencia, se obtiene un problema de Poisson: calcular la
+		función escalar $\chi$ cuyo laplaciano equivale a la divergencia del
+		campo vectorial $\vec{n}$.
+
+		\[\Delta\chi \equiv \nabla \cdot\nabla\chi = \nabla \vec{n}\]
+
+		El algoritmo rellena huecos automáticamente, pero puede resultar demasiado agresivo, uniendo porciones que deberían permanecer separadas.
 
 
 	\section{Relleno de huecos}
-		volumetric rellena huecos automáticamente
-			hueco: frontera entre vóxeles unseen/empty (nunca alcanzados por raycasting / parte externa de la superficie)
-			%filling_holes_in_comple_surfaces_using_volumetric_diffusion
-			convertir a una versión volumétrica y realizar una difusión
-				utilizar línea de vista (raycasting a la cámara)
-				(sólo en los alrededores de los huecos)
-		Surface fitting
-		Poisson rellena huecos automáticamente
-			%Be careful; poisson reconstruction method is not a hole filling algorithm; its output is deformed compared to the original cloud!
-			%poisson_surface_reconstruction
-		Adhoc
+		Dada una triangulación de la superficie, un hueco se identifica como un conjunto de aristas que corresponden cada una a sólo un elemento.
+
+		La existencia de huecos elimina la propiedad de \emph{watertight} de la
+		malla, la cual es necesaria para su impresión 3D.
+
+		El método de fusión \emph{volumetric merge} rellena huecos
+		automáticamente al definirlos como la frontera entre vóxeles externos y
+		aquellos nunca alcanzados por el raycasting.
+
+		En caso de una malla poligonal, es posible convertirla en una
+		representación volumétrica y luego realizar la difusión de la función
+		de distancia en la zona del hueco.
+		Este proceso se itera hasta que no se detectan cambios significativos en la superficie.
+		%filling_holes_in_comple_surfaces_using_volumetric_diffusion
+
+
+	\section{Herramientas}
+	%Intro
+
+		\subsection{Open Source Computer Vision Library (OpenCV)}
+			Es una biblioteca de código abierto de
+			visión computacional y aprendizaje maquinal.
+			%Cuenta con módulos de
+			%procesamiento de imágenes de profundidad
+			%y registración.
+
+			En un principio se consideró utilizar la información de textura de
+			las capturas para poder lograr la registración, pero la base de
+			datos utilizada sólo contenía información geométrica.
+			Debido a esto, no se utilizaron las funcionalidades de esta biblioteca.
+
+			%No usé OpenCV porque eran imágenes rgb-d
+			%y yo recibía nube de puntos
+			%además de que tampoco tenían color
+			%queda PCL
+
+		\subsection{The Point Cloud Library (PCL)}
+			\url{http://www.pointclouds.org}
+
+			Es un framework de código abierto multiplataforma para el procesado de imágenes 2D/3D y nubes de puntos.
+			Provee numerosos algoritmos state-of-the-art %FIXME
+			para reducción de ruido, extracción de puntos salientes,
+			cálculo de descriptores, registración,
+			reconstrucción de superficies, entre otros.
+
+			La documentación incluye tutoriales para cada módulo de la biblioteca
+			y además se cuenta con listas de correos
+			y canales de IRC para brindar soporte.
+			%Registration with the Point Cloud Library A Modular Framework for Aligning in 3-D
+			%3d_is_here_point_cloud_library_pcl.txt
+
+			%Listar algunas funciones
+			%tiene para registración, fusión volumétrica, poisson, etc
+
+			PCL se encuentra disponible para ser usada en C++.
+			Existen proyectos para portarla a Python y Java,
+			pero no se encuentran suficientemente avanzados.
+
+		\subsection{CloudCompare, Meshlab}
+			Son programas de procesamiento y edición de mallas de puntos 3D.
+			Presentan herramientas de registración semiautomática (a partir de
+			puntos seleccionados por el usuario), y cuentan con una
+			implementación del algoritmo \emph{Poisson Surface Reconstruction}
+			para reconstrucción de superficies.
+
+			Se utilizarán especialmente para visualización
+			y comparación de resultados.
+
+		\subsection{The Stanford 3D Scanning Repository}
+			\url{http://graphics.stanford.edu/data/3Dscanrep/}
+
+			Este proyecto surge debido a la falta de disponibilidad
+			por parte de los investigadores
+			de acceso a modelos poligonales densos
+				o a la infraestructura para obtener los mismos.
+			Por lo cual, se crea un repositorio público de
+			escaneos tridimensionales y sus correspondientes reconstrucciones.
+
+			Los modelos fueron escaneados mediante un escáner Cyberware 3030~MS,
+			el cual es un escáner láser de barrido.
+			Se provee de un archivo de configuración que lista por cada captura
+			las transformaciones necesarias para alinearla en un sistema de
+			referencia global.
+
+			Las capturas fueron combinadas para producir una única malla
+			triangular utilizando el método de \emph{zippering} o bien
+			\emph{volumetric merging}, ambos métodos desarrollados en Stanford.
+
+
+			Se seleccinonarion estos 5 modelos para ser utilizados: armadillo, bunny, dragon, drill y happy.
+
+		\subsection{KinectFusion}
+			Es el algoritmo desarrollado por Microsoft para lograr reconstrucciones tridimensionales utilizando el dispositivo Kinect.
+
+			%kinectfusion_real-time_3d_reconstruction_and_interaction_using_a_moving_depth_camera
+			Debido a que uno de los objetivos era lograr
+			una implementación en tiempo real,
+			el algoritmo de registración requiere de
+			poca variación entre capturas de
+			la posición relativa cámara-objeto.
+
+			Para realizar la combinación utiliza una variación del método de
+			\emph{volumetric merging} sobre GPU.
 
 \section{Bibliografía}
 \end{document}
