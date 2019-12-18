@@ -13,10 +13,11 @@
 			visión computacional y aprendizaje maquinal.
 			Cuenta con módulos de
 			procesamiento de imágenes de profundidad
-			y registración
+			y registración.
 
 			%No usé OpenCV porque eran imágenes rgb-d
 			%y yo recibía nube de puntos
+			%además de que tampoco tenían color
 			%queda PCL
 
 		\subsection{The Point Cloud Library (PCL)}
@@ -41,7 +42,7 @@
 			Son programas de procesamiento y edición de mallas de puntos 3D.
 			Presentan herramientas de registración semiautomática (a partir de
 			puntos seleccionados por el usuario), y cuentan con una
-			implementación de \emph{Poisson Surface Reconstruction}
+			implementación del algoritmo \emph{Poisson Surface Reconstruction}
 			para reconstrucción de superficies.
 
 			Se utilizarán especialmente para visualización
@@ -50,36 +51,45 @@
 		\subsection{The Stanford 3D Scanning Repository}
 			\url{http://graphics.stanford.edu/data/3Dscanrep/}
 
-			%FIXME
-			%The purpose of this repository is to make some
-			%range data and detailed reconstructions available to the public.
-			Repositorio público de escaneos y sus reconstrucciones 3D.
+			Este proyecto surge debido a la falta de disponibilidad
+			por parte de los investigadores
+			de acceso a modelos poligonales densos
+				o a la infraestructura para obtener los mismos.
+			Por lo cual se crea un repositorio público de
+			escaneos tridimensionales y sus correspondientes reconstrucciones.
 
-			Se utilizarán 5 modelos: armadillo, bunny, dragon, drill y happy.
-			Estos cuentan con las transformaciones necesarias para la
-			registración de cada captura y con reconstrucciones libres de ruido
-			a diversas resoluciones y con método zippered %citar
-			y volumétrico
-			%zippered_polygon_meshes_from_range_images
-			%a_volumetric_method_for_building_complex_models_from_range_images
+			Los modelos fueron escaneados mediante un escáner Cyberware 3030~MS,
+			el cual es un escáner láser de barrido.
+			Se provee de un archivo de configuración que lista por cada captura
+			las transformaciones necesarias para alinearla en un sistema de
+			referencia global.
 
-		kinectfusion:
+			Las capturas fueron combinadas para producir una única malla
+			triangular utilizando el método de \emph{zippering} o bien
+			\emph{volumetric merging}, ambos métodos desarrollados en Stanford.
+
+
+			Se seleccinonarion estos 5 modelos para ser utilizados: armadillo, bunny, dragon, drill y happy.
+
+		\subsection{KinectFusion}
 			%kinectfusion_real-time_3d_reconstruction_and_interaction_using_a_moving_depth_camera
-			Poca diferencia entre las posiciones de la cámara
-			Utiliza ICP para alinear
-			Reconstrucción volumétrica en gpu
+			Debido a que uno de los objetivos era lograr
+			una implementación en tiempo real,
+			el algoritmo de registración requiere de
+			poca variación entre capturas de
+			la posición relativa cámara-objeto.
 
-	\section{Alineación}
+			Para realizar la combinación utiliza una variación del método de
+			\emph{volumetric merging} sobre GPU.
+
+	\section{Registración}
 		%PCL_Registration_Tutorial
 		La registración entre dos nubes de puntos se suele resolver mediante
-		alguna de las variantes del algoritmo Iterative Closest Point (ICP).
+		alguna de las variantes del algoritmo \emph{Iterative Closest Point (ICP)}. 
 		Sin embargo, para evitar caer en mínimos locales,
 		se debe contar con una buena aproximación inicial.
-		Se buscarán algorimos para conseguir esta aproximación inicial.
-
-		%TODO:
-			pipeline: keypoints -> features -> correspondences -> restrictions -> estimation
-
+		Por esto, es necesario desarrollar algorimos para conseguir esta
+		aproximación inicial.
 
 		Iterative closest point:
 			Busca la transformación que minimice el error de alineación
@@ -88,29 +98,59 @@
 			%generalized_icp.txt
 			implementado en PCL
 
-		%PCL_Registration_Tutorial
-		Keypoints:
-			no buscar saliencias: Uniforme, random,
-			basado en procesamiento de imágenes: harris, brisk
-			específico 3d: ISS
-			persistencia multiescala de features: fpfh
-			%Fast Point Feature Histograms (FPFH) for 3D Registration
 
-		Features:
-			ISS, USC, SHOT:
-				por cada keypoint se obtiene 
-				una representación independiente de la vista,
-					lo cual nos permite establecer las correspondencias;
-				y un marco de referencia, que nos permite calcular la transformación con tan sólo dos puntos
+		% efficient_variants_of_the_icp_algorithm
+		Los algoritmos de registración se pueden dividir en los siguientes pasos:
+		\begin{enumerate}
+			\item Selección de puntos de la entrada (\emph{keypoints}).
+			\item Utilizar descriptores para establecer correspondencias entre los puntos de las nubes.
+			\item Rechazar correspondencias para reducir los \emph{outliers}.
+			\item Alineación.
+		\end{enumerate}
 
-		Correción del bucle:
+		En cuanto a la selección de puntos se tienen como opciones:
+		\begin{itemize}
+			\item No buscar saliencias: utilizar todos los puntos o realizar un submuestreo uniforme o aleatorio.
+			\item Algoritmos basados en procesamiento de imágenes: como harris y brisk.
+			\item Algoritmos específicos para puntos 3D: como ISS.
+			\item Búsqueda de puntos cuyos descriptores sean persistentes a varias escalas: se requiere de formas eficientes de calcular los descriptores, como FPFH.
+		\end{itemize}
+
+		Descriptores:
+			Por cada \emph{keypoint} se calculará un descriptor que nos
+			permitirá determinar las correspondencias entre las dos nubes de
+			puntos.
+			Un descriptor es una representación compacta
+			de la vecindad de un punto,
+			siendo importante además establecer el límite de esta vecindad.
+
+			Para puntos en el espacio, los descriptores utilizarán las
+			posiciones relativas de los vecinos o los ángulos entre sus
+			normales, ponderándolos según la distancia al punto de interés.
+			Por ejemplo: el descriptor 3DSC define un histograma tridimensional
+			cuantizando la distancia, azimuth y elevación entre los puntos;
+			el descriptor FPFH realiza algo similar con las normales.
+
+			Ciertos descriptores, como ISS y SHOT, establecen un marco de
+			referencia que permite obtener una estimación de la transformación
+			entre las nubes a partir de solamente dos puntos.
+
+		\subsection{Correción del bucle}
 			Debido a que la registración se hace de a pares el error aumenta
-			con cada nueva malla, se tendrá entonces un corrimiento de los
+			con cada nueva malla.
+			Este error generará artefactos que se evidenciarán sobre todo como
+			un corrimiento apreciable entre los bordes de la primera y última
+			malla de la lista.
+
+			Para ajustar este corrimiento se podrá perturbar la última
+			registración y luego propagar esta perturbación en las alineaciones
+			anteriores.
+			se tendrá entonces un corrimiento de los
 			bordes que deberían cerrar el bucle.
-				Ajustar según el corrimiento, y propagar el ajuste a las alineaciones anteriores
-				%in-hand_scanning_with_online_loop_closure
-				%embedded_deformation_for_shape_manipulation
-				Realizan las correcciones "de la forma más rígida posible"
+
+			%in-hand_scanning_with_online_loop_closure
+			%embedded_deformation_for_shape_manipulation
+			Realizan las correcciones "de la forma más rígida posible"
 
 	\section{Fusión}
 		Volumetric: superficie implícita %a_volumetric_method_for_building_complex_models_from_range_images.txt

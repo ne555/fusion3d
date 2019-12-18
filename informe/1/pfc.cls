@@ -7,7 +7,8 @@
 
 \RequirePackage{fontspec} %utf8
 \RequirePackage[shortlabels]{enumitem}
-\setitemize{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
+%\setitemize{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
+\setlist{noitemsep,nolistsep,topsep=0pt,parsep=0pt,partopsep=0pt}
 
 \RequirePackage{pdfpages}
 \RequirePackage{graphicx}
