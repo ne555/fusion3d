@@ -5,27 +5,28 @@
 %FIXME: alineación / registración
 %\section{Informe bibliográfico}
 	\maketitle
-	\section{General}
+	%\section{Introducción}
+
+	%	Iterative closest point:
+	%		Busca la transformación que minimice el error de alineación
+	%		entre los puntos de las mallas
+	%		%efficient_variants_of_the_icp_algorithm.txt
+	%		%generalized_icp.txt
+	%		implementado en PCL
 
 	\section{Registración}
-		%PCL_Registration_Tutorial
 		La registración entre dos nubes de puntos se suele resolver mediante
 		alguna de las variantes del algoritmo \emph{Iterative Closest Point (ICP)}. 
 		Sin embargo, para evitar caer en mínimos locales,
 		se debe contar con una buena aproximación inicial.
 		Por esto, es necesario desarrollar algorimos para conseguir esta
-		aproximación inicial.
+		aproximación inicial.\cite{7271006}
+		%Registration with the Point Cloud Library A Modular Framework for Aligning in 3-D
 
-		Iterative closest point:
-			Busca la transformación que minimice el error de alineación
-			entre los puntos de las mallas
-			%efficient_variants_of_the_icp_algorithm.txt
-			%generalized_icp.txt
-			implementado en PCL
 
 
 		% efficient_variants_of_the_icp_algorithm
-		Los algoritmos de registración se pueden dividir en los siguientes pasos:
+		Los algoritmos de registración se pueden dividir en los siguientes pasos:\cite{conf/3dim/RusinkiewiczL01}
 		\begin{enumerate}
 			\item Selección de puntos de la entrada (\emph{keypoints}).
 			\item Utilizar descriptores para establecer correspondencias entre los puntos de las nubes.
@@ -41,7 +42,7 @@
 			\item Búsqueda de puntos cuyos descriptores sean persistentes a varias escalas: se requiere de formas eficientes de calcular los descriptores, como FPFH.
 		\end{itemize}
 
-		Descriptores:
+		%Descriptores:
 			Por cada \emph{keypoint} se calculará un descriptor que nos
 			permitirá determinar las correspondencias entre las dos nubes de
 			puntos.
@@ -76,7 +77,7 @@
 			Estas perturbaciones provocarán una deformación de la malla.
 			%in-hand_scanning_with_online_loop_closure
 			se plantea un algoritmo para el cálculo
-			y la propagación de estas perturbaciones.
+			y la propagación de estas perturbaciones.\cite{5457479}
 			%FIXME
 			%de modo que la deformación sea "lo más rígida posible".
 
@@ -84,7 +85,6 @@
 		Una vez alineadas las superficies éstas deben combinarse en una única malla resultante
 
 		\subsection{Volumetric merge}
-		%a_volumetric_method_for_building_complex_models_from_range_images.txt
 		Se divide el espacio en un arreglo de vóxeles que contienen la
 		distancia con signo desde el centro del vóxel a la superficie (la
 		distancia será positiva si el vóxel se encuentra en la parte exterior y
@@ -95,17 +95,16 @@
 		En cada nueva registración se actualizarán las distancias de los
 		vóxeles mediante raycasting
 		desde la posición estimada de la cámara hacia la superficie,
-		realizando un promedio ponderado con los valores anteriormente calculados.
-		Debido a que sólo nos interesan las zonas donde la distancia es cercana a 0 es posible utilizar una representación rala para los vóxeles.
-		% large-scale_multi-resolution_surface_reconstruction_from_rgb-d_sequences
+		realizando un promedio ponderado con los valores anteriormente calculados.\cite{Curless:1996:VMB:237170.237269} %a_volumetric_method_for_building_complex_models_from_range_images.txt
+		Debido a que sólo nos interesan las zonas donde la distancia es cercana a 0 es posible utilizar una representación rala para los vóxeles.\cite{Steinbrucker:2013:LMS:2586117.2586926} % large-scale_multi-resolution_surface_reconstruction_from_rgb-d_sequences
 
-		PCL provee la clase TSDFVolume para las operaciones sobre el arreglo de vóxeles.
+		%PCL provee la clase TSDFVolume para las operaciones sobre el arreglo de vóxeles.
 
 		\subsection{Zippered}
 		%zippered_polygon_meshes_from_range_images.txt
 		Se obtendrá como resultado una malla poligonal.
 
-		El algoritmo trabaja en dos pasos:
+		El algoritmo trabaja en dos pasos:\cite{Turk:1994:ZPM:192161.192241}
 		\begin{enumerate}
 			\item Aproximación de la topología: se reduce el área solapada
 				entre las mallas seleccionando una de las representaciones para
@@ -118,7 +117,7 @@
 		\subsection{Representación de surfel}
 		%in-hand_scanning_with_online_loop_closure.txt
 		En lugar de realizar una triangulación, en cada punto se establece un disco de radio variable orientado según la normal.
-		Esto facilita la actualización, el agregado y la eliminación de puntos en cada nueva registración y además permite detectar ciertos \emph{outliers}.
+		Esto facilita la actualización, el agregado y la eliminación de puntos en cada nueva registración y además permite detectar ciertos \emph{outliers}.\cite{5457479}
 
 		\subsection{Reconstrucción Poisson}
 		%poisson_surface_reconstruction
@@ -132,7 +131,7 @@
 		aproxime el campo vectorial definido por las normales. Aplicando el
 		operador de divergencia, se obtiene un problema de Poisson: calcular la
 		función escalar $\chi$ cuyo laplaciano equivale a la divergencia del
-		campo vectorial $\vec{n}$.
+		campo vectorial $\vec{n}$.\cite{Kazhdan:2006:PSR:1281957.1281965}
 
 		\[\Delta\chi \equiv \nabla \cdot\nabla\chi = \nabla \vec{n}\]
 
@@ -152,7 +151,7 @@
 		En caso de una malla poligonal, es posible convertirla en una
 		representación volumétrica y luego realizar la difusión de la función
 		de distancia en la zona del hueco.
-		Este proceso se itera hasta que no se detectan cambios significativos en la superficie.
+		Este proceso se itera hasta que no se detectan cambios significativos en la superficie.\cite{fillingholes}
 		%filling_holes_in_comple_surfaces_using_volumetric_diffusion
 
 
@@ -177,7 +176,7 @@
 			%queda PCL
 
 		\subsection{The Point Cloud Library (PCL)}
-			\url{http://www.pointclouds.org}
+			%\url{http://www.pointclouds.org}
 
 			Es un framework de código abierto multiplataforma para el procesado de imágenes 2D/3D y nubes de puntos.
 			Provee numerosos algoritmos state-of-the-art %FIXME
@@ -209,7 +208,7 @@
 			y comparación de resultados.
 
 		\subsection{The Stanford 3D Scanning Repository}
-			\url{http://graphics.stanford.edu/data/3Dscanrep/}
+			%\url{http://graphics.stanford.edu/data/3Dscanrep/}
 
 			Este proyecto surge debido a la falta de disponibilidad
 			por parte de los investigadores
@@ -226,7 +225,7 @@
 
 			Las capturas fueron combinadas para producir una única malla
 			triangular utilizando el método de \emph{zippering} o bien
-			\emph{volumetric merging}, ambos métodos desarrollados en Stanford.
+			\emph{volumetric merging}, ambos métodos desarrollados en Stanford.\cite{StanfordScanRep}
 
 
 			Se seleccinonarion estos 5 modelos para ser utilizados: armadillo, bunny, dragon, drill y happy.
@@ -242,7 +241,10 @@
 			la posición relativa cámara-objeto.
 
 			Para realizar la combinación utiliza una variación del método de
-			\emph{volumetric merging} sobre GPU.
+			\emph{volumetric merging} sobre GPU.\cite{Izadi:2011:KRR:2047196.2047270}
 
-\section{Bibliografía}
+%\nocite{*}
+\bibliographystyle{alpha}
+\bibliography{biblio}
+
 \end{document}
