@@ -26,12 +26,12 @@
 
 
 		% efficient_variants_of_the_icp_algorithm
-		Los algoritmos de registración se pueden dividir en los siguientes pasos:\cite{conf/3dim/RusinkiewiczL01}
+		Los algoritmos de registración se pueden dividir en los siguientes pasos:
 		\begin{enumerate}
 			\item Selección de puntos de la entrada (\emph{keypoints}).
 			\item Utilizar descriptores para establecer correspondencias entre los puntos de las nubes.
 			\item Rechazar correspondencias para reducir los \emph{outliers}.
-			\item Alineación.
+			\item Alineación.\cite{conf/3dim/RusinkiewiczL01}
 		\end{enumerate}
 
 		En cuanto a la selección de puntos se tienen como opciones:
@@ -104,14 +104,14 @@
 		%zippered_polygon_meshes_from_range_images.txt
 		Se obtendrá como resultado una malla poligonal.
 
-		El algoritmo trabaja en dos pasos:\cite{Turk:1994:ZPM:192161.192241}
+		El algoritmo trabaja en dos pasos:
 		\begin{enumerate}
 			\item Aproximación de la topología: se reduce el área solapada
 				entre las mallas seleccionando una de las representaciones para
 				cada punto en común.
 			\item Refinado: se ajusta la posición de cada punto moviéndolo
 				según su normal mediante un promedio ponderado dependiente del
-				nivel de \emph{confianza} que posee el punto en cada vista.
+				nivel de \emph{confianza} que posee el punto en cada vista.\cite{Turk:1994:ZPM:192161.192241}
 		\end{enumerate}
 
 		\subsection{Representación de surfel}
