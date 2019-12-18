@@ -1,18 +1,13 @@
 \documentclass{pfc}
 \title{Relevamiento del estado del arte}
-\author{Walter Bedrij}
-\date{\today}
 
 \begin{document}
 %FIXME: alineación / registración
 %\section{Informe bibliográfico}
+	\maketitle
 	\section{General}
 
 	\section{Herramientas}
-		\subsection{C++}
-			PCL se encuentra disponible para ser usada en C++.
-			Existen proyectos para portarla a Python y Java,
-			pero no se encuentran suficientemente avanzados.
 		\subsection{Open Source Computer Vision Library (OpenCV)}
 			Es una biblioteca de código abierto de
 			visión computacional y aprendizaje maquinal.
@@ -38,11 +33,15 @@
 			%Registration with the Point Cloud Library A Modular Framework for Aligning in 3-D
 			%3d_is_here_point_cloud_library_pcl.txt
 
+			PCL se encuentra disponible para ser usada en C++.
+			Existen proyectos para portarla a Python y Java,
+			pero no se encuentran suficientemente avanzados.
+
 		\subsection{CloudCompare, Meshlab}
 			Son programas de procesamiento y edición de mallas de puntos 3D.
 			Presentan herramientas de registración semiautomática (a partir de
 			puntos seleccionados por el usuario), y cuentan con una
-			implementación de poisson_surface_reconstruction
+			implementación de \emph{Poisson Surface Reconstruction}
 			para reconstrucción de superficies.
 
 			Se utilizarán especialmente para visualización
