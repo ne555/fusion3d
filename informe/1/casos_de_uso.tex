@@ -11,7 +11,7 @@
 			\item El sistema lee la malla del disco.
 			\item El sistema realiza una reducción de ruidos y eliminación de outliers.
 			\item El sistema calcula normales y vecindades de los puntos de la nube.
-			\item El sistema devuelve una nube de puntos preprocesada
+			\item El sistema devuelve una nube de puntos con sus normales y vecindades.
 		\end{enumerate}
 
 	\CasoUso{Alinear dos nubes de puntos}
@@ -25,6 +25,7 @@
 			\item El sistema selecciona puntos salientes.
 			\item El sistema calcula descriptores y sus correspondencias.
 			\item El sistema elimina correspondencias espurias.
+			\item El sistema estima una transformación a partir de las correspondencias.
 			\item El sistema devuelve la transformación de alineación.
 		\end{enumerate}
 
@@ -38,7 +39,7 @@
 			\item El usuario introduce una \emph{transformación}.
 			\item El sistema aplica la \emph{transformación} a la nube \emph{fuente}.
 			\item El sistema determina los puntos que corresponden al área común entre las nubes (área solapada).
-			\item El sistema calcula medidas sobre el área solapada:
+			\item El sistema devuelve medidas sobre el área solapada:
 				cantidad de puntos en relación a las nubes originales,
 				distancia punto a punto entre las nubes.
 		\end{enumerate}
@@ -74,6 +75,7 @@
 			\item El sistema filtra el ruido y elimina los outliers de la nube.
 			\item El sistema calcula las vecindades de los puntos y realiza una triangulación.
 			\item El sistema calcula las normales para cada triángulo.
+			\item El sistema devuelve la superficie representativa.
 		\end{enumerate}
 
 	\CasoUso{Identificar huecos}
@@ -97,4 +99,5 @@
 			\item El usuario identifica un hueco. \IncCU{Identificar huecos}
 			\item El sistema agrega puntos en el interior del hueco.
 			\item El sistema integra los nuevos puntos a la malla.
+			\item El sistema devuelve la malla resultante.
 		\end{enumerate}
