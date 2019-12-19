@@ -1,9 +1,24 @@
 \documentclass{pfc}
-\title{}
+\title{Estado del arte y requerimientos}
+
+\newcommand{\CasoUso}[1]{\medskip{\bfseries Caso de uso: #1}\par}
+\newcommand{\IncCU}[1]{{\bfseries Incluye (#1)}}
+\newcommand{\UseCU}[1]{{\bfseries Usa (#1)}}
+\newcommand{\CUField}[2]{{\bfseries#1:} #2\par}
+\newcommand{\CUNormal}{\smallskip{\bfseries Curso Normal:}\par}
+
+
+\newcommand{\Requerimiento}[2]{%
+	{\bfseries #1}\\%
+	#2%
+}
 
 \begin{document}
 	\maketitle
 	\include{estado_del_arte}
-	%\include{casos_de_uso}
-	%\include{requerimientos}
+	\include{casos_de_uso}
+	\include{requerimientos}
+
+	\bibliographystyle{alpha}
+	\bibliography{biblio}
 \end{document}
