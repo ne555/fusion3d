@@ -14,6 +14,9 @@
 \RequirePackage{graphicx}
 \RequirePackage[export]{adjustbox}
 \RequirePackage{hyperref}
+\RequirePackage{pstricks}
+\RequirePackage{pgf}
+\RequirePackage{tikz}
 
 \RequirePackage{titlesec}
 \titleformat{\chapter}

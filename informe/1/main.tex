@@ -1,9 +1,24 @@
 \documentclass{pfc}
+
+\usepackage{environ}
+\makeatletter
+\newsavebox{\measure@tikzpicture}
+\NewEnviron{scaletikzpicturetowidth}[1]{%
+  \def\tikz@width{#1}%
+  \def\tikzscale{1}\begin{lrbox}{\measure@tikzpicture}%
+  \BODY
+  \end{lrbox}%
+  \pgfmathparse{#1/\wd\measure@tikzpicture}%
+  \edef\tikzscale{\pgfmathresult}%
+  \BODY
+}
+\makeatother
+
 \title{Estado del arte y requerimientos}
 
 \newcommand{\CasoUso}[1]{\medskip{\bfseries Caso de uso: #1}\par}
-\newcommand{\IncCU}[1]{{\bfseries Incluye (#1)}}
-\newcommand{\UseCU}[1]{{\bfseries Usa (#1)}}
+\newcommand{\IncCU}[1]{{\bfseries Include (#1)}}
+\newcommand{\UseCU}[1]{{\bfseries Use (#1)}}
 \newcommand{\CUField}[2]{{\bfseries#1:} #2\par}
 \newcommand{\CUNormal}{\smallskip{\bfseries Curso Normal:}\par}
 
