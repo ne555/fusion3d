@@ -1,7 +1,7 @@
 %vim: set filetype=tex:
 
 \ProvidesClass{pfc}
-\LoadClass[a4paper]{article}
+\LoadClass[a4paper]{report}
 \RequirePackage{polyglossia} %reemplaza a babel
 \setmainlanguage{spanish}
 
@@ -14,6 +14,15 @@
 \RequirePackage{graphicx}
 \RequirePackage[export]{adjustbox}
 \RequirePackage{hyperref}
+
+\RequirePackage{titlesec}
+\titleformat{\chapter}
+	{}
+	{}
+	{0pt}
+	{\centering\bfseries\LARGE}
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
 
 \RequirePackage{caratula}
 

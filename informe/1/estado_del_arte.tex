@@ -1,10 +1,23 @@
-\documentclass{pfc}
-\title{Relevamiento del estado del arte}
+\chapter{Relevamiento del estado del arte}
+	Con el fin de identificar requerimientos y obtener el marco teórico
+	necesario para el desarrollo del proyecto se analizaron herramientas de
+	software utilizadas para la reconstrucción tridimensional y textos
+	científicos acordes a la temática.
 
-\begin{document}
+	El proceso de reconstrucción se dividirá en tres etapas:
+	\begin{enumerate}
+		\item Registración: donde se determinan las transformaciones necesarias
+			para llevar cada vista a su correcta posición en un marco de
+			referencia global.
+		\item Fusión: donde se unifica el aporte de cada vista para obtener una
+			superficie que las englobe.
+		\item Relleno de huecos: donde se asegura que la superficie global sea
+			cerrada, es decir, que encierre un volumen.
+	\end{enumerate}
+
+
 %FIXME: alineación / registración
 %\section{Informe bibliográfico}
-	\maketitle
 	%\section{Introducción}
 
 	%	Iterative closest point:
@@ -19,7 +32,7 @@
 		alguna de las variantes del algoritmo \emph{Iterative Closest Point (ICP)}. 
 		Sin embargo, para evitar caer en mínimos locales,
 		se debe contar con una buena aproximación inicial.
-		Por esto, es necesario desarrollar algorimos para conseguir esta
+		Por esto, es necesario desarrollar algoritmos para conseguir esta
 		aproximación inicial.\cite{7271006}
 		%Registration with the Point Cloud Library A Modular Framework for Aligning in 3-D
 
@@ -54,14 +67,14 @@
 			posiciones relativas de los vecinos o los ángulos entre sus
 			normales, ponderándolos según la distancia al punto de interés.
 			Por ejemplo: el descriptor 3DSC define un histograma tridimensional
-			cuantizando la distancia, azimuth y elevación entre los puntos;
+			cuantizando la distancia, azimut y elevación entre los puntos;
 			el descriptor FPFH realiza algo similar con las normales.
 
 			Ciertos descriptores, como ISS y SHOT, establecen un marco de
 			referencia que permite obtener una estimación de la transformación
 			entre las nubes a partir de solamente dos puntos.
 
-		\subsection{Correción del bucle}
+		\subsection{Corrección del bucle}
 			Debido a que la registración se hace de a pares el error aumenta
 			con cada nueva malla.
 			Este error generará artefactos que se evidenciarán sobre todo como
@@ -71,15 +84,13 @@
 			Para ajustar este corrimiento se podrá perturbar la última
 			registración y luego propagar esta perturbación en las alineaciones
 			anteriores.
-			se tendrá entonces un corrimiento de los
-			bordes que deberían cerrar el bucle.
 
 			Estas perturbaciones provocarán una deformación de la malla.
 			%in-hand_scanning_with_online_loop_closure
+			%FIXME: describir el algoritmo
+			En \cite{5457479}
 			se plantea un algoritmo para el cálculo
-			y la propagación de estas perturbaciones.\cite{5457479}
-			%FIXME
-			%de modo que la deformación sea "lo más rígida posible".
+			y la propagación de estas perturbaciones, de forma que la deformación sea ``lo más rígida posible''.
 
 	\section{Fusión}
 		Una vez alineadas las superficies éstas deben combinarse en una única malla resultante
@@ -139,8 +150,7 @@
 
 
 	\section{Relleno de huecos}
-		Dada una triangulación de la superficie, un hueco se identifica como un conjunto de aristas que corresponden cada una a sólo un elemento.
-
+		Los huecos son regiones que ninguna de las vistas logró capturar.
 		La existencia de huecos elimina la propiedad de \emph{watertight} de la
 		malla, la cual es necesaria para su impresión 3D.
 
@@ -148,11 +158,33 @@
 		automáticamente al definirlos como la frontera entre vóxeles externos y
 		aquellos nunca alcanzados por el raycasting.
 
-		En caso de una malla poligonal, es posible convertirla en una
+		En el caso de una malla poligonal,
+		pueden identificarse fácilmente los vértices que limitan el hueco
+		como aquellos que definen una arista que corresponde a sólo un elemento.
+		Entonces puede operarse solamente en la vecindad del hueco.
+
+		Una opción es convertir la superficie en una
 		representación volumétrica y luego realizar la difusión de la función
 		de distancia en la zona del hueco.
 		Este proceso se itera hasta que no se detectan cambios significativos en la superficie.\cite{fillingholes}
 		%filling_holes_in_comple_surfaces_using_volumetric_diffusion
+
+		Otra opción es transformar el problema al de una interpolación.
+		\begin{itemize}
+			\item Por cada hueco se ajusta un plano a los puntos del borde y
+				sus vecinos.
+			\item Se proyectan los puntos a este plano, obteniéndose un mapa de
+				altura del contorno del hueco.
+			\item Utilizando el algoritmo de \emph{Moving Least Squares} se
+				ajusta una superficie a este mapa de altura.
+			\item Se realiza un muestreo sobre esta superficie para obtener
+				puntos que rellenen el hueco.
+		\end{itemize}
+		De esta forma el parche de reconstrucción se unirá suavemente a la malla original.\cite{Filling_holes_on_locally_smooth_surfaces}
+			%Filling holes on locally smooth surfaces reconstructed from point clouds
+
+
+
 
 
 	\section{Herramientas}
@@ -228,7 +260,7 @@
 			\emph{volumetric merging}, ambos métodos desarrollados en Stanford.\cite{StanfordScanRep}
 
 
-			Se seleccinonarion estos 5 modelos para ser utilizados: armadillo, bunny, dragon, drill y happy.
+			Se seleccinonarion estos 5 modelos: armadillo, bunny, dragon, drill y happy.
 
 		\subsection{KinectFusion}
 			Es el algoritmo desarrollado por Microsoft para lograr reconstrucciones tridimensionales utilizando el dispositivo Kinect.
@@ -246,5 +278,3 @@
 %\nocite{*}
 \bibliographystyle{alpha}
 \bibliography{biblio}
-
-\end{document}
