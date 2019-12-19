@@ -4,7 +4,7 @@
 	software utilizadas para la reconstrucción tridimensional y textos
 	científicos acordes a la temática.
 
-	El proceso de reconstrucción se dividirá en tres etapas:
+	El proceso de reconstrucción generalmente se divide en tres etapas:
 	\begin{enumerate}
 		\item Registración: donde se determinan las transformaciones necesarias
 			para llevar cada vista a su correcta posición en un marco de
@@ -29,7 +29,7 @@
 
 	\section{Registración}
 		La registración entre dos nubes de puntos se suele resolver mediante
-		alguna de las variantes del algoritmo \emph{Iterative Closest Point (ICP)}. 
+		alguna de las variantes del algoritmo \emph{Iterative Closest Point (ICP)}.
 		Sin embargo, para evitar caer en mínimos locales,
 		se debe contar con una buena aproximación inicial.
 		Por esto, es necesario desarrollar algoritmos para conseguir esta
@@ -49,10 +49,10 @@
 
 		En cuanto a la selección de puntos se tienen como opciones:
 		\begin{itemize}
-			\item No buscar saliencias: utilizar todos los puntos o realizar un submuestreo uniforme o aleatorio.
-			\item Algoritmos basados en procesamiento de imágenes: como harris y brisk.
-			\item Algoritmos específicos para puntos 3D: como ISS.
-			\item Búsqueda de puntos cuyos descriptores sean persistentes a varias escalas: se requiere de formas eficientes de calcular los descriptores, como FPFH.
+			\item Utilizar todos los puntos o realizar un submuestreo uniforme o aleatorio.
+			\item Algoritmos basados en procesamiento de imágenes: como harris\cite{Harris88acombined} y brisk\cite{Leutenegger:2011:BBR:2355573.2356277}.
+			\item Algoritmos específicos para puntos 3D: como ISS\cite{ISS}.
+			\item Búsqueda de puntos cuyos descriptores sean persistentes a varias escalas: se requiere de formas eficientes de calcular los descriptores, como FPFH\cite{Rusu:2009:FPF:1703435.1703733}.
 		\end{itemize}
 
 		%Descriptores:
@@ -63,7 +63,7 @@
 			de la vecindad de un punto,
 			siendo importante además establecer el límite de esta vecindad.
 
-			Para puntos en el espacio, los descriptores utilizarán las
+			Para puntos en el espacio, los descriptores utilizan las
 			posiciones relativas de los vecinos o los ángulos entre sus
 			normales, ponderándolos según la distancia al punto de interés.
 			Por ejemplo: el descriptor 3DSC define un histograma tridimensional
@@ -74,36 +74,36 @@
 			referencia que permite obtener una estimación de la transformación
 			entre las nubes a partir de solamente dos puntos.
 
-		\subsection{Corrección del bucle}
-			Debido a que la registración se hace de a pares el error aumenta
-			con cada nueva malla.
-			Este error generará artefactos que se evidenciarán sobre todo como
-			un corrimiento apreciable entre los bordes de la primera y última
-			malla de la lista.
+		\subsection{Corrección de bucle}
+			Debido a que la registración se hace de a pares sucesivos, el error
+			se acumula con cada nueva malla.  Si se tiene una lista de capturas
+			que completan una vuelta sobre el objeto, el error de registración
+			acumulado para la última malla de la lista podrá ser apreciado
+			especialmente en los bordes de esta respecto a la primera malla.
 
-			Para ajustar este corrimiento se podrá perturbar la última
-			registración y luego propagar esta perturbación en las alineaciones
-			anteriores.
-
-			Estas perturbaciones provocarán una deformación de la malla.
+			Es posible corregir este error al perturbar la última registración
+			y luego propagar esta perturbación en las alineaciones anteriores.
+			Estas perturbaciones provocan una deformación de la malla, por lo
+			cual
 			%in-hand_scanning_with_online_loop_closure
 			%FIXME: describir el algoritmo
-			En \cite{5457479}
-			se plantea un algoritmo para el cálculo
-			y la propagación de estas perturbaciones, de forma que la deformación sea ``lo más rígida posible''.
+			en \cite{5457479}
+			se plantea un algoritmo para el cálculo y la propagación de las
+			mismas, de forma que la deformación sea ``lo más rígida posible''.
 
 	\section{Fusión}
-		Una vez alineadas las superficies éstas deben combinarse en una única malla resultante
+		Una vez alineadas las superficies éstas deben combinarse en una única malla resultante.
 
 		\subsection{Volumetric merge}
 		Se divide el espacio en un arreglo de vóxeles que contienen la
 		distancia con signo desde el centro del vóxel a la superficie (la
 		distancia será positiva si el vóxel se encuentra en la parte exterior y
-		negativa si se encuentra en el interior). De esta forma, en los vóxeles
-		donde la distancia es 0, se tiene definida de forma implícita a la
-		superficie, la cual puede extraerse con, por ejemplo, \emph{marching cubes}.
+		negativa si se encuentra en el interior).
+		De esta forma,
+		se tiene definida de forma implícita a la
+		superficie donde la distancia es 0, y puede extraerse con, por ejemplo, \emph{marching cubes}.
 
-		En cada nueva registración se actualizarán las distancias de los
+		En cada nueva registración se actualizan las distancias de los
 		vóxeles mediante raycasting
 		desde la posición estimada de la cámara hacia la superficie,
 		realizando un promedio ponderado con los valores anteriormente calculados.\cite{Curless:1996:VMB:237170.237269} %a_volumetric_method_for_building_complex_models_from_range_images.txt
@@ -113,7 +113,7 @@
 
 		\subsection{Zippered}
 		%zippered_polygon_meshes_from_range_images.txt
-		Se obtendrá como resultado una malla poligonal.
+		Obtiene como resultado una malla poligonal.
 
 		El algoritmo trabaja en dos pasos:
 		\begin{enumerate}
@@ -130,23 +130,30 @@
 		En lugar de realizar una triangulación, en cada punto se establece un disco de radio variable orientado según la normal.
 		Esto facilita la actualización, el agregado y la eliminación de puntos en cada nueva registración y además permite detectar ciertos \emph{outliers}.\cite{5457479}
 
-		\subsection{Reconstrucción Poisson}
+		Sin embargo, se requiere un post-procesamiento para determinar las conectividades de los puntos.
+
+		\subsection{Poisson Surface Reconstruction}
 		%poisson_surface_reconstruction
-		Utiliza una función indicadora $\chi$ que recibe el valor 1 para puntos
-		dentros del modelo y 0 para puntos en el exterior.
+		La reconstrucción se realiza considerando los puntos y normales de
+		todas las nubes a la vez, es decir, no realiza un promedio ponderado como los métodos anteriores.
+
+		Se define una función indicadora $\chi$ que recibe el valor 1 para puntos
+		dentro del modelo y 0 para puntos en el exterior.
 		La superficie del objeto queda determinada por la frontera entre estos
 		valores, y el gradiente de la función indicadora se corresponde con las
 		normales de los puntos del objeto $\vec{n}$.
 
-		El problema consiste en encontrar la function $\chi$ cuyo gradiente
+		El problema consiste en encontrar la función $\chi$ cuyo gradiente
 		aproxime el campo vectorial definido por las normales. Aplicando el
 		operador de divergencia, se obtiene un problema de Poisson: calcular la
 		función escalar $\chi$ cuyo laplaciano equivale a la divergencia del
-		campo vectorial $\vec{n}$.\cite{Kazhdan:2006:PSR:1281957.1281965}
+		campo vectorial $\vec{n}$.
 
 		\[\Delta\chi \equiv \nabla \cdot\nabla\chi = \nabla \vec{n}\]
 
-		El algoritmo rellena huecos automáticamente, pero puede resultar demasiado agresivo, uniendo porciones que deberían permanecer separadas.
+		Utilizando funciones de soporte local para aproximar la solución, se obtiene un sistema lineal ralo bien condicionado.
+
+		El algoritmo rellena huecos automáticamente, pero puede resultar demasiado agresivo, uniendo porciones que deberían permanecer separadas.\cite{Kazhdan:2006:PSR:1281957.1281965}
 
 
 	\section{Relleno de huecos}
@@ -189,29 +196,27 @@
 
 	\section{Herramientas}
 	%Intro
+	A continuación se mencionan las principales herramientas de software
+	utilizadas en el desarrollo de programas de reconstrucción tridimensional.
 
-		\subsection{Open Source Computer Vision Library (OpenCV)}
-			Es una biblioteca de código abierto de
-			visión computacional y aprendizaje maquinal.
-			%Cuenta con módulos de
-			%procesamiento de imágenes de profundidad
-			%y registración.
+		\subsection{KinectFusion}
+			Es el algoritmo desarrollado por Microsoft para lograr reconstrucciones tridimensionales utilizando el dispositivo Kinect.
 
-			En un principio se consideró utilizar la información de textura de
-			las capturas para poder lograr la registración, pero la base de
-			datos utilizada sólo contenía información geométrica.
-			Debido a esto, no se utilizaron las funcionalidades de esta biblioteca.
+			%kinectfusion_real-time_3d_reconstruction_and_interaction_using_a_moving_depth_camera
+			Debido a que uno de los objetivos era lograr
+			una implementación en tiempo real,
+			el algoritmo de registración requiere de
+			poca variación entre capturas de
+			la posición relativa cámara-objeto.
 
-			%No usé OpenCV porque eran imágenes rgb-d
-			%y yo recibía nube de puntos
-			%además de que tampoco tenían color
-			%queda PCL
+			Para realizar la fusión utiliza una variación del método de
+			\emph{volumetric merging} sobre GPU.\cite{Izadi:2011:KRR:2047196.2047270}
 
 		\subsection{The Point Cloud Library (PCL)}
 			%\url{http://www.pointclouds.org}
 
 			Es un framework de código abierto multiplataforma para el procesado de imágenes 2D/3D y nubes de puntos.
-			Provee numerosos algoritmos state-of-the-art %FIXME
+			Provee numerosos algoritmos modernos
 			para reducción de ruido, extracción de puntos salientes,
 			cálculo de descriptores, registración,
 			reconstrucción de superficies, entre otros.
@@ -229,15 +234,22 @@
 			Existen proyectos para portarla a Python y Java,
 			pero no se encuentran suficientemente avanzados.
 
-		\subsection{CloudCompare, Meshlab}
-			Son programas de procesamiento y edición de mallas de puntos 3D.
-			Presentan herramientas de registración semiautomática (a partir de
-			puntos seleccionados por el usuario), y cuentan con una
-			implementación del algoritmo \emph{Poisson Surface Reconstruction}
-			para reconstrucción de superficies.
+		\subsection{Open Source Computer Vision Library (OpenCV)}
+			Es una biblioteca de código abierto de
+			visión computacional y aprendizaje maquinal.
+			%Cuenta con módulos de
+			%procesamiento de imágenes de profundidad
+			%y registración.
 
-			Se utilizarán especialmente para visualización
-			y comparación de resultados.
+			En un principio se consideró utilizar la información de textura de
+			las capturas para poder lograr la registración, pero la base de
+			datos utilizada sólo contenía información geométrica.
+			Debido a esto, no se utilizarán las funcionalidades de esta biblioteca.
+
+			%No usé OpenCV porque eran imágenes rgb-d
+			%y yo recibía nube de puntos
+			%además de que tampoco tenían color
+			%queda PCL
 
 		\subsection{The Stanford 3D Scanning Repository}
 			%\url{http://graphics.stanford.edu/data/3Dscanrep/}
@@ -260,20 +272,19 @@
 			\emph{volumetric merging}, ambos métodos desarrollados en Stanford.\cite{StanfordScanRep}
 
 
-			Se seleccinonarion estos 5 modelos: armadillo, bunny, dragon, drill y happy.
+			Se seleccionaron estos 5 modelos: armadillo, bunny, dragon, drill y happy.
 
-		\subsection{KinectFusion}
-			Es el algoritmo desarrollado por Microsoft para lograr reconstrucciones tridimensionales utilizando el dispositivo Kinect.
+		\subsection{CloudCompare, Meshlab}
+			Son programas de procesamiento y edición de mallas de puntos 3D.
+			Presentan herramientas de registración semiautomática (a partir de
+			puntos seleccionados por el usuario), y cuentan con una
+			implementación del algoritmo \emph{Poisson Surface Reconstruction}
+			para reconstrucción de superficies.
 
-			%kinectfusion_real-time_3d_reconstruction_and_interaction_using_a_moving_depth_camera
-			Debido a que uno de los objetivos era lograr
-			una implementación en tiempo real,
-			el algoritmo de registración requiere de
-			poca variación entre capturas de
-			la posición relativa cámara-objeto.
+			Se utilizarán especialmente para visualización
+			y comparación de resultados.
 
-			Para realizar la combinación utiliza una variación del método de
-			\emph{volumetric merging} sobre GPU.\cite{Izadi:2011:KRR:2047196.2047270}
+
 
 %\nocite{*}
 \bibliographystyle{alpha}
