@@ -1,4 +1,5 @@
-\chapter{Casos de uso}
+\chapter{Casos de uso} %[PANCHO] breve introduccion? A continuacion se detallan bla bla bla. Separa los casos un poco mas, a  simple vista no se distingue donde empiexa uno y termina otro
+A continuación se presentan los casos de uso identificados y el detalle de los mismos.
 
 \begin{figure}[h]
 	\centering
@@ -91,7 +92,7 @@
 		\CUNormal
 		\begin{enumerate}
 			\item El usuario introduce una malla poligonal.
-			\item El sistema identifica los vértices que forman parte de un hueco.
+			\item El sistema identifica los vértices que forman parte de un hueco.  %[PANCHO] Aca los identifica el sistema, no deberia el usuario tener que elegir huecos para rellenar luego.
 			\item El sistema calcula los contornos de los huecos.
 			\item El sistema devuelve una lista con cada hueco y los vértices de su contorno.
 		\end{enumerate}
@@ -103,7 +104,7 @@
 		\CUNormal
 		\begin{enumerate}
 			\item El usuario introduce una malla poligonal.
-			\item El usuario identifica un hueco. \IncCU{Identificar huecos}
+			\item El usuario elige un hueco a rellenar. \IncCU{Identificar huecos} %[PANCHO] Usuario identifica hueco?
 			\item El sistema agrega puntos en el interior del hueco.
 			\item El sistema integra los nuevos puntos a la malla.
 			\item El sistema devuelve la malla resultante.

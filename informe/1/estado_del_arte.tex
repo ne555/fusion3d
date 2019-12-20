@@ -92,19 +92,19 @@
 			mismas, de forma que la deformación sea ``lo más rígida posible''.
 
 	\section{Fusión}
-		Una vez alineadas las superficies éstas deben combinarse en una única malla resultante.
+		Una vez alineadas las superficies, éstas deben combinarse en una única malla resultante.
 
 		\subsection{Volumetric merge}
-		Se divide el espacio en un arreglo de vóxeles que contienen la
+		Se divide el espacio en un arreglo de vóxeles, que contienen la
 		distancia con signo desde el centro del vóxel a la superficie (la
-		distancia será positiva si el vóxel se encuentra en la parte exterior y
+		distancia será positiva si el vóxel se encuentra en la parte exterior, y
 		negativa si se encuentra en el interior).
 		De esta forma,
 		se tiene definida de forma implícita a la
 		superficie donde la distancia es 0, y puede extraerse con, por ejemplo, \emph{marching cubes}.
 
 		En cada nueva registración se actualizan las distancias de los
-		vóxeles mediante raycasting
+		vóxeles mediante raycasting,
 		desde la posición estimada de la cámara hacia la superficie,
 		realizando un promedio ponderado con los valores anteriormente calculados.\cite{Curless:1996:VMB:237170.237269} %a_volumetric_method_for_building_complex_models_from_range_images.txt
 		Debido a que sólo nos interesan las zonas donde la distancia es cercana a 0 es posible utilizar una representación rala para los vóxeles.\cite{Steinbrucker:2013:LMS:2586117.2586926} % large-scale_multi-resolution_surface_reconstruction_from_rgb-d_sequences

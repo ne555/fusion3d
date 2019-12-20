@@ -20,7 +20,7 @@
 		y relleno de huecos para conseguir una superficie cerrada.
 
 		Las entradas serán nubes de puntos con valores de posición (x,y,z).
-		No se dispondrá de información de textura, normales o conectividades.
+		No se dispondrá de información de textura, normales o conectividades. %[PANCHO] no contradice lo dicho en el anteproyecto?
 
 		Como salida se tendrá una superficie cerrada triangulada.
 
@@ -58,9 +58,10 @@
 			El ángulo máximo entre dos mallas no podrá exceder los 60\textdegree.
 
 			La cámara no se encontrará demasiado elevada respecto a la
-			superficie giratoria. En ningún caso deberá superar el punto más alto del objeto.
+			superficie giratoria. En ningún caso deberá superar el punto más alto del objeto. %[PANCHO]
+			\clearpage
 
-	\section{Requerimientos funcionales}
+	\section{Requerimientos funcionales}    %[PANCHO] dejales un espacio entre medio, move la seccion asi queda en una pagina (sin cortarse por uno o dos renglones, es por facha, si no queres no hay drama) 
 		El sistema deberá proveer las siguientes funcionalidades:
 
 		\Requerimiento
@@ -90,8 +91,9 @@
 
 		\Requerimiento
 			{Combinación de nubes}
-			{Se debe disponer de funciones para ajustar los puntos y sus normales según la
-			información de cada malla de donde provengan.}
+			{Se debe disponer de funciones para ajustar los puntos y sus normales,
+			según la información provista por cada malla.}
+			%[PANCHO] "según la información de cada malla de donde provengan" reformular? "segun la informacion proveniente de cada malla"
 
 		\Requerimiento
 			{Triangulación}
@@ -104,11 +106,22 @@
 			información.}
 
 	\section{Requerimientos no funcionales}
-		Si bien no se busca una ejecución en tiempo real de los algoritmos,
-		éstos deberán correr en una PC estándar en tiempo de minutos.
+		Se identificaron los siguientes requerimientos no funcionales:
+	
+	    %[PANCHO] Agrega introduccion como la seccion anterior, y lista los requerimientos.
+	
+		\Requerimiento{Tiempo de ejecución}
+		{No se espera una ejecución a tiempo real de los algoritmos implementados.}
+		%Si bien no se busca una ejecución en tiempo real de los algoritmos,
+		%éstos deberán correr en una PC estándar en tiempo de minutos. % [PANCHO] no prometas nada a esta altura, con aclarar que no esta destinado a tiempo real esta bien, estas cosas las usa gaston para joder despues.
 
-		El consumo de memoria no deberá ser muy elevado.
+		%El consumo de memoria no deberá ser muy elevado. %[PANCHO] Cambia este.
+		
+		% [PANCHO] Requerimientos no funcionales (ejemplos): - Desarrollado en lenguaje C++. - Empleando las bibliotecas XXXXX.
+		\Requerimiento{Lenguaje de programación}
+		{El producto se desarrollará en el lenguaje C++.}
 
 
-		El producto desarrollado estará destinado a utilizarse en los sistemas
-		operativos Windows y Linux
+		\Requerimiento{Sistemas operativos}
+		{El producto desarrollado estará destinado a utilizarse en los sistemas
+		operativos Windows y Linux.}
