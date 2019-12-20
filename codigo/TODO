@@ -43,7 +43,12 @@ features
 		usar diferencia respecto a la media para elegir sobresalientes
 		agrupar regiones de "saliencia" similar (todo un grupo debería definirse por un punto)
 		revisar cálculo de histograma, que cada punto sume de forma proporcional en cada cubeta
+		cambiar lrf por usc / shot
 	shot
+	3dsc (puntos en lugar de normales, quizás menos propenso a ruidos y malas correspondencias)
+		usc unique shape context (local reference frame)
+			iss, matriz de covarianza ponderada por distancia
+			desambiguar según los puntos de la vecindad (x, z) el otro y = x \crss z
 
 alineación
 	icp
@@ -61,6 +66,10 @@ alineación
 	mejorar con icp
 	**revisar clustering, ángulos negativos y ambigüedad de ref_frame
 		elegir clúster cuyo centro sea el más cercano a la media
+
+visualización
+	mostrar colores comparando las distancias entre las mallas
+	mostrar colores comparando el producto punto entre las normales
 
 leer .ply con estructura
 escribir .ply con estructura
