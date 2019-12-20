@@ -9,7 +9,9 @@ CU: Alinear dos mallas
 			  ser alineada
 	* fin
 
-CU: Detectar bucle
+@@CU: Detectar bucle
+	@@ no es caso de uso
+	@@ el usuario provee de una lista de imágenes circular que cierra.
 
 
 CU: Alinear bucle
@@ -23,10 +25,13 @@ CU: Alinear bucle
 	* _sistema_ corrige acumulación de errores
 	* resultado: lista de mallas válidas y sus transformaciones
 
-CU: Rechazo (¿es caso de uso?)
+@@CU: Rechazo (¿es caso de uso?)
+	¿puedo rechazar mallas?
+	¿tengo la capacidad?
+	sí, pero no lo puedo resolver
+	eliminar la malla y seguir no me alcanzan los ángulos
 
 CU: Relleno de huecos
-	** Descartado **
 	¿qué  es hueco?
 		borde de un sólo vecino
 	detectar contorno hueco
@@ -36,7 +41,10 @@ CU: Relleno de huecos
 		difundir bordes
 	¿qué es rellenar?
 
-	
+CU: Ajuste de parámetros
+	* el usuario debe poder configurar los parámetros de los algoritmos
+		ver algoritmo
+
 
 CU: Extracción de superficie
 	Entrada: lista de mallas
