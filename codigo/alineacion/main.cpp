@@ -32,10 +32,18 @@ namespace nih {
 	transformation
 	create_transformation(double angle, vector axis, vector translation);
 
-	// returns the center and if the element forms part of the cluster
+	// returns the center and if the element forms part
+	// of the cluster with the most elements
 	template <class T>
 	std::tuple<T, std::vector<bool> >
 	biggest_cluster(std::vector<T> v, int n_clusters);
+
+	// returns the center and if the element forms part
+	// of the cluster whose center is nearest to target
+	std::tuple<vector, std::vector<bool> >
+	nearest_cluster(std::vector<vector> v, int n_clusters, const vector &target);
+	std::tuple<double, std::vector<bool> >
+	nearest_cluster(std::vector<double> v, int n_clusters, const double &target);
 
 	// transforms the input to be used for dkm::kmeans
 	std::vector<std::array<float, 3> >
@@ -260,7 +268,7 @@ namespace nih {
 	template <class T>
 	std::tuple<T, std::vector<bool> >
 	biggest_cluster(std::vector<T> v, int n_clusters) {
-		if(v.size() < n_clusters) n_clusters = 1;
+		if(v.size() <= n_clusters) n_clusters = 1;
 		auto [center, label] = dkm::kmeans_lloyd(to_vec_array(v), n_clusters);
 		std::vector<bool> member(v.size());
 		int mode_label = mode(label.begin(), label.end());
@@ -269,6 +277,42 @@ namespace nih {
 
 		return std::make_tuple(from_vec_array(center[0]), member);
 	}
+
+	std::tuple<vector, std::vector<bool> >
+	nearest_cluster(std::vector<vector> v, int n_clusters, const vector &target) {
+		if(v.size() <= n_clusters) n_clusters = 1;
+		auto [center, label] = dkm::kmeans_lloyd(to_vec_array(v), n_clusters);
+		std::vector<bool> member(v.size());
+
+		std::vector<double> distances_(v.size());
+		for(const auto &x: center)
+			distances_.push_back( (target-from_vec_array(x)).norm() );
+
+		int nearest_label = label[std::min_element(distances_.begin(), distances_.end()) - distances_.begin()];
+		for(int K = 0; K < member.size(); ++K)
+			member[K] = label[K] == nearest_label;
+
+		return std::make_tuple(from_vec_array(center[nearest_label]), member);
+	}
+
+	std::tuple<double, std::vector<bool> >
+	nearest_cluster(std::vector<double> v, int n_clusters, const double &target) {
+		if(v.size() <= n_clusters) n_clusters = 1;
+		auto [center, label] = dkm::kmeans_lloyd(to_vec_array(v), n_clusters);
+		std::vector<bool> member(v.size());
+
+		std::vector<double> distances_(v.size());
+		for(const auto &x: center)
+			distances_.push_back(target-from_vec_array(x));
+
+		int nearest_label = label[std::min_element(distances_.begin(), distances_.end()) - distances_.begin()];
+		std::cerr << "***" << nearest_label << '\n';
+		for(int K = 0; K < member.size(); ++K)
+			member[K] = label[K] == nearest_label;
+
+		return std::make_tuple(from_vec_array(center[nearest_label]), member);
+	}
+
 	std::vector<std::array<double, 1> >
 	to_vec_array(const std::vector<double> &v) {
 		std::vector<std::array<double, 1> > data(v.size());
@@ -347,16 +391,17 @@ namespace nih {
 
 		filter_y_threshold();
 		std::vector<double> angles = filter_rotation_axis();
-		for(auto &K: angles)
-			std::cerr << rad2deg(K) << ' ';
-		std::cerr << '\n';
+		//for(auto &K: angles)
+		//	std::cerr << rad2deg(K) << ' ';
+		//std::cerr << '\n';
 		// iterate clustering
 		double angle_result = 0;
 		vector translation_result(0, 0, 0);
 		std::vector<bool> angle_label, trans_label;
 		for(int K = 0; K < max_iterations_; ++K) {
+			auto angle_mean = nih::mean(angles.begin(), angles.end());
 			std::tie(angle_result, angle_label) =
-			    biggest_cluster(angles, n_clusters_);
+			    nearest_cluster(angles, n_clusters_, angle_mean);
 			filter(correspondences_, angle_label);
 			filter(angles, angle_label);
 			std::vector<vector> translations = source_.compute_translations(
@@ -364,8 +409,9 @@ namespace nih {
 			    Eigen::Vector3f::UnitY(),
 			    target_,
 			    correspondences_);
+			auto translation_mean = nih::mean(translations.begin(), translations.end());
 			std::tie(translation_result, trans_label) =
-			    biggest_cluster(translations, n_clusters_);
+			    nearest_cluster(translations, n_clusters_, translation_mean);
 			filter(correspondences_, trans_label);
 			filter(angles, trans_label);
 		}
@@ -477,6 +523,7 @@ namespace nih {
 
 			for(int L = 0; L < 3; ++L)
 				for(int M = 0; M < 3; ++M)
+					//FIXME: ponderar según la distancia (ver usc / shot)
 					covarianza(L, M) += (p.data[L] - center.data[L])
 					                    * (p.data[M] - center.data[M]);
 		}
@@ -490,6 +537,10 @@ namespace nih {
 			f.eigenvectors_.col(K) = solver.eigenvectors().col(3-(K+1));
 		}
 
+		//FIXME: desambiguar según los puntos de alrededor
+		//S+ = contar( (p-c).dot(eigenvector[0]) >= 0
+		//S- = contar( (p-c).dot(eigenvector[0]) < 0
+		//orientar al mayor
 		// to always have right-hand rule
 		f.eigenvectors_.col(2) =
 		    f.eigenvectors_.col(0).cross(f.eigenvectors_.col(1));
