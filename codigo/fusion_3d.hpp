@@ -154,7 +154,7 @@ namespace nih {
 		Eigen::Translation<float, 3> translation(t[0], t[1], t[2]);
 
 		transformation transformation_;
-		transformation_ = translation * rotation.inverse();
+		transformation_ = translation * rotation;
 
 		return transformation_;
 	}
