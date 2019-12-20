@@ -1,5 +1,6 @@
 #include "../fusion_3d.hpp"
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/io/ply_io.h>
 
 #include <string>
 #include <iostream>
@@ -30,8 +31,10 @@ int main(int argc, char **argv) {
 		nubes.push_back(load_cloud_normal(directory+filename) );
 
 	auto fusionada = fusionar(nubes);
+	pcl::PLYWriter writer;
+	writer.write("result.ply", *fusionada);
 
-	visualise(nubes, fusionada);
+	//visualise(nubes, fusionada);
 
 	return 0;
 }
