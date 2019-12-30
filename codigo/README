@@ -1,30 +1,104 @@
-align
-alineacion
-cloud_to_colormap
-cloud_to_depth
-compilation
-correspondence
-ejemplos
-features
-filter
-generate_point_cloud.py
-ground_truth
-io
-keypoints
-load_ply
-ndt
-pcd2ply
-registracion
-registration
-smooth
-stanford_database
-surface
-tags
-transformation
+align: opencv kinfu
+
+alineacion:
+	módulo registración
+		submuestreo uniforme
+		correspondencia fpfh
+		marco de referencia iss
+		restricción movimiento vertical
+		restricción eje de giro
+		k-means
+		(sin icp, icp aleja)
+
+cloud_to_colormap: opencv visualizar nube de puntos como imagen de profundidad
+
+cloud_to_depth: opencv proyección de la nube de puntos (parámetros de cámara inventados)
+
+compilation: reducir tiempo de compilación mediante instanciación de templates (failure)
+
+correspondence: (mejorado en alineación)
+
+ejemplos:
+	foo
+		crop_box: filtro de bounding box (pcl::{CropBox,BoxClipper3D})
+		icp.cpp: la misma nube un poco movida
+		icp_incremental.cpp: icp con feature (muchas de a pares)
+		range_image.cpp: proyección de la nube de puntos (parámetros de cámara inventados)
+	pcd2ply: conversión .pcl -> .ply y viceversa (mejorado en ./pcd2ply)
+	triangulation: Greedy Projection Triangulation
+	voxel_grid: filtro voxel grid
+
+features:
+	prueba de distintos keypoints (brisk, iss)
+	prueba de supervivencia multiescala de distintas features (fpfh)
+
+filter:
+	triangular la entrada
+	eliminar puntos de borde
+	pseudocódigo en filter.py
+
+generate_point_cloud.py: nube de puntos .ply a partir de imágenes de profundidad y color
+
+ground_truth: muestra la transformación en quaternion y angleaxis
+
+io: visualización y lectura en pclpointcloud2
+
+keypoints: prueba de keypoints y de lo lejos que quedan alineados
+
+load_ply: para cargar con normales (¿failure?)
+
+ndt: algoritmo de registración para muchos puntos
+
+pcd2ply: convierte .pcd -> .ply
+
+registracion: copia de registration/skeleton.cpp
+
+registration:
+	copia ndt/ndt.cpp
+	módulo registración
+		keypoints multiescale fpfh
+		sample consensus fpfh
+		icp
+		informe de errores
+
+smooth: reducción de ruido
+	moving least squares
+	bilateral filter (ver parámetros)
+
+stanford_database:
+	corregir .conf para que la transformación sea 
+	translación * rotación
+
+surface:
+	une todas las nubes en una
+	pésimo visualizador
+
+tags: para saltar entre funciones en *vim
+
+transformation:
+	aplicar transformaciones a la cámara
+
+visualization:
+	ejemplo pclvisualizer
+
+filter.hpp:
+	triangulación (delaunay) de la nube de puntos
+	eliminar triangulos grandes
+	eliminar borde
+	eliminar normales ortogonales
+
+fpfh.cpp: calcular fpfh
+
+fusion_3d.hpp:
+	alias de tipos pcl
+	lectura de nubes y transformaciones
+	cálculo de normales
+	operaciones entre puntos xyz
+	operaciones entre nubes
+
+util.hpp:
+	funciones auxiliares
+
+CMakeLists.txt: ejemplo
+
 TODO: things to do (and things already done)
-util.hpp
-visualization
-CMakeLists.txt
-filter.hpp
-fpfh.cpp
-fusion_3d.hpp
