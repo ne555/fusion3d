@@ -62,6 +62,7 @@ namespace nih {
 
 	void show_rotation(const Eigen::Matrix3f &rotation, std::ostream &out = std::cout);
 	void show_transformation(const transformation &t, std::ostream &out = std::cout);
+	void write_transformation(const transformation &t, std::ostream &out = std::cout);
 	class alignment {
 		struct reference_frame {
 			Eigen::Matrix3f eigenvectors_; // column order
@@ -143,12 +144,16 @@ int main(int argc, char **argv) {
 	double resolution = nih::get_resolution(first);
 
 	std::vector<nih::cloud_with_normal> clouds;
+	std::vector<std::string> names;
 	clouds.emplace_back(
 	    nih::preprocess(nih::moving_least_squares(first, 6 * resolution)));
+	names.push_back(filename);
 
 	nih::alignment align;
 	align.set_resolution(resolution);
 	while(input >> filename) {
+		names.push_back(filename);
+
 		auto source_orig = nih::load_cloud_ply(directory + filename);
 		auto source = nih::preprocess(
 		    nih::moving_least_squares(source_orig, 6 * resolution));
@@ -158,12 +163,16 @@ int main(int argc, char **argv) {
 
 		source.transformation_ = align.align(source, target);
 		//nih::show_transformation(source.transformation_, std::cerr);
-		//source.transformation_ = target.transformation_ * source.transformation_;
+		source.transformation_ = target.transformation_ * source.transformation_;
 		clouds.emplace_back(std::move(source));
 	}
 
-	for(auto K : clouds)
-		nih::show_transformation(K.transformation_);
+	std::ofstream output(config+"_result");
+	for(int K=0; K<names.size(); ++K){
+		output << names[K] << ' ';
+		nih::write_transformation(clouds[K].transformation_, output);
+	}
+		//nih::show_transformation(K.transformation_);
 	return 0;
 }
 
@@ -366,6 +375,11 @@ namespace nih {
 		out << "axis: " << aa.axis().transpose() << '\t';
 		out << "dist_y: " << 1-abs(aa.axis().dot(Eigen::Vector3f::UnitY())) << '\n';
 	}
+	void write_transformation(const transformation &t, std::ostream &out){
+		Eigen::Quaternion<float> rotation(t.rotation());
+		out << t.translation().transpose() << ' ';
+		out << rotation.vec().transpose() << ' ' << rotation.w() << '\n';
+	}
 
 	// class alignment
 	alignment::alignment()
@@ -401,7 +415,7 @@ namespace nih {
 		for(int K = 0; K < max_iterations_; ++K) {
 			auto angle_mean = nih::mean(angles.begin(), angles.end());
 			std::tie(angle_result, angle_label) =
-			    nearest_cluster(angles, n_clusters_, angle_mean);
+			    biggest_cluster(angles, n_clusters_);
 			filter(correspondences_, angle_label);
 			filter(angles, angle_label);
 			std::vector<vector> translations = source_.compute_translations(
@@ -411,7 +425,7 @@ namespace nih {
 			    correspondences_);
 			auto translation_mean = nih::mean(translations.begin(), translations.end());
 			std::tie(translation_result, trans_label) =
-			    nearest_cluster(translations, n_clusters_, translation_mean);
+			    biggest_cluster(translations, n_clusters_);
 			filter(correspondences_, trans_label);
 			filter(angles, trans_label);
 		}
