@@ -3,6 +3,7 @@
 #include "util.hpp"
 #include "functions.hpp"
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/visualization/point_cloud_color_handlers.h>
 #include <pcl/io/ply_io.h>
 
 #include <string>
@@ -18,6 +19,7 @@ namespace nih {
 
 void visualise(const std::vector<nih::cloud_with_normal> &nubes);
 void visualise(const std::vector<nih::cloud::Ptr> &nubes);
+void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube);
 
 //parte en A, solapado, B
 std::vector<nih::cloud::Ptr>
@@ -55,9 +57,26 @@ int main(int argc, char **argv) {
 
 	std::cerr << "\nLoad finished\n";
 
-	visualise(clouds);
+	if(argv[3]){
+		auto ground_truth = nih::load_cloud_ply(argv[3]);
+		visualise(nih::cloud_diff_with_threshold(secciones[0], ground_truth, 5*resolution));
+		visualise(nih::cloud_diff_with_threshold(secciones[1], ground_truth, 5*resolution));
+	}
+
+	//visualise(clouds);
 	visualise(secciones);
 	return 0;
+}
+
+void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube){
+	auto view =
+	    boost::make_shared<pcl::visualization::PCLVisualizer>("surface");
+	view->setBackgroundColor(0, 0, 0);
+	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> color (nube, "intensity");
+	view->addPointCloud<pcl::PointXYZI>(nube, color, "cloud");
+	while(!view->wasStopped())
+		view->spinOnce(100);
+	view->close();
 }
 
 void visualise(const std::vector<nih::cloud_with_normal> &nubes){
@@ -79,6 +98,7 @@ void visualise(const std::vector<nih::cloud_with_normal> &nubes){
 
 	while(!view->wasStopped())
 		view->spinOnce(100);
+	view->close();
 }
 
 void visualise(const std::vector<nih::cloud::Ptr> &nubes){
@@ -96,6 +116,7 @@ void visualise(const std::vector<nih::cloud::Ptr> &nubes){
 
 	while(!view->wasStopped())
 		view->spinOnce(100);
+	view->close();
 }
 
 void usage(const char *program) {
@@ -117,7 +138,7 @@ std::vector<nih::cloud::Ptr> seccionar(
     nih::cloud_with_transformation a,
     nih::cloud_with_transformation b,
     double threshold) {
-	std::vector<nih::cloud::Ptr> result(3);
+	std::vector<nih::cloud::Ptr> result(4);
 	for(auto &c: result)
 		c = nih::create<nih::cloud>();
 
@@ -141,9 +162,9 @@ std::vector<nih::cloud::Ptr> seccionar(
 		int a_index = nih::get_index(p, kdtree);
 		double distance_ = nih::distance(p, (*a.points_)[a_index]);
 		if(distance_ < threshold)
-			result[1]->push_back(p);
-		else
 			result[2]->push_back(p);
+		else
+			result[3]->push_back(p);
 	}
 
 	return result;
