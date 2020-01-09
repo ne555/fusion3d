@@ -75,3 +75,10 @@ visualización
 
 leer .ply con estructura
 escribir .ply con estructura
+
+
+fusión:
+	zona solapada promedio
+		* promedio de b con su más cercano
+		promedio entre correspondencias (a cercano a b, b cercano a a)
+			¿qué hacer con los que quedan fuera? (quedan como 1)
