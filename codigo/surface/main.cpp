@@ -61,6 +61,78 @@ merge(nih::cloud::Ptr a, nih::cloud::Ptr b){
 	return result;
 }
 
+pcl::PointCloud<pcl::PointXYZI>::Ptr
+fusionar(std::vector<nih::cloud_with_normal> &clouds, double threshold){
+	class fusion{
+		public:
+			fusion(double threshold):
+				cloud_(nih::create<nih::cloud>()),
+				threshold_(threshold)
+			{}
+			std::vector<int> counter;
+			nih::cloud::Ptr cloud_;
+			double threshold_;
+
+			void append(nih::cloud::Ptr a){
+				int size = a->size();
+				counter.insert(counter.end(), size, 1);
+				*cloud_ += *a;
+			}
+
+			void running_avg(int index, nih::point p){
+				auto &q = (*cloud_)[index];
+				using nih::v2p;
+				using nih::p2v;
+
+				q = v2p( (p2v(q)*counter[index] + p2v(p))/(counter[index]+1) );
+				++counter[index];
+			}
+
+			void merge(nih::cloud::Ptr a){
+				pcl::KdTreeFLANN<nih::point> kdtree;
+				auto copia = cloud_->makeShared();
+				kdtree.setInputCloud(copia); //una copia porque se modifican los puntos
+
+				for(auto p: a->points){
+					int index = nih::get_index(p, kdtree);
+					auto &q = (*copia)[index];
+					double distance_ = nih::distance(p, q);
+
+					if(distance_ < threshold_)
+						running_avg(index, p);
+					else{
+						cloud_->push_back(p);
+						counter.push_back(1);
+					}
+				}
+			}
+
+			pcl::PointCloud<pcl::PointXYZI>::Ptr
+			with_intensity() const{
+				auto result = nih::create<pcl::PointCloud<pcl::PointXYZI>>();
+				for(int K=0; K<cloud_->size(); ++K){
+					auto p = (*cloud_)[K];
+					pcl::PointXYZI pi;
+					pi.x = p.x;
+					pi.y = p.y;
+					pi.z = p.z;
+					pi.intensity = counter[K];
+
+					result->push_back(pi);
+				}
+				return result;
+			}
+
+	};
+	fusion result(threshold);
+
+	result.append(clouds[0].points_);
+	for(int K=1; K<clouds.size(); ++K)
+		result.merge(clouds[K].points_);
+
+	return result.with_intensity();
+}
+
 int main(int argc, char **argv) {
 	if(argc < 3) {
 		usage(argv[0]);
@@ -89,6 +161,11 @@ int main(int argc, char **argv) {
 	for(auto &c: clouds)
 		pcl::transformPointCloud(*c.points_, *c.points_, c.transformation_);
 
+	auto fusion = fusionar(clouds, 5*resolution);
+
+	visualise(fusion, 1);
+
+#if 0
 	auto secciones = seccionar(clouds[0], clouds[1], 5*resolution);
 	auto merge_ = merge(secciones[1], secciones[2]);
 
@@ -103,6 +180,7 @@ int main(int argc, char **argv) {
 		//visualise(nih::cloud_diff_with_threshold(secciones[1], ground_truth, 5*resolution), resolution);
 	}
 	visualise(merge_, 1);
+#endif
 
 	//visualise(clouds);
 	//visualise(secciones);
@@ -148,6 +226,7 @@ void visualise(const std::vector<nih::cloud_with_normal> &nubes){
 void visualise(const std::vector<nih::cloud::Ptr> &nubes){
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("solapa");
+	view->setBackgroundColor(0, 0, 0);
 	double delta = 1./(nubes.size()-1);
 	for(size_t K = 0; K < nubes.size(); ++K) {
 		view->addPointCloud<nih::point>(nubes[K], std::to_string(K));
