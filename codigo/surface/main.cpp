@@ -25,6 +25,42 @@ void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale);
 std::vector<nih::cloud::Ptr>
 seccionar(nih::cloud_with_transformation a, nih::cloud_with_transformation b, double threshold);
 
+
+pcl::PointCloud<pcl::PointXYZI>::Ptr
+merge(nih::cloud::Ptr a, nih::cloud::Ptr b){
+	auto result = nih::create<pcl::PointCloud<pcl::PointXYZI>>();
+	pcl::KdTreeFLANN<nih::point> kdtree;
+	kdtree.setInputCloud(a);
+
+	for(auto p: a->points){
+		pcl::PointXYZI pi;
+		pi.x = p.x;
+		pi.y = p.y;
+		pi.z = p.z;
+		pi.intensity = 1;
+		result->push_back(pi);
+	}
+
+	//add nearest point
+	for(auto p: b->points){
+		int a_index = nih::get_index(p, kdtree);
+		auto &pi = (*result)[a_index];
+		pi.x += p.x;
+		pi.y += p.y;
+		pi.z += p.z;
+		++pi.intensity;
+	}
+
+	//average
+	for(auto &p: result->points){
+		p.x /= p.intensity;
+		p.y /= p.intensity;
+		p.z /= p.intensity;
+	}
+
+	return result;
+}
+
 int main(int argc, char **argv) {
 	if(argc < 3) {
 		usage(argv[0]);
@@ -54,17 +90,22 @@ int main(int argc, char **argv) {
 		pcl::transformPointCloud(*c.points_, *c.points_, c.transformation_);
 
 	auto secciones = seccionar(clouds[0], clouds[1], 5*resolution);
+	auto merge_ = merge(secciones[1], secciones[2]);
 
 	std::cerr << "\nLoad finished\n";
 
 	if(argv[3]){
 		auto ground_truth = nih::load_cloud_ply(argv[3]);
-		visualise(nih::cloud_diff_with_threshold(secciones[0], ground_truth, 5*resolution), resolution);
-		visualise(nih::cloud_diff_with_threshold(secciones[1], ground_truth, 5*resolution), resolution);
+		auto all = secciones[0];
+		for(int K=1; K<secciones.size(); ++K)
+			*all += *secciones[K];
+		visualise(nih::cloud_diff_with_threshold(all, ground_truth, 5*resolution), resolution);
+		//visualise(nih::cloud_diff_with_threshold(secciones[1], ground_truth, 5*resolution), resolution);
 	}
+	visualise(merge_, 1);
 
 	//visualise(clouds);
-	visualise(secciones);
+	//visualise(secciones);
 	return 0;
 }
 
