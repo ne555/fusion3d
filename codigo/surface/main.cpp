@@ -36,6 +36,11 @@ int main(int argc, char **argv) {
 		cloud_.transformation_ = nih::get_transformation(input);
 		clouds.push_back(cloud_);
 	}
+
+	//aplicar las transformaciones (mantener almacenado)
+	for(auto &c: clouds)
+		pcl::transformPointCloud(*c.points_, *c.points_, c.transformation_);
+
 	std::cerr << "\nLoad finished\n";
 
 	visualise(clouds);

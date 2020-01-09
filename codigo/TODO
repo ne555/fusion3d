@@ -9,6 +9,8 @@ preproceso
 		erosión de parches
 		equivalente de erosión niveles de gris
 
+trabajar con pointnormal junto
+
 triangulación de la entrada
 	proyectar a z=0
 	triangular por cercanía
