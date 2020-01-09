@@ -89,16 +89,22 @@ fusionar(std::vector<nih::cloud_with_normal> &clouds, double threshold){
 			}
 
 			void merge(nih::cloud::Ptr a){
-				pcl::KdTreeFLANN<nih::point> kdtree;
 				auto copia = cloud_->makeShared();
+				pcl::KdTreeFLANN<nih::point> kdtree;
 				kdtree.setInputCloud(copia); //una copia porque se modifican los puntos
 
-				for(auto p: a->points){
-					int index = nih::get_index(p, kdtree);
-					auto &q = (*copia)[index];
-					double distance_ = nih::distance(p, q);
+				pcl::KdTreeFLANN<nih::point> kt_a;
+				kt_a.setInputCloud(a); //una copia porque se modifican los puntos
 
-					if(distance_ < threshold_)
+				for(int K=0; K<a->size(); ++K){
+					auto p = (*a)[K];
+					int index = nih::get_index(p, kdtree);
+					auto q = (*copia)[index];
+					double distance_ = nih::distance(p, q);
+					int a_index = nih::get_index(q, kt_a);
+
+					if(distance_ < threshold_ and a_index == K)
+						// correspondencia (p y q son los más cercanos entre sí)
 						running_avg(index, p);
 					else{
 						cloud_->push_back(p);
