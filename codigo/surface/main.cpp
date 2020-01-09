@@ -19,7 +19,7 @@ namespace nih {
 
 void visualise(const std::vector<nih::cloud_with_normal> &nubes);
 void visualise(const std::vector<nih::cloud::Ptr> &nubes);
-void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube);
+void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale);
 
 //parte en A, solapado, B
 std::vector<nih::cloud::Ptr>
@@ -59,8 +59,8 @@ int main(int argc, char **argv) {
 
 	if(argv[3]){
 		auto ground_truth = nih::load_cloud_ply(argv[3]);
-		visualise(nih::cloud_diff_with_threshold(secciones[0], ground_truth, 5*resolution));
-		visualise(nih::cloud_diff_with_threshold(secciones[1], ground_truth, 5*resolution));
+		visualise(nih::cloud_diff_with_threshold(secciones[0], ground_truth, 5*resolution), resolution);
+		visualise(nih::cloud_diff_with_threshold(secciones[1], ground_truth, 5*resolution), resolution);
 	}
 
 	//visualise(clouds);
@@ -68,7 +68,10 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube){
+void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale){
+	for(auto &p: nube->points)
+		p.intensity /= scale;
+
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("surface");
 	view->setBackgroundColor(0, 0, 0);
