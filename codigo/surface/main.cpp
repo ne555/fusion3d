@@ -12,10 +12,16 @@
 void usage(const char *program);
 namespace nih {
 	typedef pcl::PointCloud<pcl::PointNormal> cloudnormal;
+	using cloud_with_transformation = cloud_with_normal;
 	cloud_with_normal load_cloud_normal(std::string filename);
 }
 
 void visualise(const std::vector<nih::cloud_with_normal> &nubes);
+void visualise(const std::vector<nih::cloud::Ptr> &nubes);
+
+//parte en A, solapado, B
+std::vector<nih::cloud::Ptr>
+seccionar(nih::cloud_with_transformation a, nih::cloud_with_transformation b, double threshold);
 
 int main(int argc, char **argv) {
 	if(argc < 3) {
@@ -30,8 +36,12 @@ int main(int argc, char **argv) {
 	std::vector<nih::cloud_with_normal> clouds;
 
 	std::cerr << "Loading clouds";
+	double resolution;
 	while(input >> filename) {
 		std::cerr << '.';
+		auto first = nih::load_cloud_ply(directory + filename);
+		double resolution_ = nih::get_resolution(first);
+		resolution = resolution_;
 		auto cloud_ = nih::load_cloud_normal(directory + filename);
 		cloud_.transformation_ = nih::get_transformation(input);
 		clouds.push_back(cloud_);
@@ -41,9 +51,12 @@ int main(int argc, char **argv) {
 	for(auto &c: clouds)
 		pcl::transformPointCloud(*c.points_, *c.points_, c.transformation_);
 
+	auto secciones = seccionar(clouds[0], clouds[1], 5*resolution);
+
 	std::cerr << "\nLoad finished\n";
 
 	visualise(clouds);
+	visualise(secciones);
 	return 0;
 }
 
@@ -68,6 +81,23 @@ void visualise(const std::vector<nih::cloud_with_normal> &nubes){
 		view->spinOnce(100);
 }
 
+void visualise(const std::vector<nih::cloud::Ptr> &nubes){
+	auto view =
+	    boost::make_shared<pcl::visualization::PCLVisualizer>("solapa");
+	double delta = 1./(nubes.size()-1);
+	for(size_t K = 0; K < nubes.size(); ++K) {
+		view->addPointCloud<nih::point>(nubes[K], std::to_string(K));
+		view->setPointCloudRenderingProperties(
+			pcl::visualization::PCL_VISUALIZER_COLOR,
+			K*delta, 1, K*delta,
+			std::to_string(K)
+		);
+	}
+
+	while(!view->wasStopped())
+		view->spinOnce(100);
+}
+
 void usage(const char *program) {
 	std::cerr << program << " directory "
 	          << "conf_file\n";
@@ -82,3 +112,39 @@ namespace nih {
 	    return preprocess(moving_least_squares(cloud_, radius * resolution));
 	}
 } // namespace nih
+
+std::vector<nih::cloud::Ptr> seccionar(
+    nih::cloud_with_transformation a,
+    nih::cloud_with_transformation b,
+    double threshold) {
+	std::vector<nih::cloud::Ptr> result(3);
+	for(auto &c: result)
+		c = nih::create<nih::cloud>();
+
+	pcl::KdTreeFLANN<nih::point> kdtree;
+	kdtree.setInputCloud(b.points_);
+
+	// por cada punto en a
+	for(const auto &p : a.points_->points) {
+		// buscar el más cercano en b
+		int b_index = nih::get_index(p, kdtree);
+		double distance_ = nih::distance(p, (*b.points_)[b_index]);
+		if(distance_ < threshold)
+			result[1]->push_back(p);
+		else
+			result[0]->push_back(p);
+	}
+
+	kdtree.setInputCloud(a.points_);
+	//lo mismo para b
+	for(const auto &p : b.points_->points) {
+		int a_index = nih::get_index(p, kdtree);
+		double distance_ = nih::distance(p, (*a.points_)[a_index]);
+		if(distance_ < threshold)
+			result[1]->push_back(p);
+		else
+			result[2]->push_back(p);
+	}
+
+	return result;
+}

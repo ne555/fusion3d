@@ -21,7 +21,10 @@ namespace nih {
 
 	class cloud_with_normal {
 	public:
-		cloud_with_normal() : transformation_(transformation::Identity()) {}
+		cloud_with_normal() :
+			points_(create<cloud>()),
+			normals_(create<normal>()),
+			transformation_(transformation::Identity()) {}
 		typedef boost::shared_ptr<cloud_with_normal> Ptr;
 		cloud::Ptr points_;
 		normal::Ptr normals_;
