@@ -1,9 +1,11 @@
-colorear error en la malla
+# marca lo heho
+
+# colorear error en la malla
 generar un histograma del error
 
 preproceso
 	suavizado de la superfice
-		moving least squares
+		# moving least squares
 		filtro bilineal
 	eliminación de outliers
 		erosión de parches
@@ -11,17 +13,17 @@ preproceso
 
 trabajar con pointnormal junto
 
-triangulación de la entrada
-	proyectar a z=0
-	triangular por cercanía
-	eliminar aristas demasiado grandes
+# triangulación de la entrada
+	# proyectar a z=0
+	# triangular por cercanía
+	# eliminar aristas demasiado grandes
 
 Intervalo de confianza:
-	eliminar bordes
-	eliminar normales cuasi ortogonales
-	eliminar cercano al borde
+	# eliminar bordes
+	# eliminar normales cuasi ortogonales
+	# eliminar cercano al borde
 		del centro de la captura
-	eliminar cercanos a eliminados
+	# eliminar cercanos a eliminados
 
 
 submuestreo de la entrada
@@ -38,10 +40,11 @@ submuestreo de la entrada
 		** No considerar puntos de borde **
 		-- espaciado uniforme, que resuelva las features
 
-	subdivisión de la malla
+	# subdivisión de la malla
+		(probar otra vez)
 
 features
-	fpfh
+	# fpfh
 		usar diferencia respecto a la media para elegir sobresalientes
 		agrupar regiones de "saliencia" similar (todo un grupo debería definirse por un punto)
 		revisar cálculo de histograma, que cada punto sume de forma proporcional en cada cubeta
@@ -53,24 +56,24 @@ features
 			desambiguar según los puntos de la vecindad (x, z) el otro y = x \crss z
 
 alineación
-	icp
-	SampleConsensusInitialAlignment
+	# icp
+	# SampleConsensusInitialAlignment
 	Levenberg-Marquardt
-	marco de referencia con los eigenvectors de la covarianza de la matriz de dispersión
+	# marco de referencia con los eigenvectors de la covarianza de la matriz de dispersión
 		algo para matar outliers
 			weighted k-means on the correspondences to find the rotation
-			k-means on translation
+			# k-means on translation
 			normal fitting on translation
 			promediar cuaterniones de rotación
 	alineación inicial
-		encontrar área solapada
+		# encontrar área solapada
 			erosionar una de las áreas para lograr Source incluido en Target
 	mejorar con icp
 	**revisar clustering, ángulos negativos y ambigüedad de ref_frame
 		elegir clúster cuyo centro sea el más cercano a la media
 
 visualización
-	mostrar colores comparando las distancias entre las mallas
+	# mostrar colores comparando las distancias entre las mallas
 	mostrar colores comparando el producto punto entre las normales
 
 leer .ply con estructura
@@ -79,6 +82,6 @@ escribir .ply con estructura
 
 fusión:
 	zona solapada promedio
-		* promedio de b con su más cercano
+		# promedio de b con su más cercano
 		promedio entre correspondencias (a cercano a b, b cercano a a)
 			¿qué hacer con los que quedan fuera? (quedan como 1)
