@@ -48,6 +48,7 @@ int main(int argc, char **argv) {
 
 	//cargar las nubes de los .ply en el archivo de configuración
 	std::string directory = argv[1], config = argv[2];
+	if(directory.back() not_eq '/') directory += '/';
 	std::ifstream input(config);
 	std::string filename;
 	std::vector<cloud_with_transformation> clouds;
