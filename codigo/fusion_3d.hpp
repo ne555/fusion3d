@@ -31,6 +31,7 @@ namespace nih {
 	inline boost::shared_ptr<T> create();
 	inline cloud::Ptr load_cloud_ply(std::string filename);
 	inline transformation get_transformation(std::ifstream &input);
+	inline void write_transformation(const transformation &t, std::ostream &out);
 	normal::Ptr compute_normals(cloud::Ptr nube, double distance);
 
 	inline point v2p(vector v);
@@ -172,6 +173,12 @@ namespace nih {
 		auto filtrada = create<cloud>();
 		muestreo.filter(*filtrada);
 		return filtrada;
+	}
+
+	void write_transformation(const transformation &t, std::ostream &out){
+		Eigen::Quaternion<float> rotation(t.rotation());
+		out << t.translation().transpose() << ' ';
+		out << rotation.vec().transpose() << ' ' << rotation.w() << '\n';
 	}
 
 } // namespace nih
