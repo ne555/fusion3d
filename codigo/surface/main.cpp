@@ -61,7 +61,8 @@ merge(nih::cloud::Ptr a, nih::cloud::Ptr b){
 	return result;
 }
 
-pcl::PointCloud<pcl::PointXYZI>::Ptr
+//pcl::PointCloud<pcl::PointXYZ>::Ptr
+auto
 fusionar(std::vector<nih::cloud_with_normal> &clouds, double threshold){
 	class fusion{
 		public:
@@ -137,60 +138,7 @@ fusionar(std::vector<nih::cloud_with_normal> &clouds, double threshold){
 		result.merge(clouds[K].points_);
 
 	return result.with_intensity();
-}
-
-int main(int argc, char **argv) {
-	if(argc < 3) {
-		usage(argv[0]);
-		return 1;
-	}
-
-	//cargar las nubes de los .ply en el archivo de configuración
-	std::string directory = argv[1], config = argv[2];
-	std::ifstream input(config);
-	std::string filename;
-	std::vector<nih::cloud_with_normal> clouds;
-
-	std::cerr << "Loading clouds";
-	double resolution;
-	while(input >> filename) {
-		std::cerr << '.';
-		auto first = nih::load_cloud_ply(directory + filename);
-		double resolution_ = nih::get_resolution(first);
-		resolution = resolution_;
-		auto cloud_ = nih::load_cloud_normal(directory + filename);
-		cloud_.transformation_ = nih::get_transformation(input);
-		clouds.push_back(cloud_);
-	}
-
-	//aplicar las transformaciones (mantener almacenado)
-	for(auto &c: clouds)
-		pcl::transformPointCloud(*c.points_, *c.points_, c.transformation_);
-
-	auto fusion = fusionar(clouds, 5*resolution);
-
-	visualise(fusion, 1);
-
-#if 0
-	auto secciones = seccionar(clouds[0], clouds[1], 5*resolution);
-	auto merge_ = merge(secciones[1], secciones[2]);
-
-	std::cerr << "\nLoad finished\n";
-
-	if(argv[3]){
-		auto ground_truth = nih::load_cloud_ply(argv[3]);
-		auto all = secciones[0];
-		for(int K=1; K<secciones.size(); ++K)
-			*all += *secciones[K];
-		visualise(nih::cloud_diff_with_threshold(all, ground_truth, 5*resolution), resolution);
-		//visualise(nih::cloud_diff_with_threshold(secciones[1], ground_truth, 5*resolution), resolution);
-	}
-	visualise(merge_, 1);
-#endif
-
-	//visualise(clouds);
-	//visualise(secciones);
-	return 0;
+	//return result.cloud_;
 }
 
 void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale){
@@ -297,4 +245,63 @@ std::vector<nih::cloud::Ptr> seccionar(
 	}
 
 	return result;
+}
+
+int main(int argc, char **argv) {
+	if(argc < 3) {
+		usage(argv[0]);
+		return 1;
+	}
+
+	//cargar las nubes de los .ply en el archivo de configuración
+	std::string directory = argv[1], config = argv[2];
+	std::ifstream input(config);
+	std::string filename;
+	std::vector<nih::cloud_with_normal> clouds;
+
+	std::cerr << "Loading clouds";
+	double resolution;
+	while(input >> filename) {
+		std::cerr << '.';
+		auto first = nih::load_cloud_ply(directory + filename);
+		double resolution_ = nih::get_resolution(first);
+		resolution = resolution_;
+		auto cloud_ = nih::load_cloud_normal(directory + filename);
+		cloud_.transformation_ = nih::get_transformation(input);
+		clouds.push_back(cloud_);
+	}
+
+	//aplicar las transformaciones (mantener almacenado)
+	for(auto &c: clouds)
+		pcl::transformPointCloud(*c.points_, *c.points_, c.transformation_);
+
+	auto fusion = fusionar(clouds, 5*resolution);
+
+	visualise(fusion, 1);
+	auto sin_rojo = nih::create<pcl::PointCloud<pcl::PointXYZI>>();
+	for(auto p: fusion->points)
+		if(p.intensity not_eq 1)
+			sin_rojo->push_back(p);
+
+	fusion = sin_rojo;
+
+	visualise(fusion, 1);
+
+#if 0
+	auto secciones = seccionar(clouds[0], clouds[1], 5*resolution);
+	auto merge_ = merge(secciones[1], secciones[2]);
+
+	std::cerr << "\nLoad finished\n";
+#endif
+
+#if 0
+	if(argv[3]){
+		auto ground_truth = nih::load_cloud_ply(argv[3]);
+		visualise(nih::cloud_diff_with_threshold(fusion, ground_truth, 5*resolution), resolution);
+	}
+#endif
+
+	//visualise(clouds);
+	//visualise(secciones);
+	return 0;
 }
