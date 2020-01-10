@@ -29,8 +29,8 @@ void visualise(const std::vector<cloud_with_transformation> &nubes){
 	std::cerr << "clouds\n";
 	view->spinOnce(100);
 	for(size_t K = 0; K < nubes.size(); ++K) {
-		std::cerr << K;
 		pcl::RGB color = pcl::GlasbeyLUT::at(K);
+		std::cerr << K << ' ' << color << '\n';
 		view->addPointCloud<nih::point>(nubes[K].cloud_, std::to_string(K));
 		view->setPointCloudRenderingProperties(
 			pcl::visualization::PCL_VISUALIZER_COLOR,
@@ -74,11 +74,16 @@ int main(int argc, char **argv) {
 			c.transformation_ = t;
 		prev = c.transformation_;
 		clouds.push_back(c);
+
+		pcl::transformPointCloud(*c.cloud_, *c.cloud_, c.transformation_);
+		std::cerr << filename << ' ';
+		visualise(clouds);
+		std::cerr << "\npress Enter: "; std::cin.get();
 	}
 
 	//aplicar las transformaciones (mantener almacenado)
-	for(auto &c: clouds)
-		pcl::transformPointCloud(*c.cloud_, *c.cloud_, c.transformation_);
+	//for(auto &c: clouds)
+	//	pcl::transformPointCloud(*c.cloud_, *c.cloud_, c.transformation_);
 
 
 	visualise(clouds);

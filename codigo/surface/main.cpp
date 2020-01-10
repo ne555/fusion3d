@@ -207,7 +207,10 @@ namespace nih {
 		double resolution = get_resolution(cloud_);
 		double radius = 6;
 
-	    return preprocess(moving_least_squares(cloud_, radius * resolution));
+		cloud_with_normal result;
+		result.points_ = moving_least_squares(cloud_, radius * resolution);
+	    //return preprocess(moving_least_squares(cloud_, radius * resolution));
+		return result;
 	}
 } // namespace nih
 
