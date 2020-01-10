@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
 		}
 		auto t = nih::get_transformation(input);
 		if(partial)
-			cloud_.transformation_ = t*prev;
+			cloud_.transformation_ = prev * t;
 		else
 			cloud_.transformation_ = t;
 		prev = cloud_.transformation_;
@@ -288,10 +288,10 @@ int main(int argc, char **argv) {
 		pcl::transformPointCloud(*c.points_, *c.points_, c.transformation_);
 
 	//fusion
-#if 0
 	auto fusion = fusionar(clouds, 5*resolution);
 
 	visualise(fusion, 1);
+#if 1
 	auto sin_rojo = nih::create<pcl::PointCloud<pcl::PointXYZI>>();
 	for(auto p: fusion->points)
 		if(p.intensity not_eq 1)
@@ -316,7 +316,7 @@ int main(int argc, char **argv) {
 	}
 #endif
 
-	visualise(clouds);
+	//visualise(clouds);
 	//visualise(secciones);
 	return 0;
 }
