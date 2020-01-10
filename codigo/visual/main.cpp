@@ -4,6 +4,7 @@
 #include "functions.hpp"
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_cloud_color_handlers.h>
+#include <pcl/common/colors.h>
 #include <pcl/io/ply_io.h>
 
 #include <string>
@@ -26,15 +27,20 @@ void visualise(const std::vector<cloud_with_transformation> &nubes){
 	double delta = 1./(nubes.size()-1);
 
 	std::cerr << "clouds\n";
+	view->spinOnce(100);
 	for(size_t K = 0; K < nubes.size(); ++K) {
+		std::cerr << K;
+		pcl::RGB color = pcl::GlasbeyLUT::at(K);
 		view->addPointCloud<nih::point>(nubes[K].cloud_, std::to_string(K));
 		view->setPointCloudRenderingProperties(
 			pcl::visualization::PCL_VISUALIZER_COLOR,
-			.5,K*delta,1,
+			color.r/255.0,
+			color.g/255.0,
+			color.b/255.0,
+			//1,K*delta,0,
 			std::to_string(K)
 		);
 	}
-
 	while(!view->wasStopped())
 		view->spinOnce(100);
 	view->close();
@@ -63,7 +69,7 @@ int main(int argc, char **argv) {
 		char partial; input >> partial;
 		auto t = nih::get_transformation(input);
 		if(partial=='p')
-			c.transformation_ = t*prev;
+			c.transformation_ = prev * t;
 		else
 			c.transformation_ = t;
 		prev = c.transformation_;

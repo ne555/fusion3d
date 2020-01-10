@@ -20,7 +20,7 @@ int main(int argc, char **argv){
 	nih::transformation prev = nih::transformation::Identity();
 	while(input >> filename){
 		auto current = nih::get_transformation(input);
-		auto partial = current * prev.inverse();
+		auto partial = prev.inverse() * current;
 		output << filename << " p ";
 		nih::write_transformation(partial, output);
 
