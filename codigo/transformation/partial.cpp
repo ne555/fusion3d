@@ -21,7 +21,7 @@ int main(int argc, char **argv){
 	while(input >> filename){
 		auto current = nih::get_transformation(input);
 		auto partial = current * prev.inverse();
-		output << filename << ' ';
+		output << filename << " p ";
 		nih::write_transformation(partial, output);
 
 		prev = current;

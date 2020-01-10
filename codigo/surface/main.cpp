@@ -261,13 +261,25 @@ int main(int argc, char **argv) {
 
 	std::cerr << "Loading clouds";
 	double resolution;
+	nih::transformation prev = nih::transformation::Identity();
 	while(input >> filename) {
 		std::cerr << '.';
 		auto first = nih::load_cloud_ply(directory + filename);
 		double resolution_ = nih::get_resolution(first);
 		resolution = resolution_;
 		auto cloud_ = nih::load_cloud_normal(directory + filename);
-		cloud_.transformation_ = nih::get_transformation(input);
+		bool partial;
+		{
+			char c;
+			input >> c;
+			partial = c=='p';
+		}
+		auto t = nih::get_transformation(input);
+		if(partial)
+			cloud_.transformation_ = t*prev;
+		else
+			cloud_.transformation_ = t;
+		prev = cloud_.transformation_;
 		clouds.push_back(cloud_);
 	}
 
@@ -275,6 +287,8 @@ int main(int argc, char **argv) {
 	for(auto &c: clouds)
 		pcl::transformPointCloud(*c.points_, *c.points_, c.transformation_);
 
+	//fusion
+#if 0
 	auto fusion = fusionar(clouds, 5*resolution);
 
 	visualise(fusion, 1);
@@ -286,6 +300,7 @@ int main(int argc, char **argv) {
 	fusion = sin_rojo;
 
 	visualise(fusion, 1);
+#endif
 
 #if 0
 	auto secciones = seccionar(clouds[0], clouds[1], 5*resolution);
@@ -301,7 +316,7 @@ int main(int argc, char **argv) {
 	}
 #endif
 
-	//visualise(clouds);
+	visualise(clouds);
 	//visualise(secciones);
 	return 0;
 }
