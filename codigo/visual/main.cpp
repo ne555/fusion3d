@@ -10,6 +10,8 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("clouds");
+
 struct cloud_with_transformation{
 	nih::cloud::Ptr cloud_;
 	nih::transformation transformation_;
@@ -20,15 +22,12 @@ void usage(const char *program) {
 	          << "conf_file\n";
 }
 
-void visualise(const std::vector<cloud_with_transformation> &nubes){
-	auto view =
-	    boost::make_shared<pcl::visualization::PCLVisualizer>("clouds");
-	view->setBackgroundColor(0, 0, 0);
-	double delta = 1./(nubes.size()-1);
-
-	std::cerr << "clouds\n";
-	view->spinOnce(100);
-	for(size_t K = 0; K < nubes.size(); ++K) {
+void visualise(const std::vector<cloud_with_transformation> &nubes, int beg, int end){
+	view->removeAllPointClouds();
+	std::cerr << "From " << beg << " to " << end << '\n';
+	int dist = (end-beg+nubes.size()) % nubes.size();
+	for(size_t K = beg; K not_eq end; ++K) {
+		K %= nubes.size();
 		pcl::RGB color = pcl::GlasbeyLUT::at(K);
 		std::cerr << K << ' ' << color << '\n';
 		view->addPointCloud<nih::point>(nubes[K].cloud_, std::to_string(K));
@@ -41,6 +40,34 @@ void visualise(const std::vector<cloud_with_transformation> &nubes){
 			std::to_string(K)
 		);
 	}
+}
+
+void keyboardEventOccurred(
+    const pcl::visualization::KeyboardEvent &event, void *data) {
+	static int beg = 0;
+	static int end = 0;
+	const std::vector<cloud_with_transformation> &nubes = *static_cast<const std::vector<cloud_with_transformation> *>(data);
+
+	if(event.keyDown()){
+		if(event.getKeySym() == "j")
+			--beg;
+		else if(event.getKeySym() == "J")
+			++beg;
+		else if(event.getKeySym() == "k")
+			--end;
+		else if(event.getKeySym() == "K")
+			++end;
+	}
+
+	beg = (beg+nubes.size()) % nubes.size();
+	end = (end+nubes.size()) % nubes.size();
+
+	visualise(nubes, beg, end);
+}
+
+void visualise_wrapper(const std::vector<cloud_with_transformation> &nubes){
+	view->setBackgroundColor(0, 0, 0);
+	view->registerKeyboardCallback(keyboardEventOccurred, (void *)&nubes);
 	while(!view->wasStopped())
 		view->spinOnce(100);
 	view->close();
@@ -75,18 +102,14 @@ int main(int argc, char **argv) {
 		prev = c.transformation_;
 		clouds.push_back(c);
 
-		pcl::transformPointCloud(*c.cloud_, *c.cloud_, c.transformation_);
-		std::cerr << filename << ' ';
-		visualise(clouds);
-		std::cerr << "\npress Enter: "; std::cin.get();
 	}
 
 	//aplicar las transformaciones (mantener almacenado)
-	//for(auto &c: clouds)
-	//	pcl::transformPointCloud(*c.cloud_, *c.cloud_, c.transformation_);
+	for(auto &c: clouds)
+		pcl::transformPointCloud(*c.cloud_, *c.cloud_, c.transformation_);
 
 
-	visualise(clouds);
+	visualise_wrapper(clouds);
 	return 0;
 }
 
