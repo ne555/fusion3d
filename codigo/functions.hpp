@@ -6,6 +6,7 @@
 #define FUNCTIONS_HPP
 
 #include "fusion_3d.hpp"
+#include "util.hpp"
 #include <pcl/surface/mls.h>
 
 namespace nih{
