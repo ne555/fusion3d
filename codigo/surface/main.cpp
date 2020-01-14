@@ -214,6 +214,12 @@ namespace nih {
 	}
 } // namespace nih
 
+template <class Cloud>
+void write_cloud_ply(const Cloud &cloud_, std::string filename) {
+	pcl::PLYWriter writer;
+	writer.write(filename, cloud_);
+}
+
 std::vector<nih::cloud::Ptr> seccionar(
     nih::cloud_with_transformation a,
     nih::cloud_with_transformation b,
@@ -283,7 +289,9 @@ int main(int argc, char **argv) {
 		else
 			cloud_.transformation_ = t;
 		prev = cloud_.transformation_;
-		clouds.push_back(cloud_);
+
+		if(partial)
+			clouds.push_back(cloud_);
 	}
 
 	//aplicar las transformaciones (mantener almacenado)
@@ -291,10 +299,10 @@ int main(int argc, char **argv) {
 		pcl::transformPointCloud(*c.points_, *c.points_, c.transformation_);
 
 	//fusion
-	auto fusion = fusionar(clouds, 5*resolution);
+	auto fusion = fusionar(clouds, 5);
 
-	visualise(fusion, 1);
 #if 1
+	visualise(fusion, 1);
 	auto sin_rojo = nih::create<pcl::PointCloud<pcl::PointXYZI>>();
 	for(auto p: fusion->points)
 		if(p.intensity not_eq 1)
@@ -302,8 +310,9 @@ int main(int argc, char **argv) {
 
 	fusion = sin_rojo;
 
-	visualise(fusion, 1);
+	//visualise(fusion, 1);
 #endif
+	write_cloud_ply(*fusion, "result.ply");
 
 #if 0
 	auto secciones = seccionar(clouds[0], clouds[1], 5*resolution);
