@@ -17,6 +17,11 @@
 #include <fstream>
 auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("clouds");
 
+namespace{
+	int beg = 0;
+	int end = 0;
+}
+
 struct cloud_with_transformation{
 	nih::cloud::Ptr cloud_;
 	nih::transformation transformation_;
@@ -47,27 +52,42 @@ void visualise(const std::vector<cloud_with_transformation> &nubes, int beg, int
 	}
 }
 
+void visualise_diff(const cloud_with_transformation &a, const cloud_with_transformation &b){
+	view->removeAllPointClouds();
+	double resolution = nih::get_resolution(a.cloud_);
+	auto diff = nih::cloud_diff_with_threshold(a.cloud_, b.cloud_, 5*resolution);
+
+	for(auto &p: diff->points)
+		p.intensity /= resolution;
+	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> color (diff, "intensity");
+	view->addPointCloud<pcl::PointXYZI>(diff, color, "diff");
+}
+
 void keyboardEventOccurred(
     const pcl::visualization::KeyboardEvent &event, void *data) {
-	static int beg = 0;
-	static int end = 0;
-	const std::vector<cloud_with_transformation> &nubes = *static_cast<const std::vector<cloud_with_transformation> *>(data);
+	const std::vector<cloud_with_transformation> &nubes =
+	    *static_cast<const std::vector<cloud_with_transformation> *>(data);
 
-	if(event.keyDown()){
-		if(event.getKeySym() == "W")
+	if(event.keyDown()) {
+		std::string key = event.getKeySym();
+		// from a to b
+		if(key == "W")
 			--beg;
-		else if(event.getKeySym() == "w")
+		else if(key == "w")
 			++beg;
-		else if(event.getKeySym() == "S")
+		else if(key == "S")
 			--end;
-		else if(event.getKeySym() == "s")
+		else if(key == "s")
 			++end;
+		else if(key == "k") {
+			visualise_diff(nubes[beg], nubes[end]);
+			return;
+		}
+		beg = (beg + nubes.size()) % nubes.size();
+		end = (end + nubes.size()) % nubes.size();
+
+		visualise(nubes, beg, end);
 	}
-
-	beg = (beg+nubes.size()) % nubes.size();
-	end = (end+nubes.size()) % nubes.size();
-
-	visualise(nubes, beg, end);
 }
 
 void visualise_wrapper(const std::vector<cloud_with_transformation> &nubes){
