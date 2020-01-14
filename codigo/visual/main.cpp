@@ -1,3 +1,8 @@
+/*
+ * Visualiza muchas nubes de puntos
+ * un color distinto para cada una
+ * usar el teclado: j, k, para agregar y quitar
+ */
 #include "fusion_3d.hpp"
 #include "filter.hpp"
 #include "util.hpp"
@@ -25,20 +30,20 @@ void usage(const char *program) {
 void visualise(const std::vector<cloud_with_transformation> &nubes, int beg, int end){
 	view->removeAllPointClouds();
 	std::cerr << "From " << beg << " to " << end << '\n';
-	int dist = (end-beg+nubes.size()) % nubes.size();
-	for(size_t K = beg; K not_eq end; ++K) {
-		K %= nubes.size();
-		pcl::RGB color = pcl::GlasbeyLUT::at(K);
-		std::cerr << K << ' ' << color << '\n';
-		view->addPointCloud<nih::point>(nubes[K].cloud_, std::to_string(K));
+	int dist = (end - beg + nubes.size()) % nubes.size();
+	for(size_t K = 0; K not_eq dist+1; ++K){
+		pcl::RGB color = pcl::GlasbeyLUT::at(beg);
+		std::cerr << beg << ' ' << color << '\n';
+		view->addPointCloud<nih::point>(nubes[beg].cloud_, std::to_string(beg));
 		view->setPointCloudRenderingProperties(
 			pcl::visualization::PCL_VISUALIZER_COLOR,
 			color.r/255.0,
 			color.g/255.0,
 			color.b/255.0,
-			//1,K*delta,0,
-			std::to_string(K)
+			//1,beg*delta,0,
+			std::to_string(beg)
 		);
+		beg = (beg+1)%nubes.size();
 	}
 }
 
