@@ -52,15 +52,27 @@ void visualise(const std::vector<cloud_with_transformation> &nubes, int beg, int
 	}
 }
 
-void visualise_diff(const cloud_with_transformation &a, const cloud_with_transformation &b){
+void visualise_diff(
+    const cloud_with_transformation &a, const cloud_with_transformation &b) {
 	view->removeAllPointClouds();
 	double resolution = nih::get_resolution(a.cloud_);
-	auto diff = nih::cloud_diff_with_threshold(a.cloud_, b.cloud_, 5*resolution);
+	auto diff =
+	    nih::cloud_diff_with_threshold(a.cloud_, b.cloud_, 10 * resolution);
 
-	for(auto &p: diff->points)
+	for(auto &p : diff->points)
 		p.intensity /= resolution;
-	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> color (diff, "intensity");
+	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI>
+	    color(diff, "intensity");
+
 	view->addPointCloud<pcl::PointXYZI>(diff, color, "diff");
+	view->setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_LUT,
+	    pcl::visualization::PCL_VISUALIZER_LUT_VIRIDIS,
+	    "diff");
+	view->setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_LUT_RANGE,
+	    pcl::visualization::PCL_VISUALIZER_LUT_RANGE_AUTO,
+	    "diff");
 }
 
 void keyboardEventOccurred(
