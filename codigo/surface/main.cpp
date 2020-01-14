@@ -266,7 +266,9 @@ int main(int argc, char **argv) {
 	std::string directory = argv[1], config = argv[2];
 	std::ifstream input(config);
 	std::string filename;
-	std::vector<nih::cloud_with_normal> clouds;
+	//std::vector<nih::cloud_with_normal> clouds;
+	std::vector<nih::cloudnormal::Ptr> clouds;
+	std::vector<nih::transformation> transformations;
 
 	std::cerr << "Loading clouds";
 	double resolution;
@@ -277,31 +279,31 @@ int main(int argc, char **argv) {
 		double resolution_ = nih::get_resolution(first);
 		resolution = resolution_;
 		auto cloud_ = nih::load_cloud_normal(directory + filename);
+		auto cloudnormal_ = nih::create<nih::cloudnormal>();
+		pcl::concatenateFields(*cloud_.points_, *cloud_.normals_, *cloudnormal_);
 		bool partial;
 		{
 			char c;
 			input >> c;
-			partial = c=='p';
+			partial = c == 'p';
 		}
 		auto t = nih::get_transformation(input);
-		if(partial)
-			cloud_.transformation_ = prev * t;
-		else
-			cloud_.transformation_ = t;
-		prev = cloud_.transformation_;
-
-		if(partial)
-			clouds.push_back(cloud_);
+		if(partial){
+			t = prev * t;
+			clouds.push_back(cloudnormal_);
+			transformations.push_back(t);
+		}
+		prev = t;
 	}
 
 	//aplicar las transformaciones (mantener almacenado)
-	for(auto &c: clouds)
-		pcl::transformPointCloud(*c.points_, *c.points_, c.transformation_);
+	for(int K=0; K<clouds.size(); ++K)
+		pcl::transformPointCloudWithNormals(*clouds[K], *clouds[K], transformations[K]);
 
 	//fusion
-	auto fusion = fusionar(clouds, 5);
+	//auto fusion = fusionar(clouds, 5);
 
-#if 1
+#if 0
 	visualise(fusion, 1);
 	auto sin_rojo = nih::create<pcl::PointCloud<pcl::PointXYZI>>();
 	for(auto p: fusion->points)
@@ -312,7 +314,7 @@ int main(int argc, char **argv) {
 
 	//visualise(fusion, 1);
 #endif
-	write_cloud_ply(*fusion, "result.ply");
+	//write_cloud_ply(*fusion, "result.ply");
 
 #if 0
 	auto secciones = seccionar(clouds[0], clouds[1], 5*resolution);
