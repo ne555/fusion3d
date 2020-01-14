@@ -54,13 +54,13 @@ void keyboardEventOccurred(
 	const std::vector<cloud_with_transformation> &nubes = *static_cast<const std::vector<cloud_with_transformation> *>(data);
 
 	if(event.keyDown()){
-		if(event.getKeySym() == "j")
+		if(event.getKeySym() == "W")
 			--beg;
-		else if(event.getKeySym() == "J")
+		else if(event.getKeySym() == "w")
 			++beg;
-		else if(event.getKeySym() == "k")
+		else if(event.getKeySym() == "S")
 			--end;
-		else if(event.getKeySym() == "K")
+		else if(event.getKeySym() == "s")
 			++end;
 	}
 
