@@ -65,41 +65,36 @@ int main(int argc, char **argv){
 
 	//conseguir la lista de huecos
 	std::vector<pcl::Vertices> holes_;
+	pcl::Vertices isolated;
 	auto free_points = nih::create<nih::cloud>();
 	auto states = gp3.getPointStates();
-	int hole = 0;
 	for(int K=0; K<states.size(); ++K){
+		using Mesh = nih::TMesh::element_type;
 		auto s = states[K];
 		//Options are defined as constants: FREE, FRINGE, COMPLETED, BOUNDARY and NONE 
 		if(s == pcl::GreedyProjectionTriangulation<pcl::PointNormal>::BOUNDARY){
-			std::cout << hole++ << ": ";
-			//recorrer los vértices conectados a este
-			using Mesh = nih::TMesh::element_type;
-			auto edge = mesh_->getOutgoingHalfEdgeIndex (Mesh::VertexIndex(K));
-			if(not edge.isValid()){
-				std::cerr << "Error: not valid edge " << K << '\n';
-				break;
+			if(mesh_->isIsolated(Mesh::VertexIndex(K))){ //¿qué hago en este caso?
+				isolated.vertices.push_back(K);
+				continue;
 			}
-			auto f = mesh_->getFaceIndex(edge);
+			//recorrer los vértices conectados a este
+			auto edge = mesh_->getOutgoingHalfEdgeIndex (Mesh::VertexIndex(K));
 			auto beg = mesh_->getInnerHalfEdgeAroundFaceCirculator(edge);
 			auto end = beg;
+			pcl::Vertices h;
 			do{
-				std::cout << mesh_->getVertexDataCloud()[mesh_->getOriginatingVertexIndex(beg.getTargetIndex()).get()].id << ' ';
+				Mesh::VertexIndex v = mesh_->getOriginatingVertexIndex(beg.getTargetIndex());
+				states[v.get()] = pcl::GreedyProjectionTriangulation<pcl::PointNormal>::FREE; //sólo para que no vuelva a considerarse 
+				h.vertices.push_back(v.get());
 			}while(++beg not_eq end);
-			std::cout << std::endl;
-#if 0
-			if(f.isValid()){
-				std::cerr << "Swap\n";
-				edge = mesh_->getOppositeHalfEdgeIndex(edge);
-			}
-			if(f.isValid()){
-				std::cerr << "Error: not boundary" << K << '\n';
-				break;
-			}
-#endif
+			holes_.push_back(h);
 		}
 	}
 
-
+	std::cout << "Holes found: " << holes_.size() << '\n';
+	std::cout << "tamaños: ";
+	for(auto &h: holes_)
+		std::cout << h.vertices.size() << ' ';
+	std::cout << "\n";
 	return 0;
 }
