@@ -11,6 +11,7 @@
 #include <pcl/io/vtk_lib_io.h>
 
 #include <pcl/surface/gp3.h>
+#include <pcl/geometry/get_boundary.h>
 
 using Mesh = nih::TMesh::element_type;
 
@@ -25,6 +26,7 @@ void visualise(const pcl::PolygonMesh &malla, nih::cloudnormal::Ptr nube, const 
 	view.addPolygonMesh(malla, "malla");
 	//view.addPointCloud<pcl::PointNormal>(nube, "cloud");
 	for(int K = 0; K < holes.size(); ++K){
+	//for(int K = 0; K < 20; ++K){
 		//rellenar la nube con los puntos del hueco
 		auto aux = nih::create<nih::cloudnormal>();
 		for(auto v: holes[K].vertices)
@@ -94,72 +96,45 @@ int main(int argc, char **argv){
 	pcl::PolygonMesh malla;
 	gp3.reconstruct(malla);
 
+	std::vector< pcl::Vertices > polygons;
+	gp3.reconstruct(polygons);
+
 	//create geometry triangle mesh
 	auto mesh_ = nih::create<nih::TMesh::element_type>();
 	mesh_->reserveVertices(nube_con_normales->size());
 	for(int K = 0; K < nube_con_normales->size(); ++K)
 		mesh_->addVertex(nih::vertex_data{K});
 	mesh_->reserveFaces(malla.polygons.size());
-	for(int K = 0; K < malla.polygons.size(); ++K) {
-		auto face = malla.polygons[K];
-		mesh_->addFace(
+	for(const auto &face: polygons){
+		auto ff = mesh_->addFace(
 			pcl::geometry::VertexIndex(face.vertices[0]),
 			pcl::geometry::VertexIndex(face.vertices[1]),
 			pcl::geometry::VertexIndex(face.vertices[2]));
+		if(not ff.isValid()){ //problemas de normales
+			auto fg = mesh_->addFace(
+					pcl::geometry::VertexIndex(face.vertices[0]),
+					pcl::geometry::VertexIndex(face.vertices[2]),
+					pcl::geometry::VertexIndex(face.vertices[1]));
+			//sigue habiendo inválidos, ¿por qué?
+		}
 	}
+	std::cerr << "Características:\n";
+	std::cerr << mesh_->sizeVertices() << ' ';
+	std::cerr << mesh_->sizeEdges() << ' ';
+	std::cerr << mesh_->sizeFaces() << '\n';
+	std::cerr << "Debería ser: " << nube_con_normales->size() << ' ' << "no sé " << polygons.size() << '\n';
 
 	//conseguir la lista de huecos
 	std::vector<pcl::Vertices> holes_;
-	pcl::Vertices isolated;
-	auto free_points = nih::create<nih::cloud>();
-	auto states = gp3.getPointStates();
-	std::cerr << "states:\n";
-	std::cerr << "FREE     " << pcl::GreedyProjectionTriangulation<pcl::PointNormal>::FREE << '\n';
-	std::cerr << "FRINGE   " << pcl::GreedyProjectionTriangulation<pcl::PointNormal>::FRINGE << '\n';
-	std::cerr << "COMPLETED" << pcl::GreedyProjectionTriangulation<pcl::PointNormal>::COMPLETED << '\n';
-	std::cerr << "BOUNDARY " << pcl::GreedyProjectionTriangulation<pcl::PointNormal>::BOUNDARY << '\n';
-	std::cerr << "NONE     " << pcl::GreedyProjectionTriangulation<pcl::PointNormal>::NONE << '\n';
-	for(int K=0; K<states.size(); ++K){
-		auto s = states[K];
-		//Options are defined as constants: FREE, FRINGE, COMPLETED, BOUNDARY and NONE
-		if(s == pcl::GreedyProjectionTriangulation<pcl::PointNormal>::BOUNDARY){
-			if(mesh_->isIsolated(Mesh::VertexIndex(K))){ //¿qué hago en este caso?
-				isolated.vertices.push_back(K);
-				continue;
-			}
-			//recorrer los vértices conectados a este
-			//auto edge = mesh_->getOutgoingHalfEdgeIndex (Mesh::VertexIndex(K));
-			auto edge = get_boundary_edge(mesh_, Mesh::VertexIndex(K));
-			auto beg = edge;
-			//auto beg = mesh_->getInnerHalfEdgeAroundFaceCirculator(edge);
-			auto end = beg;
-			pcl::Vertices h;
+	std::vector<Mesh::HalfEdgeIndices> hole_boundary;
+	pcl::Vertices isolated; //...
 
-			do{
-				Mesh::VertexIndex v = mesh_->getOriginatingVertexIndex(beg);
-				if(states[v.get()] not_eq pcl::GreedyProjectionTriangulation<pcl::PointNormal>::BOUNDARY){
-					std::cerr << states[v.get()] << ' ';
-					//no debería entrar aquí
-					//std::cerr << '.';
-				}
-				states[v.get()] = pcl::GreedyProjectionTriangulation<pcl::PointNormal>::FREE; //sólo para que no vuelva a considerarse
-				h.vertices.push_back(v.get());
-
-				beg = mesh_->getNextHalfEdgeIndex(beg);
-			} while(beg not_eq end);
-
-			//do{
-			//	Mesh::VertexIndex v = mesh_->getOriginatingVertexIndex(beg.getTargetIndex());
-			//	if(states[v.get()] not_eq pcl::GreedyProjectionTriangulation<pcl::PointNormal>::BOUNDARY){
-			//		//no debería entrar aquí
-			//		//std::cerr << '.';
-			//		continue;
-			//	}
-			//	states[v.get()] = pcl::GreedyProjectionTriangulation<pcl::PointNormal>::FREE; //sólo para que no vuelva a considerarse
-			//	h.vertices.push_back(v.get());
-			//}while(++beg not_eq end);
-			holes_.push_back(h);
-		}
+	pcl::geometry::getBoundBoundaryHalfEdges(*mesh_, hole_boundary);
+	for(auto &hb: hole_boundary){
+		pcl::Vertices h;
+		for(auto &edge: hb)
+			h.vertices.push_back(mesh_->getOriginatingVertexIndex(edge).get());
+		holes_.push_back(h);
 	}
 
 	//ordenar por cantidad de vértices
