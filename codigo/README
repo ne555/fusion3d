@@ -1,3 +1,14 @@
+Modo de uso:
+	./alineacion directorio conf
+		conf tiene la lista de nubes en *orden*
+		produce archivo conf_result
+	./transformation conf_result conf_partial
+		las transformaciones parciales se marcan con p
+	./visual directorio conf_partial
+		las transformaciones parciales se marcan con p
+		las totales (ej: ground truth) con t
+	./surface directorio conf_partial
+
 alineacion:
 	módulo registración
 		submuestreo uniforme
@@ -48,7 +59,11 @@ surface:
 tags: para saltar entre funciones en *vim
 
 transformation:
-	aplicar transformaciones a la cámara
+	calcula las transformaciones parciales entre las nubes
+
+visual:
+	muestra muchas nubes de puntos a distintos colores
+	interactivo
 
 filter.hpp:
 	triangulación (delaunay) de la nube de puntos
