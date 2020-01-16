@@ -17,6 +17,8 @@
 
 #include <pcl/surface/gp3.h>
 #include <pcl/surface/simplification_remove_unused_vertices.h>
+#include <pcl/surface/concave_hull.h>
+
 
 void usage(const char *program){
 	std::cerr << program << " mesh.ply\n";
@@ -44,6 +46,19 @@ int main(int argc, char **argv){
 	auto nube_con_normales = nih::create<nih::cloudnormal>();
 	pcl::concatenateFields (*nube, *normales, *nube_con_normales);
 
+	pcl::PolygonMesh malla;
+	pcl::ConcaveHull<pcl::PointNormal> hull;
+	hull.setAlpha(1.5*model_resolution); //longitud de segmentos
+	hull.setKeepInformation(true);
+	hull.setInputCloud(nube_con_normales);
+	hull.reconstruct(malla);
+
+	std::cerr << nube_con_normales->size() << '\n';
+	std::cerr << malla.cloud.height * malla.cloud.width << '\n';
+	pcl::fromPCLPointCloud2(malla.cloud, *nube_con_normales);
+
+
+#if 1
 	//triangulación
 	pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;
 	// (maximum edge length)
@@ -60,7 +75,7 @@ int main(int argc, char **argv){
 
 
 	gp3.setInputCloud(nube_con_normales);
-	pcl::PolygonMesh malla;
+	//pcl::PolygonMesh malla;
 	gp3.reconstruct(malla);
 
 	auto free_points = nih::create<nih::cloud>();
@@ -73,15 +88,16 @@ int main(int argc, char **argv){
 			free_points->push_back((*nube)[K]);
 	}
 #endif
+#endif
 
 	/** Visualizar malla (AC) **/
 	//los triángulos no están bien orientados
 #if 1
 	pcl::visualization::PCLVisualizer view("malla");
 	view.addPolygonMesh(malla, "malla");
-	view.addPointCloud(free_points, "libre");
-	view.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "libre");
-	view.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "libre");
+	//view.addPointCloud(free_points, "libre");
+	//view.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "libre");
+	//view.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "libre");
 	while(!view.wasStopped())
 		view.spinOnce(100);
 	view.close();

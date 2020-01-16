@@ -9,6 +9,7 @@
 #include <pcl/common/colors.h>
 #include <pcl/PolygonMesh.h>
 #include <pcl/io/vtk_lib_io.h>
+#include <pcl/geometry/mesh_io.h>
 
 #include <pcl/surface/gp3.h>
 #include <pcl/geometry/get_boundary.h>
@@ -89,13 +90,13 @@ int main(int argc, char **argv){
 	gp3.setMinimumAngle(M_PI/9); // 20 degrees
 	gp3.setMaximumAngle(M_PI/2); // 90 degrees
 
-	gp3.setNormalConsistency(true); //probar con false
-
+	//sino construye algunos triángulos al revés
+	gp3.setNormalConsistency(true);
+	gp3.setConsistentVertexOrdering(true);
 
 	gp3.setInputCloud(nube_con_normales);
 	pcl::PolygonMesh malla;
 	gp3.reconstruct(malla);
-
 	std::vector< pcl::Vertices > polygons;
 	gp3.reconstruct(polygons);
 
@@ -116,8 +117,11 @@ int main(int argc, char **argv){
 					pcl::geometry::VertexIndex(face.vertices[2]),
 					pcl::geometry::VertexIndex(face.vertices[1]));
 			//sigue habiendo inválidos, ¿por qué?
+			//manifold, más de 2 caras comparten una arista
 		}
 	}
+	//pasar a PolygonMesh para visualizar
+
 	std::cerr << "Características:\n";
 	std::cerr << mesh_->sizeVertices() << ' ';
 	std::cerr << mesh_->sizeEdges() << ' ';
@@ -149,6 +153,9 @@ int main(int argc, char **argv){
 	for(auto &h: holes_)
 		std::cout << h.vertices.size() << ' ';
 	std::cout << "\n";
+
+	pcl::geometry::MeshIO<Mesh> io;
+	io.write("malla.ply", *mesh_);
 
 	visualise(malla, nube_con_normales, holes_);
 	return 0;
