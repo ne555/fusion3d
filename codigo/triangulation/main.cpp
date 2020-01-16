@@ -20,6 +20,39 @@
 #include <pcl/surface/concave_hull.h>
 
 
+template <class PointType>
+double
+computeCloudResolution (const typename pcl::PointCloud<PointType>::Ptr &cloud)
+{
+  double res = 0.0;
+  int n_points = 0;
+  int nres;
+  std::vector<int> indices (2);
+  std::vector<float> sqr_distances (2);
+  pcl::search::KdTree<PointType> tree;
+  tree.setInputCloud (cloud);
+
+  for (std::size_t i = 0; i < cloud->size (); ++i)
+  {
+    if (! std::isfinite ((*cloud)[i].x))
+    {
+      continue;
+    }
+    //Considering the second neighbor since the first is the point itself.
+    nres = tree.nearestKSearch (i, 2, indices, sqr_distances);
+    if (nres == 2)
+    {
+      res += sqrt (sqr_distances[1]);
+      ++n_points;
+    }
+  }
+  if (n_points != 0)
+  {
+    res /= n_points;
+  }
+  return res;
+}
+
 void usage(const char *program){
 	std::cerr << program << " mesh.ply\n";
 }
@@ -40,15 +73,21 @@ int main(int argc, char **argv){
 	//carga de datos
 	auto nube = nih::load_cloud_ply(filename);
 	double model_resolution = nih::get_resolution(nube);
+	double model_resolution_b = computeCloudResolution<nih::point>(nube);
+	std::cerr << "Resolution:\n";
+	std::cerr << model_resolution << '\n';
+	std::cerr << model_resolution_b << '\n';
+	model_resolution = model_resolution_b;
 	nube = nih::moving_least_squares(nube, 6 * model_resolution);
 	//estimación normales
 	auto normales = nih::compute_normals(nube, 4 * model_resolution);
 	auto nube_con_normales = nih::create<nih::cloudnormal>();
 	pcl::concatenateFields (*nube, *normales, *nube_con_normales);
+	auto original = nube_con_normales->makeShared();
 
 	pcl::PolygonMesh malla;
 	pcl::ConcaveHull<pcl::PointNormal> hull;
-	hull.setAlpha(1.5*model_resolution); //longitud de segmentos
+	hull.setAlpha(1*model_resolution); //longitud de segmentos
 	hull.setKeepInformation(true);
 	hull.setInputCloud(nube_con_normales);
 	hull.reconstruct(malla);
@@ -95,6 +134,9 @@ int main(int argc, char **argv){
 #if 1
 	pcl::visualization::PCLVisualizer view("malla");
 	view.addPolygonMesh(malla, "malla");
+	view.addPointCloud<pcl::PointNormal>(original, "orig");
+	view.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "orig");
+	view.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 0, "orig");
 	//view.addPointCloud(free_points, "libre");
 	//view.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "libre");
 	//view.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "libre");
