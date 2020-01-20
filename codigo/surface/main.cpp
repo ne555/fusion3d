@@ -52,6 +52,11 @@ public:
 
 		// TODO: la confianza disminuye en los bordes
 		// TODO: la confianza disminuye según la normal
+		for(int K=0; K < cloud_->size(); ++K){
+			const auto &p = (*cloud_)[K];
+			//producto punto respecto al eje z
+			confidence[K] = p.normal_z;
+		}
 
 		// realizar la transformación sobre la nube
 		pcl::transformPointCloudWithNormals(
@@ -256,8 +261,8 @@ fusionar(const std::vector<captura> &clouds, double threshold){
 	for(int K=1; K<clouds.size(); ++K)
 		result.merge(clouds[K]);
 
-	return result.cloud_.cloud_;
-	//return result.with_intensity();
+	//return result.cloud_.cloud_;
+	return result.with_intensity();
 }
 
 void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale){
@@ -267,8 +272,19 @@ void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale){
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("surface");
 	view->setBackgroundColor(0, 0, 0);
-	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> color (nube, "intensity");
-	view->addPointCloud<pcl::PointXYZI>(nube, color, "cloud");
+	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI>
+	    color(nube, "intensity");
+
+	view->addPointCloud<pcl::PointXYZI>(nube, color, "nube");
+	view->setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_LUT,
+	    pcl::visualization::PCL_VISUALIZER_LUT_VIRIDIS,
+	    "nube");
+	view->setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_LUT_RANGE,
+	    pcl::visualization::PCL_VISUALIZER_LUT_RANGE_AUTO,
+	    "nube");
+
 	while(!view->wasStopped())
 		view->spinOnce(100);
 	view->close();
@@ -414,9 +430,9 @@ int main(int argc, char **argv) {
 	}
 
 	auto result = fusionar(clouds, 5*resolution);
-	auto tmesh = triangulate_3d(result, 5*resolution);
-	visualise(result, tmesh);
-	//visualise(result, 1);
+	//auto tmesh = triangulate_3d(result, 5*resolution);
+	//visualise(result, tmesh);
+	visualise(result, 1);
 
 	return 0;
 }
