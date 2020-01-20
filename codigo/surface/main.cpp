@@ -6,9 +6,63 @@
 #include <pcl/visualization/point_cloud_color_handlers.h>
 #include <pcl/io/ply_io.h>
 
+#include <pcl/surface/gp3.h>
+#include <pcl/geometry/get_boundary.h>
+
 #include <string>
 #include <iostream>
 #include <fstream>
+
+nih::pointnormal weighted_average(
+    double alpha, nih::pointnormal a, double beta, nih::pointnormal b) {
+	using nih::vector;
+	using nih::v2p;
+	double total_weight = alpha + beta;
+	nih::point position = v2p((alpha * vector(a.data) + beta * vector(b.data)) / total_weight);
+	nih::vector normal = alpha * vector(a.data_n) + beta*vector(b.data_n);
+	normal = normal/normal.norm();
+
+	nih::pointnormal result;
+	for(int K=0; K<3; ++K)
+		result.data[K] = position.data[K];
+	for(int K=0; K<3; ++K)
+		result.data_n[K] = normal(K);
+
+	return result;
+}
+
+
+
+class captura {
+public:
+	nih::cloudnormal::Ptr cloud_;
+	std::vector<double> confidence;
+
+	captura() : cloud_(nih::create<nih::cloudnormal>()) {}
+	captura(
+	    nih::cloudnormal::Ptr cloud_,
+	    nih::transformation transformation_,
+	    double resolution = 0)
+	    : cloud_(cloud_) {
+		confidence.resize(this->cloud_->size(), 1);
+		// TODO: la confianza disminuye con la distancia al centro de la captura
+		// según una gaussiana de desvío proporcional a la resolución
+		// if(resolution==0)
+		//	resolution = nih::get_resolution(cloud_);
+
+		// TODO: la confianza disminuye en los bordes
+		// TODO: la confianza disminuye según la normal
+
+		// realizar la transformación sobre la nube
+		pcl::transformPointCloudWithNormals(
+		    *this->cloud_, *this->cloud_, transformation_);
+	}
+
+	void concatenate(const captura &b){
+		*cloud_ += *b.cloud_;
+		confidence.insert(confidence.end(), b.confidence.begin(), b.confidence.end());
+	}
+};
 
 void usage(const char *program);
 namespace nih {
@@ -21,6 +75,9 @@ void visualise(const std::vector<nih::cloud_with_normal> &nubes);
 void visualise(const std::vector<nih::cloud::Ptr> &nubes);
 void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale);
 
+void visualise(nih::TMesh mesh_){
+}
+
 //parte en A, solapado, B
 std::vector<nih::cloud::Ptr>
 seccionar(nih::cloud_with_transformation a, nih::cloud_with_transformation b, double threshold);
@@ -29,7 +86,7 @@ seccionar(nih::cloud_with_transformation a, nih::cloud_with_transformation b, do
 pcl::PointCloud<pcl::PointXYZI>::Ptr
 merge(nih::cloud::Ptr a, nih::cloud::Ptr b){
 	auto result = nih::create<pcl::PointCloud<pcl::PointXYZI>>();
-	pcl::KdTreeFLANN<nih::point> kdtree;
+	pcl::search::KdTree<nih::point> kdtree;
 	kdtree.setInputCloud(a);
 
 	for(auto p: a->points){
@@ -61,54 +118,68 @@ merge(nih::cloud::Ptr a, nih::cloud::Ptr b){
 	return result;
 }
 
+auto triangulate_3d(nih::cloudnormal::Ptr cloud_, double ratio){
+	pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;
+	return nih::create<nih::Mesh>();
+}
+
 //pcl::PointCloud<pcl::PointXYZ>::Ptr
 auto
-fusionar(std::vector<nih::cloud_with_normal> &clouds, double threshold){
+fusionar(const std::vector<captura> &clouds, double threshold){
 	class fusion{
 		public:
 			fusion(double threshold):
-				cloud_(nih::create<nih::cloud>()),
+				cloud_(),
 				threshold_(threshold)
 			{}
 			std::vector<int> counter;
-			nih::cloud::Ptr cloud_;
+			captura cloud_;
 			double threshold_;
 
-			void append(nih::cloud::Ptr a){
-				int size = a->size();
+			void append(const captura &a){
+				int size = a.cloud_->size();
 				counter.insert(counter.end(), size, 1);
-				*cloud_ += *a;
+				cloud_.concatenate(a);
 			}
 
-			void running_avg(int index, nih::point p){
-				auto &q = (*cloud_)[index];
-				using nih::v2p;
-				using nih::p2v;
+			void running_avg(int index_a, const captura &b, int index_b) {
+				(*cloud_.cloud_)[index_a] = weighted_average(
+						cloud_.confidence[index_a],
+						(*cloud_.cloud_)[index_a],
+						b.confidence[index_b],
+						(*b.cloud_)[index_b]);
 
-				q = v2p( (p2v(q)*counter[index] + p2v(p))/(counter[index]+1) );
-				++counter[index];
+				cloud_.confidence[index_a] += b.confidence[index_b];
+				++counter[index_a];
 			}
 
-			void merge(nih::cloud::Ptr a){
-				auto copia = cloud_->makeShared();
-				pcl::KdTreeFLANN<nih::point> kdtree;
-				kdtree.setInputCloud(copia); //una copia porque se modifican los puntos
+			void merge(const captura &b){
+				const auto &cloud_a = cloud_.cloud_;
+				const auto &cloud_b = b.cloud_;
 
-				pcl::KdTreeFLANN<nih::point> kt_a;
-				kt_a.setInputCloud(a); //una copia porque se modifican los puntos
+				auto copia = cloud_a->makeShared();
+				pcl::search::KdTree<nih::pointnormal> kdtree_a;
+				kdtree_a.setInputCloud(copia); //una copia porque se modifican los puntos
 
-				for(int K=0; K<a->size(); ++K){
-					auto p = (*a)[K];
-					int index = nih::get_index(p, kdtree);
-					auto q = (*copia)[index];
+				pcl::search::KdTree<nih::pointnormal> kdtree_b;
+				kdtree_b.setInputCloud(cloud_b);
+
+				//por cada punto de la nueva nube
+				for(int K=0; K<cloud_b->size(); ++K){
+					auto p = (*cloud_b)[K];
+					//busca el más cercano en la reconstrucción
+					int a_index = nih::get_index(p, kdtree_a);
+					auto q = (*copia)[a_index];
 					double distance_ = nih::distance(p, q);
-					int a_index = nih::get_index(q, kt_a);
+					int b_index = nih::get_index(q, kdtree_b);
 
-					if(distance_ < threshold_ and a_index == K)
-						// correspondencia (p y q son los más cercanos entre sí)
-						running_avg(index, p);
+					//si están cerca, promedia
+					if(distance_ < threshold_ and b_index == K)
+						running_avg(a_index, b, b_index);
+					//sino, agrega
 					else{
-						cloud_->push_back(p);
+						cloud_.cloud_->push_back(p);
+						cloud_.confidence.push_back(b.confidence[K]);
 						counter.push_back(1);
 					}
 				}
@@ -116,14 +187,16 @@ fusionar(std::vector<nih::cloud_with_normal> &clouds, double threshold){
 
 			pcl::PointCloud<pcl::PointXYZI>::Ptr
 			with_intensity() const{
+				const auto &cloud_a = cloud_.cloud_;
 				auto result = nih::create<pcl::PointCloud<pcl::PointXYZI>>();
-				for(int K=0; K<cloud_->size(); ++K){
-					auto p = (*cloud_)[K];
+				for(int K=0; K<cloud_a->size(); ++K){
+					auto p = (*cloud_a)[K];
 					pcl::PointXYZI pi;
 					pi.x = p.x;
 					pi.y = p.y;
 					pi.z = p.z;
-					pi.intensity = counter[K];
+					//pi.intensity = counter[K];
+					pi.intensity = cloud_.confidence[K] / counter[K];
 
 					result->push_back(pi);
 				}
@@ -133,12 +206,12 @@ fusionar(std::vector<nih::cloud_with_normal> &clouds, double threshold){
 	};
 	fusion result(threshold);
 
-	result.append(clouds[0].points_);
+	result.append(clouds[0]);
 	for(int K=1; K<clouds.size(); ++K)
-		result.merge(clouds[K].points_);
+		result.merge(clouds[K]);
 
+	//return result.cloud_.cloud_;
 	return result.with_intensity();
-	//return result.cloud_;
 }
 
 void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale){
@@ -228,7 +301,7 @@ std::vector<nih::cloud::Ptr> seccionar(
 	for(auto &c: result)
 		c = nih::create<nih::cloud>();
 
-	pcl::KdTreeFLANN<nih::point> kdtree;
+	pcl::search::KdTree<nih::point> kdtree;
 	kdtree.setInputCloud(b.points_);
 
 	// por cada punto en a
@@ -267,20 +340,22 @@ int main(int argc, char **argv) {
 	std::ifstream input(config);
 	std::string filename;
 	//std::vector<nih::cloud_with_normal> clouds;
-	std::vector<nih::cloudnormal::Ptr> clouds;
+	std::vector<captura> clouds;
 	std::vector<nih::transformation> transformations;
 
 	std::cerr << "Loading clouds";
+	bool first = false;
 	double resolution;
-	nih::transformation prev = nih::transformation::Identity();
+	nih::transformation prev = nih::transformation::Identity(); //acumulación de las transformaciones
 	while(input >> filename) {
 		std::cerr << '.';
-		auto first = nih::load_cloud_ply(directory + filename);
-		double resolution_ = nih::get_resolution(first);
-		resolution = resolution_;
 		auto cloud_ = nih::load_cloud_normal(directory + filename);
 		auto cloudnormal_ = nih::create<nih::cloudnormal>();
 		pcl::concatenateFields(*cloud_.points_, *cloud_.normals_, *cloudnormal_);
+		if(not first){ //para que todas trabajen con la misma resolución
+			first = true;
+			resolution = nih::cloud_resolution<nih::pointnormal>(cloudnormal_);
+		}
 		bool partial;
 		{
 			char c;
@@ -288,49 +363,17 @@ int main(int argc, char **argv) {
 			partial = c == 'p';
 		}
 		auto t = nih::get_transformation(input);
-		if(partial){
+		if(partial)
 			t = prev * t;
-			clouds.push_back(cloudnormal_);
-			transformations.push_back(t);
-		}
+		clouds.push_back( {cloudnormal_, t, resolution} );
+		transformations.push_back(t);
 		prev = t;
 	}
 
-	//aplicar las transformaciones (mantener almacenado)
-	for(int K=0; K<clouds.size(); ++K)
-		pcl::transformPointCloudWithNormals(*clouds[K], *clouds[K], transformations[K]);
+	auto result = fusionar(clouds, 5*resolution);
+	//auto tmesh = triangulate_3d(result, 5);
+	//visualise(tmesh);
+	visualise(result, 1);
 
-	//fusion
-	//auto fusion = fusionar(clouds, 5);
-
-#if 0
-	visualise(fusion, 1);
-	auto sin_rojo = nih::create<pcl::PointCloud<pcl::PointXYZI>>();
-	for(auto p: fusion->points)
-		if(p.intensity not_eq 1)
-			sin_rojo->push_back(p);
-
-	fusion = sin_rojo;
-
-	//visualise(fusion, 1);
-#endif
-	//write_cloud_ply(*fusion, "result.ply");
-
-#if 0
-	auto secciones = seccionar(clouds[0], clouds[1], 5*resolution);
-	auto merge_ = merge(secciones[1], secciones[2]);
-
-	std::cerr << "\nLoad finished\n";
-#endif
-
-#if 0
-	if(argv[3]){
-		auto ground_truth = nih::load_cloud_ply(argv[3]);
-		visualise(nih::cloud_diff_with_threshold(fusion, ground_truth, 5*resolution), resolution);
-	}
-#endif
-
-	//visualise(clouds);
-	//visualise(secciones);
 	return 0;
 }

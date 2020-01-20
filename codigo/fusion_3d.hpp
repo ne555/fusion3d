@@ -13,6 +13,8 @@
 #include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
 
+#include <pcl/search/search.h>
+
 #include <fstream>
 #include <string>
 #include <vector>
@@ -22,6 +24,7 @@ namespace nih {
 	typedef pcl::PointCloud<pcl::Normal> normal;
 	typedef pcl::PointCloud<pcl::PointNormal> cloudnormal;
 	typedef pcl::PointXYZ point;
+	typedef pcl::PointNormal pointnormal;
 	typedef Eigen::Transform<float, 3, Eigen::Affine> transformation;
 	typedef Eigen::Vector3f vector;
 	typedef pcl::PointCloud<pcl::FPFHSignature33> signature;
@@ -39,12 +42,14 @@ namespace nih {
 	// operations element to element
 	inline vector prod(vector a, const vector &b);
 	inline vector div(vector a, const vector &b);
-	double distance(const point &a, const point &b);
+	inline double distance(const point &a, const point &b);
+	inline double distance(const pointnormal &a, const pointnormal &b);
 
 	// information
 	// espacio esperado entre puntos (proyecta en z=0)
 	inline double get_resolution(cloud::Ptr input);
-	int get_index(const point &center, pcl::KdTreeFLANN<nih::point> &kdtree);
+	template <class PointT>
+	inline int get_index(const PointT &center, pcl::search::KdTree<PointT> &kdtree);
 	inline cloud::Ptr subsampling(cloud::Ptr nube, double alfa);
 
 	//returns a cloud with distance information
@@ -63,10 +68,14 @@ namespace nih {
 	double distance(const point &a, const point &b){
 		return (p2v(a) - p2v(b)).norm();
 	}
+	double distance(const pointnormal &a, const pointnormal &b){
+		return (vector(a.data) - vector(b.data)).norm();
+	}
 
-	int get_index(const nih::point &center, pcl::KdTreeFLANN<nih::point> &kdtree){
-		std::vector<int> indices;
-		std::vector<float> distances;
+	template <class PointT>
+	int get_index(const PointT &center, pcl::search::KdTree<PointT> &kdtree){
+		std::vector<int> indices(1);
+		std::vector<float> distances(1);
 		kdtree.nearestKSearch(center, 1, indices, distances);
 		return indices[0];
 	}
@@ -75,7 +84,7 @@ namespace nih {
 	cloud_diff_with_threshold(nih::cloud::Ptr a, nih::cloud::Ptr b, double threshold){
 		//almacena distancia |a - b| clampeado a `clamp'
 		auto result = create<pcl::PointCloud<pcl::PointXYZI>>();
-		pcl::KdTreeFLANN<nih::point> kdtree;
+		pcl::search::KdTree<nih::point> kdtree;
 		kdtree.setInputCloud(b);
 
 		//por cada punto en a

@@ -16,8 +16,8 @@ namespace nih {
 	struct vertex_data {
 		int id;
 	};
-	using TMesh = pcl::geometry::TriangleMesh<
-	    pcl::geometry::DefaultMeshTraits<vertex_data> >::Ptr;
+	using Mesh = pcl::geometry::TriangleMesh<pcl::geometry::DefaultMeshTraits<vertex_data> >;
+	using TMesh = Mesh::Ptr;
 
 	class cloud_with_normal {
 	public:
