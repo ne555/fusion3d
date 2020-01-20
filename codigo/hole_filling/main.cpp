@@ -104,6 +104,7 @@ void visualise(const pcl::PolygonMesh &malla, nih::cloudnormal::Ptr nube, const 
 	view.addPolygonMesh(malla, "malla");
 	//view.addPointCloud<pcl::PointNormal>(nube, "cloud");
 	for(int K = 0; K < holes.size(); ++K){
+	//for(int K = 0; K < 20; ++K){
 		//rellenar la nube con los puntos del hueco
 		auto aux = nih::create<nih::cloudnormal>();
 		for(auto v: holes[K].vertices)
@@ -140,6 +141,49 @@ auto get_boundary_edge(nih::TMesh mesh_, Mesh::VertexIndex v) {
 	return Mesh::HalfEdgeIndex(-1); // inválido
 }
 
+template <class CloudPtr>
+nih::TMesh
+create_mesh(CloudPtr cloud_, const std::vector<pcl::Vertices> &polygons) {
+	auto mesh_ = nih::create<Mesh>();
+	for(int K = 0; K < cloud_->size(); ++K)
+		mesh_->addVertex(nih::vertex_data{K});
+
+	mesh_->reserveFaces(polygons.size());
+	for(int K = 0; K < polygons.size(); ++K) {
+		const auto &face = polygons[K];
+		auto new_face = mesh_->addFace(
+		    pcl::geometry::VertexIndex(face.vertices[0]),
+		    pcl::geometry::VertexIndex(face.vertices[1]),
+		    pcl::geometry::VertexIndex(face.vertices[2]));
+		if(not new_face.isValid())
+			mesh_->addFace(
+			    pcl::geometry::VertexIndex(face.vertices[0]),
+			    pcl::geometry::VertexIndex(face.vertices[2]),
+			    pcl::geometry::VertexIndex(face.vertices[1]));
+	}
+
+	return mesh_;
+}
+
+template <class CloudPtr>
+pcl::PolygonMesh tmesh_to_polygon(CloudPtr cloud_, nih::TMesh mesh_){
+	pcl::PolygonMesh result;
+	pcl::toPCLPointCloud2(*cloud_, result.cloud);
+	//llenar los polígonos
+	//recorrer las caras
+	for(int K=0; K < mesh_->sizeFaces(); ++K){
+		pcl::Vertices face;
+		auto begin = mesh_->getVertexAroundFaceCirculator(pcl::geometry::FaceIndex(K));
+		auto end = begin;
+		do{
+			face.vertices.push_back(begin.getTargetIndex().get());
+		}while(++begin not_eq end);
+		result.polygons.push_back(face);
+	}
+
+	return result;
+}
+
 int main(int argc, char **argv){
 	if (argc not_eq 2){
 		usage(argv[0]);
@@ -157,7 +201,7 @@ int main(int argc, char **argv){
 	pcl::concatenateFields (*nube, *normales, *nube_con_normales);
 
 	//triangulación
-#if 0
+#if 1
 	pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;
 	gp3.setSearchRadius (5*model_resolution);// (maximum edge length)
 	gp3.setMu(3); //para zonas densas, limita la estimación en este radio
@@ -171,38 +215,24 @@ int main(int argc, char **argv){
 
 
 	gp3.setInputCloud(nube_con_normales);
-	pcl::PolygonMesh malla;
-	gp3.reconstruct(malla);
+	std::vector<pcl::Vertices> polygons;
+	gp3.reconstruct(polygons);
 #endif
 
+#if 0
 	//create geometry triangle mesh
 	auto mesh_ = triangulate(nube, 4*model_resolution);
 	//crear malla para visualizar
 	auto malla_ = triangulate2(nube, 4*model_resolution);
 	auto &malla = *malla_;
-#if 0
-	auto mesh_ = nih::create<nih::TMesh::element_type>();
-	mesh_->reserveVertices(nube_con_normales->size());
-	for(int K = 0; K < nube_con_normales->size(); ++K)
-		mesh_->addVertex(nih::vertex_data{K});
-	mesh_->reserveFaces(malla.polygons.size());
-	for(int K = 0; K < malla.polygons.size(); ++K) {
-		auto face = malla.polygons[K];
-		mesh_->addFace(
-			pcl::geometry::VertexIndex(face.vertices[0]),
-			pcl::geometry::VertexIndex(face.vertices[1]),
-			pcl::geometry::VertexIndex(face.vertices[2]));
-	}
 #endif
 
-	auto free_points = nih::create<nih::cloud>();
-	//auto states = gp3.getPointStates();
-
+	auto mesh_ = create_mesh(nube_con_normales, polygons);
+	auto malla = tmesh_to_polygon(nube_con_normales, mesh_);
 
 	//conseguir la lista de huecos
 	std::vector<pcl::Vertices> holes_;
 	std::vector<Mesh::HalfEdgeIndices> hole_boundary;
-	pcl::Vertices isolated; //...
 
 	pcl::geometry::getBoundBoundaryHalfEdges(*mesh_, hole_boundary);
 	for(auto &hb: hole_boundary){
