@@ -9,11 +9,14 @@
 #include "util.hpp"
 #include <pcl/surface/mls.h>
 #include <pcl/search/search.h>
+#include <pcl/PolygonMesh.h>
 
 namespace nih {
 	inline cloud::Ptr moving_least_squares(cloud::Ptr nube, double radius);
 	template <class PointT>
 	inline double cloud_resolution(typename pcl::PointCloud<PointT>::ConstPtr cloud_);
+	template <class CloudPtr>
+	inline pcl::PolygonMesh tmesh_to_polygon(CloudPtr cloud_, nih::TMesh mesh_);
 } // namespace nih
 
 //implementation
@@ -60,6 +63,26 @@ namespace nih {
 			resolution /= n_points;
 		}
 		return resolution;
+	}
+
+	template <class CloudPtr>
+	pcl::PolygonMesh tmesh_to_polygon(CloudPtr cloud_, nih::TMesh mesh_){
+		//copy the clouds
+		pcl::PolygonMesh result;
+		pcl::toPCLPointCloud2(*cloud_, result.cloud);
+
+		//copy the faces
+		for(int K=0; K < mesh_->sizeFaces(); ++K){
+			pcl::Vertices face;
+			auto begin = mesh_->getVertexAroundFaceCirculator(pcl::geometry::FaceIndex(K));
+			auto end = begin;
+			do{
+				face.vertices.push_back(begin.getTargetIndex().get());
+			}while(++begin not_eq end);
+			result.polygons.push_back(face);
+		}
+
+		return result;
 	}
 } // namespace nih
 

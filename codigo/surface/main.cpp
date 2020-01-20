@@ -75,7 +75,15 @@ void visualise(const std::vector<nih::cloud_with_normal> &nubes);
 void visualise(const std::vector<nih::cloud::Ptr> &nubes);
 void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale);
 
-void visualise(nih::TMesh mesh_){
+void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_){
+	auto polygon_mesh = nih::tmesh_to_polygon(cloud_, mesh_);
+	pcl::visualization::PCLVisualizer view("fusion");
+	view.setBackgroundColor(0, 0, 0);
+	view.addPolygonMesh(polygon_mesh, "malla");
+
+	while(!view.wasStopped())
+		view.spinOnce(100);
+	view.close();
 }
 
 //parte en A, solapado, B
@@ -118,9 +126,47 @@ merge(nih::cloud::Ptr a, nih::cloud::Ptr b){
 	return result;
 }
 
-auto triangulate_3d(nih::cloudnormal::Ptr cloud_, double ratio){
+template <class CloudPtr>
+nih::TMesh
+create_mesh(CloudPtr cloud_, const std::vector<pcl::Vertices> &polygons) {
+	auto mesh_ = nih::create<nih::Mesh>();
+	for(int K = 0; K < cloud_->size(); ++K)
+		mesh_->addVertex(nih::vertex_data{K});
+
+	mesh_->reserveFaces(polygons.size());
+	for(int K = 0; K < polygons.size(); ++K) {
+		const auto &face = polygons[K];
+		auto new_face = mesh_->addFace(
+		    pcl::geometry::VertexIndex(face.vertices[0]),
+		    pcl::geometry::VertexIndex(face.vertices[1]),
+		    pcl::geometry::VertexIndex(face.vertices[2]));
+		if(not new_face.isValid())
+			mesh_->addFace(
+			    pcl::geometry::VertexIndex(face.vertices[0]),
+			    pcl::geometry::VertexIndex(face.vertices[2]),
+			    pcl::geometry::VertexIndex(face.vertices[1]));
+	}
+
+	return mesh_;
+}
+
+auto triangulate_3d(nih::cloudnormal::Ptr cloud_, double radius){
 	pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;
-	return nih::create<nih::Mesh>();
+	gp3.setSearchRadius (radius);// (maximum edge length)
+	gp3.setMu(3); //para zonas densas, limita la estimación en este radio
+
+	gp3.setMaximumNearestNeighbors (100);
+	gp3.setMaximumSurfaceAngle(M_PI/4); // ángulo entre normales 45
+	gp3.setMinimumAngle(M_PI/9); // 20 degrees
+	gp3.setMaximumAngle(M_PI/2); // 90 degrees
+
+	gp3.setNormalConsistency(true);
+
+	gp3.setInputCloud(cloud_);
+	std::vector<pcl::Vertices> polygons;
+	gp3.reconstruct(polygons);
+
+	return create_mesh(cloud_, polygons);
 }
 
 //pcl::PointCloud<pcl::PointXYZ>::Ptr
@@ -210,8 +256,8 @@ fusionar(const std::vector<captura> &clouds, double threshold){
 	for(int K=1; K<clouds.size(); ++K)
 		result.merge(clouds[K]);
 
-	//return result.cloud_.cloud_;
-	return result.with_intensity();
+	return result.cloud_.cloud_;
+	//return result.with_intensity();
 }
 
 void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale){
@@ -368,9 +414,9 @@ int main(int argc, char **argv) {
 	}
 
 	auto result = fusionar(clouds, 5*resolution);
-	//auto tmesh = triangulate_3d(result, 5);
-	//visualise(tmesh);
-	visualise(result, 1);
+	auto tmesh = triangulate_3d(result, 5*resolution);
+	visualise(result, tmesh);
+	//visualise(result, 1);
 
 	return 0;
 }
