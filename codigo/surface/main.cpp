@@ -12,6 +12,9 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <cmath>
+
+double desvio;
 
 nih::pointnormal weighted_average(
     double alpha, nih::pointnormal a, double beta, nih::pointnormal b) {
@@ -49,13 +52,18 @@ public:
 		// según una gaussiana de desvío proporcional a la resolución
 		// if(resolution==0)
 		//	resolution = nih::get_resolution(cloud_);
+		for(int K=0; K < cloud_->size(); ++K){
+			const auto &p = (*cloud_)[K];
+			double distance = nih::square(p.x) + nih::square(p.y);
+			confidence[K] *= exp(-distance / desvio);
+		}
 
 		// TODO: la confianza disminuye en los bordes
-		// TODO: la confianza disminuye según la normal
+		// TODO: la confianza disminuye según la normal se desvíe de la cámara
 		for(int K=0; K < cloud_->size(); ++K){
 			const auto &p = (*cloud_)[K];
 			//producto punto respecto al eje z
-			confidence[K] = p.normal_z;
+			confidence[K] *= nih::square(p.normal_z);
 		}
 
 		// realizar la transformación sobre la nube
@@ -226,7 +234,7 @@ fusionar(const std::vector<captura> &clouds, double threshold){
 
 					//si están cerca, promedia
 					if(distance_ < threshold_ and b_index == K)
-						running_avg(a_index, b, b_index);
+							running_avg(a_index, b, b_index);
 					//sino, agrega
 					else{
 						cloud_.cloud_->push_back(p);
@@ -261,8 +269,8 @@ fusionar(const std::vector<captura> &clouds, double threshold){
 	for(int K=1; K<clouds.size(); ++K)
 		result.merge(clouds[K]);
 
-	//return result.cloud_.cloud_;
-	return result.with_intensity();
+	return result.cloud_.cloud_;
+	//return result.with_intensity();
 }
 
 void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale){
@@ -402,6 +410,9 @@ int main(int argc, char **argv) {
 	std::vector<captura> clouds;
 	std::vector<nih::transformation> transformations;
 
+	std::cout << "Desvío: ";
+	std::cin >> desvio;
+
 	std::cerr << "Loading clouds";
 	bool first = false;
 	double resolution;
@@ -414,6 +425,7 @@ int main(int argc, char **argv) {
 		if(not first){ //para que todas trabajen con la misma resolución
 			first = true;
 			resolution = nih::cloud_resolution<nih::pointnormal>(cloudnormal_);
+			desvio *= resolution;
 		}
 		bool partial;
 		{
@@ -429,10 +441,15 @@ int main(int argc, char **argv) {
 		prev = t;
 	}
 
-	auto result = fusionar(clouds, 5*resolution);
-	//auto tmesh = triangulate_3d(result, 5*resolution);
-	//visualise(result, tmesh);
+
+	auto result = fusionar(clouds, 1.5*resolution);
+#if 1
+	auto tmesh = triangulate_3d(result, 5*resolution);
+	visualise(result, tmesh);
+#else
 	visualise(result, 1);
+#endif
+	write_cloud_ply(*result, "result.ply");
 
 	return 0;
 }
