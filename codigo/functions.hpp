@@ -10,6 +10,7 @@
 #include <pcl/surface/mls.h>
 #include <pcl/search/search.h>
 #include <pcl/PolygonMesh.h>
+#include <pcl/geometry/get_boundary.h>
 
 namespace nih {
 	inline cloud::Ptr moving_least_squares(cloud::Ptr nube, double radius);
@@ -19,6 +20,7 @@ namespace nih {
 	inline pcl::PolygonMesh tmesh_to_polygon(CloudPtr cloud_, TMesh mesh_);
 	template <class CloudPtr>
 	inline TMesh create_mesh(CloudPtr cloud_, const std::vector<pcl::Vertices> &polygons);
+	inline std::vector<pcl::Vertices> boundary_points(TMesh mesh_);
 } // namespace nih
 
 //implementation
@@ -108,6 +110,27 @@ namespace nih {
 
 		return mesh_;
 	}
+
+	std::vector<pcl::Vertices> boundary_points(TMesh mesh_) {
+		//fill the holes list
+		std::vector<pcl::Vertices> holes_;
+		std::vector<Mesh::HalfEdgeIndices> hole_boundary;
+
+		pcl::geometry::getBoundBoundaryHalfEdges(*mesh_, hole_boundary);
+		for(auto &hb : hole_boundary) {
+			pcl::Vertices h;
+			for(auto &edge : hb)
+				h.vertices.push_back(mesh_->getOriginatingVertexIndex(edge).get());
+			holes_.push_back(h);
+		}
+		//sort by number of points
+		std::sort(holes_.begin(), holes_.end(), [](const auto &a, const auto &b) {
+				return a.vertices.size() > b.vertices.size();
+				});
+
+		return holes_;
+	}
+
 } // namespace nih
 
 #endif
