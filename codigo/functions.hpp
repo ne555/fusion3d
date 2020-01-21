@@ -16,20 +16,22 @@ namespace nih {
 	template <class PointT>
 	inline double cloud_resolution(typename pcl::PointCloud<PointT>::ConstPtr cloud_);
 	template <class CloudPtr>
-	inline pcl::PolygonMesh tmesh_to_polygon(CloudPtr cloud_, nih::TMesh mesh_);
+	inline pcl::PolygonMesh tmesh_to_polygon(CloudPtr cloud_, TMesh mesh_);
+	template <class CloudPtr>
+	inline TMesh create_mesh(CloudPtr cloud_, const std::vector<pcl::Vertices> &polygons);
 } // namespace nih
 
 //implementation
 namespace nih {
 	cloud::Ptr moving_least_squares(cloud::Ptr nube, double radius) {
 		int orden = 3;
-		pcl::MovingLeastSquares<nih::point, nih::point> mls;
+		pcl::MovingLeastSquares<point, point> mls;
 		mls.setComputeNormals(false);
 		mls.setPolynomialOrder(orden);
 		mls.setSearchRadius(radius);
 		mls.setSqrGaussParam(square(radius));
 		mls.setUpsamplingMethod(
-		    pcl::MovingLeastSquares<nih::point, nih::point>::NONE);
+		    pcl::MovingLeastSquares<point, point>::NONE);
 		auto smooth = create<cloud>();
 
 		mls.setInputCloud(nube);
@@ -66,7 +68,7 @@ namespace nih {
 	}
 
 	template <class CloudPtr>
-	pcl::PolygonMesh tmesh_to_polygon(CloudPtr cloud_, nih::TMesh mesh_){
+	pcl::PolygonMesh tmesh_to_polygon(CloudPtr cloud_, TMesh mesh_){
 		//copy the clouds
 		pcl::PolygonMesh result;
 		pcl::toPCLPointCloud2(*cloud_, result.cloud);
@@ -83,6 +85,28 @@ namespace nih {
 		}
 
 		return result;
+	}
+	template <class CloudPtr>
+	TMesh create_mesh(CloudPtr cloud_, const std::vector<pcl::Vertices> &polygons) {
+		auto mesh_ = create<Mesh>();
+		for(int K = 0; K < cloud_->size(); ++K)
+			mesh_->addVertex(vertex_data{K});
+
+		mesh_->reserveFaces(polygons.size());
+		for(int K = 0; K < polygons.size(); ++K) {
+			const auto &face = polygons[K];
+			auto new_face = mesh_->addFace(
+					pcl::geometry::VertexIndex(face.vertices[0]),
+					pcl::geometry::VertexIndex(face.vertices[1]),
+					pcl::geometry::VertexIndex(face.vertices[2]));
+			if(not new_face.isValid())
+				mesh_->addFace(
+						pcl::geometry::VertexIndex(face.vertices[0]),
+						pcl::geometry::VertexIndex(face.vertices[2]),
+						pcl::geometry::VertexIndex(face.vertices[1]));
+		}
+
+		return mesh_;
 	}
 } // namespace nih
 
