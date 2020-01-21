@@ -55,7 +55,7 @@ public:
 		for(int K=0; K < cloud_->size(); ++K){
 			const auto &p = (*cloud_)[K];
 			double distance = nih::square(p.x) + nih::square(p.y);
-			confidence[K] *= exp(-distance / desvio);
+			//confidence[K] *= exp(-distance / desvio);
 		}
 
 		// TODO: la confianza disminuye en los bordes
@@ -88,11 +88,34 @@ void visualise(const std::vector<nih::cloud_with_normal> &nubes);
 void visualise(const std::vector<nih::cloud::Ptr> &nubes);
 void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale);
 
-void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_){
-	auto polygon_mesh = nih::tmesh_to_polygon(cloud_, mesh_);
+void visualise(const captura &cloud_, nih::TMesh mesh_){
+	auto polygon_mesh = nih::tmesh_to_polygon(cloud_.cloud_, mesh_);
 	pcl::visualization::PCLVisualizer view("fusion");
 	view.setBackgroundColor(0, 0, 0);
 	view.addPolygonMesh(polygon_mesh, "malla");
+	auto intensity = nih::create<pcl::PointCloud<pcl::PointXYZI>>();
+	for(int K=0; K<cloud_.cloud_->size(); ++K){
+		pcl::PointXYZI pi;
+		pcl::copyPoint((*cloud_.cloud_)[K], pi);
+		pi.intensity = cloud_.confidence[K];
+		intensity->push_back(pi);
+	}
+
+	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI>
+	    color(intensity, "intensity");
+
+	view.addPointCloud<pcl::PointXYZI>(intensity, color, "confidence");
+	view.setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_LUT,
+	    pcl::visualization::PCL_VISUALIZER_LUT_VIRIDIS,
+	    "confidence");
+	view.setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_LUT_RANGE,
+	    pcl::visualization::PCL_VISUALIZER_LUT_RANGE_AUTO,
+	    "confidence");
+
+	view.setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "confidence");
 
 	while(!view.wasStopped())
 		view.spinOnce(100);
@@ -262,6 +285,24 @@ fusionar(const std::vector<captura> &clouds, double threshold){
 				return result;
 			}
 
+			void normalise(){
+				for(int K=0; K<cloud_.confidence.size(); ++K)
+					cloud_.confidence[K] /= counter[K];
+					//cloud_.confidence[K] = counter[K];
+			}
+
+			void clean(){
+				captura cleaned;
+				for(int K=0; K<counter.size(); ++K)
+					if(counter[K] > 1){
+						cleaned.cloud_->push_back( (*cloud_.cloud_)[K] );
+						cleaned.confidence.push_back(cloud_.confidence[K]);
+					}
+
+				cloud_.cloud_ = cleaned.cloud_;
+				cloud_.confidence = std::move(cleaned.confidence);
+			}
+
 	};
 	fusion result(threshold);
 
@@ -269,7 +310,12 @@ fusionar(const std::vector<captura> &clouds, double threshold){
 	for(int K=1; K<clouds.size(); ++K)
 		result.merge(clouds[K]);
 
-	return result.cloud_.cloud_;
+	//TODO: eliminar los de counter=1
+	result.normalise();
+	result.clean();
+
+	return result.cloud_;
+	//return result.cloud_.cloud_;
 	//return result.with_intensity();
 }
 
@@ -444,12 +490,12 @@ int main(int argc, char **argv) {
 
 	auto result = fusionar(clouds, 1.5*resolution);
 #if 1
-	auto tmesh = triangulate_3d(result, 5*resolution);
+	auto tmesh = triangulate_3d(result.cloud_, 5*resolution);
 	visualise(result, tmesh);
 #else
 	visualise(result, 1);
 #endif
-	write_cloud_ply(*result, "result.ply");
+	//write_cloud_ply(*result, "result.ply");
 
 	return 0;
 }
