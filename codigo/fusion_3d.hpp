@@ -39,6 +39,7 @@ namespace nih {
 
 	inline point v2p(vector v);
 	inline vector p2v(point p);
+	inline vector p2v(pointnormal p);
 	// operations element to element
 	inline vector prod(vector a, const vector &b);
 	inline vector div(vector a, const vector &b);
@@ -139,6 +140,9 @@ namespace nih {
 		return point(v[0], v[1], v[2]);
 	}
 	vector p2v(point p) {
+		return vector(p.data);
+	}
+	vector p2v(pointnormal p) {
 		return vector(p.data);
 	}
 	vector prod(vector a, const vector &b) {

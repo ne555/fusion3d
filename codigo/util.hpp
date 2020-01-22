@@ -19,6 +19,10 @@ inline double rad2deg(double x){
 	return x * 180 / M_PI;
 }
 
+inline int circ_next_index(int index, int size);
+inline int circ_prev_index(int index, int size);
+
+
 template <class T>
 inline
 typename std::iterator_traits<T>::value_type
@@ -41,6 +45,12 @@ stddev(T beg, T end) {
 	return std::sqrt(result / std::distance(beg, end));
 }
 
+inline int circ_next_index(int index, int size){
+	return (index + 1) % size;
+}
+inline int circ_prev_index(int index, int size){
+	return (index + size - 1) % size;
+}
 }
 
 #endif

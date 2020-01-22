@@ -72,7 +72,7 @@ void subdivide_segments(
     double length_,
     nih::cloudnormal::Ptr cloud_,
     nih::TMesh mesh_,
-    pcl::Vertices boundary_) {
+    const pcl::Vertices &boundary_) {
 	// recorrer los puntos del borde
 	for(int K = 0; K < boundary_.vertices.size(); ++K) {
 		// calcular longitud del segmento
@@ -103,7 +103,7 @@ void subdivide_segments(
 			nih::pointnormal new_point;
 			auto random = segment_lenght*Eigen::MatrixXf::Random(3, 1);
 			pcl::copyPoint(
-			    nih::v2p(nih::vector(p.data) + L * segment_lenght * direction + .1*random),
+			    nih::v2p(nih::vector(p.data) + L * segment_lenght * direction + .25*random),
 			    new_point);
 			cloud_->push_back(new_point);
 			auto new_index = mesh_->addVertex(nih::vertex_data{cloud_->size()});
@@ -118,6 +118,85 @@ void subdivide_segments(
 	mesh_->cleanUp();
 }
 
+double angle(nih::vector a, nih::vector b, nih::vector c, nih::vector normal) {
+	double cos_ = (a-b).dot(c-b);
+	double sin_ = ((a-b).cross(c-b)).dot(normal);
+	double angle = atan2(-sin_, -cos_)+M_PI; //range[0; 2pi]
+	return angle;
+}
+
+double angle(
+    nih::pointnormal a,
+    nih::pointnormal b,
+    nih::pointnormal c,
+    nih::vector normal) {
+	return angle(nih::p2v(a), nih::p2v(b), nih::p2v(c), normal);
+}
+double angle(nih::point a, nih::point b, nih::point c, nih::vector normal) {
+	return angle(nih::p2v(a), nih::p2v(b), nih::p2v(c), normal);
+}
+
+std::tuple<int, double> smallest_angle(
+    nih::cloudnormal::Ptr cloud_,
+    nih::TMesh mesh_,
+    const std::vector<std::uint32_t> &boundary_,
+	nih::vector normal) {
+	double min_ = 4 * M_PI;
+	int index_min = 0;
+	for(int K = 0; K < boundary_.size(); ++K) {
+		int current = boundary_[K];
+		int next = boundary_[(K + 1) % boundary_.size()];
+		int prev = boundary_
+		               [(K + boundary_.size() - 1)
+		                % boundary_.size()];
+
+		double angle_ =
+		    angle((*cloud_)[prev], (*cloud_)[current], (*cloud_)[next], normal);
+		if(angle_ < min_){
+			min_ = angle_;
+			index_min = K;
+		}
+	}
+
+	return std::make_tuple(index_min, min_);
+}
+
+void tessellate(
+    nih::cloudnormal::Ptr cloud_,
+    nih::TMesh mesh_,
+    std::vector<pcl::Vertices> &boundary_) {
+	//TODO: lo que requiera ver otros contornos
+	auto &boundary = boundary_[0].vertices;
+
+	//normal del plano que estima el hueco
+	//¿cómo definir la orientación?
+	nih::vector normal {0, 1, 0};
+
+	//recorrer el contorno
+	//buscar el menor ángulo
+	auto [candidate, angle] = smallest_angle(cloud_, mesh_, boundary, normal);
+	std::cerr << candidate << ' ' << nih::rad2deg(angle) << '\n';
+	//FIXME
+	{
+		int next = nih::circ_next_index(candidate, boundary.size());
+		int prev = nih::circ_prev_index(candidate, boundary.size());
+		if(mesh_->addFace(
+			nih::Mesh::VertexIndex(boundary[next]),
+			nih::Mesh::VertexIndex(boundary[candidate]),
+			nih::Mesh::VertexIndex(boundary[prev])
+		).get() == -1){
+			std::cerr << candidate << ' ' << next << " invalid\n";
+		if(mesh_->addFace(
+			nih::Mesh::VertexIndex(boundary[next]),
+			nih::Mesh::VertexIndex(boundary[prev]),
+			nih::Mesh::VertexIndex(boundary[candidate])
+		).get() == -1){
+			std::cerr << candidate << ' ' << prev << " invalid\n";
+		}
+		}
+	}
+}
+
 int main(int argc, char **argv){
 	if(argc not_eq 2){
 		usage(argv[0]);
@@ -127,7 +206,10 @@ int main(int argc, char **argv){
 	auto [cloud, mesh] = load_triangle_mesh(argv[1]);
 	auto boundary_points_ = nih::boundary_points(mesh);
 	//para probar, dividir los segmentos del borde
-	subdivide_segments(0.1, cloud, mesh, boundary_points_[0]);
+	subdivide_segments(0.5, cloud, mesh, boundary_points_[0]);
+	boundary_points_ = nih::boundary_points(mesh);
+
+	tessellate(cloud, mesh, boundary_points_);
 
 	visualise(cloud, mesh);
 	return 0;
