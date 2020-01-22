@@ -28,6 +28,7 @@ load_triangle_mesh(const char *filename) {
 }
 
 void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_) {
+	std::cerr << "Points: " << cloud_->size() << '\n';
 	pcl::visualization::PCLVisualizer view("tessellation");
 	view.setBackgroundColor(0, 0, 0);
 	auto polygon_mesh = nih::tmesh_to_polygon(cloud_, mesh_);
@@ -168,25 +169,33 @@ nih::vector divide_triangle(
     nih::vector prev,
     nih::vector center,
     nih::vector next,
-    double angle) {
+    double angle,
+	double length) {
+	nih::vector a = prev-center;
+	nih::vector b = next-center;
 	//plano de los tres puntos
-	nih::vector normal = (next-center).cross(prev-center);
-	normal /= normal.norm();
+	nih::vector normal = (b).cross(a);
+	normal.normalize();
 	//rotar el segmento
 	Eigen::AngleAxisf rot(angle, normal);
-	return center + rot.toRotationMatrix() * (next-center);
+
+	b.normalize();
+	nih::vector position = center + length * rot.toRotationMatrix() * b;
+	return position;
 }
 
 nih::pointnormal divide_triangle(
     nih::pointnormal prev,
     nih::pointnormal center,
     nih::pointnormal next,
-    double angle) {
+    double angle,
+	double length) {
 	auto position = divide_triangle(
 		nih::p2v(prev),
 		nih::p2v(center),
 		nih::p2v(next),
-		angle
+		angle,
+		length
 	);
 	nih::pointnormal result;
 	pcl::copyPoint(nih::v2p(position), result);
@@ -198,15 +207,18 @@ nih::pointnormal divide_triangle(
     int center,
     int next,
     double angle,
+	double length,
     nih::cloudnormal::Ptr cloud_) {
 	return divide_triangle(
-	    (*cloud_)[prev], (*cloud_)[center], (*cloud_)[next], angle);
+	    (*cloud_)[prev], (*cloud_)[center], (*cloud_)[next], angle, length);
 }
 
 void tessellate(
     nih::cloudnormal::Ptr cloud_,
     nih::TMesh mesh_,
-    std::vector<pcl::Vertices> &boundary_) {
+    std::vector<pcl::Vertices> &boundary_,
+	double length //para que no reduzca la longitud de los segmentos
+) {
 	// TODO: lo que requiera ver otros contornos
 	auto &boundary = boundary_[0].vertices;
 
@@ -235,6 +247,7 @@ void tessellate(
 				boundary[candidate],
 				boundary[next],
 				angle/divisions,
+				length,
 				cloud_
 			);
 			//TODO: Buscar si toca algún punto de borde (este u otro)
@@ -298,7 +311,10 @@ int main(int argc, char **argv){
 	subdivide_segments(0.5, cloud, mesh, boundary_points_[0]);
 	boundary_points_ = nih::boundary_points(mesh);
 
-	tessellate(cloud, mesh, boundary_points_);
+	visualise(cloud, mesh);
+	tessellate(cloud, mesh, boundary_points_, 0.1);
+	//mesh->deleteVertex(nih::Mesh::VertexIndex(0));
+	//mesh->cleanUp();
 
 	visualise(cloud, mesh);
 	return 0;
