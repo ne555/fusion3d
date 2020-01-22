@@ -169,7 +169,6 @@ nih::vector divide_triangle(
     nih::vector center,
     nih::vector next,
     double angle) {
-	std::cerr << "angle: " << angle << '\n';
 	//plano de los tres puntos
 	nih::vector normal = (next-center).cross(prev-center);
 	normal /= normal.norm();
@@ -226,14 +225,16 @@ void tessellate(
 		std::cerr << candidate << ' ' << nih::rad2deg(angle) << '\n';
 		if(angle >= M_PI)
 			return;                     // es una isla
-		//if(angle > nih::deg2rad(135)) { // dividir en 3
-		//	return;
-		else if(angle > nih::deg2rad(75)) { // dividir en 2
+		if(angle > nih::deg2rad(75)) { // dividir en 2
+			int divisions;
+			if(angle > nih::deg2rad(135)) divisions = 3;
+			else divisions = 2;
+
 			nih::pointnormal new_point = divide_triangle(
 				boundary[prev],
 				boundary[candidate],
 				boundary[next],
-				angle/2,
+				angle/divisions,
 				cloud_
 			);
 			//TODO: Buscar si toca algún punto de borde (este u otro)
@@ -252,19 +253,22 @@ void tessellate(
 			       .get()
 			   == -1)
 				std::cerr << "invalid triangle\n";
-			if(mesh_
-			       ->addFace(
-			           nih::Mesh::VertexIndex(new_index),
-			           nih::Mesh::VertexIndex(boundary[prev]),
-			           nih::Mesh::VertexIndex(boundary[candidate]))
-			       .get()
-			   == -1)
-				std::cerr << "invalid triangle\n";
+			if(divisions == 2){ //close the other triangle too
+				if(mesh_
+						->addFace(
+							nih::Mesh::VertexIndex(new_index),
+							nih::Mesh::VertexIndex(boundary[prev]),
+							nih::Mesh::VertexIndex(boundary[candidate]))
+						.get()
+						== -1)
+					std::cerr << "invalid triangle\n";
+				//el nuevo reemplaza al elegido en el borde
+				boundary[candidate] = new_index;
+			}
+			else{
+				boundary.insert(boundary.begin()+next, new_index);
+			}
 
-			//el nuevo reemplaza al elegido en el borde
-			boundary[candidate] = new_index;
-
-			return;
 		}
 		else { // unir
 			// unir los extremos
