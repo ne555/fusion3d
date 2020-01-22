@@ -105,8 +105,8 @@ void subdivide_segments(
 			pcl::copyPoint(
 			    nih::v2p(nih::vector(p.data) + L * segment_lenght * direction + .25*random),
 			    new_point);
-			cloud_->push_back(new_point);
 			auto new_index = mesh_->addVertex(nih::vertex_data{cloud_->size()});
+			cloud_->push_back(new_point);
 			// armar las caras
 			if(mesh_->addFace(anchor, new_index, prev_index).get() == -1)
 				std::cerr << L << " invalid\n";
@@ -118,9 +118,12 @@ void subdivide_segments(
 	mesh_->cleanUp();
 }
 
-double angle(nih::vector a, nih::vector b, nih::vector c, nih::vector normal) {
+double angle(nih::vector a, nih::vector b, nih::vector c, nih::vector normal_suggested) {
 	double cos_ = (a-b).dot(c-b);
-	double sin_ = ((a-b).cross(c-b)).dot(normal);
+	nih::vector normal = (a-b).cross(c-b);
+	double sin_ = normal.norm();
+	if (normal.dot(normal_suggested) < 0)
+		sin_ = -sin_;
 	double angle = atan2(-sin_, -cos_)+M_PI; //range[0; 2pi]
 	return angle;
 }
@@ -161,6 +164,46 @@ std::tuple<int, double> smallest_angle(
 	return std::make_tuple(index_min, min_);
 }
 
+nih::vector divide_triangle(
+    nih::vector prev,
+    nih::vector center,
+    nih::vector next,
+    double angle) {
+	std::cerr << "angle: " << angle << '\n';
+	//plano de los tres puntos
+	nih::vector normal = (next-center).cross(prev-center);
+	normal /= normal.norm();
+	//rotar el segmento
+	Eigen::AngleAxisf rot(angle, normal);
+	return center + rot.toRotationMatrix() * (next-center);
+}
+
+nih::pointnormal divide_triangle(
+    nih::pointnormal prev,
+    nih::pointnormal center,
+    nih::pointnormal next,
+    double angle) {
+	auto position = divide_triangle(
+		nih::p2v(prev),
+		nih::p2v(center),
+		nih::p2v(next),
+		angle
+	);
+	nih::pointnormal result;
+	pcl::copyPoint(nih::v2p(position), result);
+	return result;
+}
+
+nih::pointnormal divide_triangle(
+    int prev,
+    int center,
+    int next,
+    double angle,
+    nih::cloudnormal::Ptr cloud_) {
+	return divide_triangle(
+	    (*cloud_)[prev], (*cloud_)[center], (*cloud_)[next], angle);
+}
+
 void tessellate(
     nih::cloudnormal::Ptr cloud_,
     nih::TMesh mesh_,
@@ -177,17 +220,53 @@ void tessellate(
 	while(boundary.size() >= 3) {
 		auto [candidate, angle] =
 		    smallest_angle(cloud_, mesh_, boundary, normal);
+		int next = nih::circ_next_index(candidate, boundary.size());
+		int prev = nih::circ_prev_index(candidate, boundary.size());
 		std::cerr << "size: " << boundary.size() << '\n';
 		std::cerr << candidate << ' ' << nih::rad2deg(angle) << '\n';
 		if(angle >= M_PI)
 			return;                     // es una isla
 		//if(angle > nih::deg2rad(135)) { // dividir en 3
 		//	return;
-		//} else if(angle > nih::deg2rad(90)) { // dividir en 2
-		//	return;
+		else if(angle > nih::deg2rad(75)) { // dividir en 2
+			nih::pointnormal new_point = divide_triangle(
+				boundary[prev],
+				boundary[candidate],
+				boundary[next],
+				angle/2,
+				cloud_
+			);
+			//TODO: Buscar si toca algún punto de borde (este u otro)
+
+			//agregar punto
+			int new_index = cloud_->size();
+			mesh_->addVertex(nih::vertex_data{new_index});
+			cloud_->push_back(new_point);
+
+			//agregar caras
+			if(mesh_
+			       ->addFace(
+			           nih::Mesh::VertexIndex(boundary[next]),
+			           nih::Mesh::VertexIndex(new_index),
+			           nih::Mesh::VertexIndex(boundary[candidate]))
+			       .get()
+			   == -1)
+				std::cerr << "invalid triangle\n";
+			if(mesh_
+			       ->addFace(
+			           nih::Mesh::VertexIndex(new_index),
+			           nih::Mesh::VertexIndex(boundary[prev]),
+			           nih::Mesh::VertexIndex(boundary[candidate]))
+			       .get()
+			   == -1)
+				std::cerr << "invalid triangle\n";
+
+			//el nuevo reemplaza al elegido en el borde
+			boundary[candidate] = new_index;
+
+			return;
+		}
 		else { // unir
-			int next = nih::circ_next_index(candidate, boundary.size());
-			int prev = nih::circ_prev_index(candidate, boundary.size());
 			// unir los extremos
 			if(mesh_
 			       ->addFace(
