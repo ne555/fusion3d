@@ -165,34 +165,40 @@ void tessellate(
     nih::cloudnormal::Ptr cloud_,
     nih::TMesh mesh_,
     std::vector<pcl::Vertices> &boundary_) {
-	//TODO: lo que requiera ver otros contornos
+	// TODO: lo que requiera ver otros contornos
 	auto &boundary = boundary_[0].vertices;
 
-	//normal del plano que estima el hueco
+	// normal del plano que estima el hueco
 	//¿cómo definir la orientación?
-	nih::vector normal {0, 1, 0};
+	nih::vector normal{0, 1, 0};
 
-	//recorrer el contorno
-	//buscar el menor ángulo
-	auto [candidate, angle] = smallest_angle(cloud_, mesh_, boundary, normal);
-	std::cerr << candidate << ' ' << nih::rad2deg(angle) << '\n';
-	//FIXME
-	{
-		int next = nih::circ_next_index(candidate, boundary.size());
-		int prev = nih::circ_prev_index(candidate, boundary.size());
-		if(mesh_->addFace(
-			nih::Mesh::VertexIndex(boundary[next]),
-			nih::Mesh::VertexIndex(boundary[candidate]),
-			nih::Mesh::VertexIndex(boundary[prev])
-		).get() == -1){
-			std::cerr << candidate << ' ' << next << " invalid\n";
-		if(mesh_->addFace(
-			nih::Mesh::VertexIndex(boundary[next]),
-			nih::Mesh::VertexIndex(boundary[prev]),
-			nih::Mesh::VertexIndex(boundary[candidate])
-		).get() == -1){
-			std::cerr << candidate << ' ' << prev << " invalid\n";
-		}
+	// recorrer el contorno
+	// buscar el menor ángulo
+	while(boundary.size() >= 3) {
+		auto [candidate, angle] =
+		    smallest_angle(cloud_, mesh_, boundary, normal);
+		std::cerr << "size: " << boundary.size() << '\n';
+		std::cerr << candidate << ' ' << nih::rad2deg(angle) << '\n';
+		if(angle >= M_PI)
+			return;                     // es una isla
+		//if(angle > nih::deg2rad(135)) { // dividir en 3
+		//	return;
+		//} else if(angle > nih::deg2rad(90)) { // dividir en 2
+		//	return;
+		else { // unir
+			int next = nih::circ_next_index(candidate, boundary.size());
+			int prev = nih::circ_prev_index(candidate, boundary.size());
+			// unir los extremos
+			if(mesh_
+			       ->addFace(
+			           nih::Mesh::VertexIndex(boundary[next]),
+			           nih::Mesh::VertexIndex(boundary[prev]),
+			           nih::Mesh::VertexIndex(boundary[candidate]))
+			       .get()
+			   == -1)
+				std::cerr << "invalid triangle\n";
+			// eliminar el punto
+			boundary.erase(boundary.begin() + candidate); // ver orden
 		}
 	}
 }
