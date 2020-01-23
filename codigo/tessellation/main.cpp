@@ -15,7 +15,7 @@
 
 
 void usage(const char *program){
-	std::cerr << program << " mesh.ply\n";
+	std::cerr << program << " mesh.ply [length=0.5]\n";
 }
 
 std::tuple<nih::cloudnormal::Ptr, nih::TMesh>
@@ -43,6 +43,7 @@ void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_) {
 	auto polygon_mesh = nih::tmesh_to_polygon(cloud_, mesh_);
 
 	view.addPolygonMesh(polygon_mesh, "mesh");
+	view.addPointCloud<nih::pointnormal>(cloud_, "nube");
 	view.setRepresentationToWireframeForAllActors();
 	while(!view.wasStopped())
 		view.spinOnce(100);
@@ -112,10 +113,10 @@ void subdivide_segments(
 		for(int L = 1; L < n_divisions; ++L) {
 			// agregar puntos
 			nih::pointnormal new_point;
-			nih::vector random = segment_lenght*Eigen::MatrixXf::Random(3, 1);
+			nih::vector random = Eigen::MatrixXf::Random(3, 1);
 			random.normalize();
 			random *= .1*segment_lenght;
-			//random(1) = 0; //no mover en y
+			//random(1) = 0.07*segment_lenght*Eigen::MatrixXf::Random(1, 1)(0); //mover poco en y
 			pcl::copyPoint(
 			    nih::v2p(nih::vector(p.data) + L * segment_lenght * direction + random),
 			    new_point);
@@ -184,6 +185,7 @@ nih::vector divide_triangle(
     nih::vector next,
     double angle,
 	double length) {
+	// todos siempre con la misma longitud o el punto podría caer demasiado cerca
 	nih::vector a = prev-center;
 	nih::vector b = next-center;
 	//plano de los tres puntos
@@ -192,6 +194,7 @@ nih::vector divide_triangle(
 	//rotar el segmento
 	Eigen::AngleAxisf rot(angle, normal);
 
+	//std::cerr << "length: " << length << ' ' << length_ << '\n';
 	b.normalize();
 	nih::vector position = center + length * rot.toRotationMatrix() * b;
 	return position;
@@ -287,8 +290,8 @@ void tessellate(
 	//¿cómo definir la orientación?
 	nih::vector normal{0, 1, 0};
 
-	// for(int K = 0; K < boundary_.size(); ++K) {
-	for(int K = 0; K < 1; ++K) {
+	for(int K = 0; K < boundary_.size(); ++K) {
+	//for(int K = 0; K < 1; ++K) {
 		// recorrer el contorno
 		// buscar el menor ángulo
 		auto &boundary = boundary_[K].vertices;
@@ -302,7 +305,7 @@ void tessellate(
 			std::cerr << "size: " << boundary_[K].vertices.size() << '\n';
 			std::cerr << candidate << ' ' << nih::rad2deg(angle) << '\n';
 			if(angle >= M_PI) // isla
-				return;
+				break;
 			if(angle > nih::deg2rad(75)) { // dividir en 2
 				int divisions;
 				if(angle > nih::deg2rad(135))
@@ -348,8 +351,10 @@ void tessellate(
 					           nih::Mesh::VertexIndex(
 					               boundary_[K].vertices[candidate]))
 					       .get()
-					   == -1)
+					   == -1){
 						std::cerr << "invalid triangle\n";
+						return;
+					}
 
 					// actualiza los contornos
 					{
@@ -387,8 +392,10 @@ void tessellate(
 					           nih::Mesh::VertexIndex(
 					               boundary_[K].vertices[candidate]))
 					       .get()
-					   == -1)
+					   == -1){
 						std::cerr << "invalid triangle\n";
+						return;
+					}
 					if(divisions == 2) { // close the other triangle too
 						if(mesh_
 						       ->addFace(
@@ -398,8 +405,10 @@ void tessellate(
 						           nih::Mesh::VertexIndex(
 						               boundary_[K].vertices[candidate]))
 						       .get()
-						   == -1)
+						   == -1){
 							std::cerr << "invalid triangle\n";
+							return;
+						}
 						// el nuevo reemplaza al elegido en el borde
 						boundary_[K].vertices[candidate] = new_index;
 					} else {
@@ -416,34 +425,42 @@ void tessellate(
 				           nih::Mesh::VertexIndex(
 				               boundary_[K].vertices[candidate]))
 				       .get()
-				   == -1)
+				   == -1){
 					std::cerr << "invalid triangle\n";
+					return;
+				}
 				// eliminar el punto
 				boundary_[K].vertices.erase(
 				    boundary_[K].vertices.begin() + candidate); // ver orden
 			}
-			// visualise(cloud_, mesh_);
+			//visualise(cloud_, mesh_);
 		}
 	}
 }
 
 int main(int argc, char **argv){
-	if(argc not_eq 2){
+	if(argc < 2){
 		usage(argv[0]);
 		return 1;
 	}
 	//cargar la malla
 	auto [cloud, mesh] = load_triangle_mesh(argv[1]);
 	auto boundary_points_ = nih::boundary_points(mesh);
+	double length = 0.5;
+	if(argc == 3) length = std::stod(argv[2]);
 	//para probar, dividir los segmentos del borde
-	subdivide_segments(0.5, cloud, mesh, boundary_points_[0]);
+	subdivide_segments(length, cloud, mesh, boundary_points_[0]);
 	boundary_points_ = nih::boundary_points(mesh);
 
 	visualise(cloud, mesh);
-	tessellate(cloud, mesh, boundary_points_, 0.5);
+	tessellate(cloud, mesh, boundary_points_, length);
 	//mesh->deleteVertex(nih::Mesh::VertexIndex(0));
 	//mesh->cleanUp();
+	//auto cloud_aux = nih::create<nih::cloudnormal>();
+	//for(int K=1; K<cloud->size(); ++K)
+	//	cloud_aux->push_back((*cloud)[K]);
 
+	//visualise(cloud_aux, mesh);
 	visualise(cloud, mesh);
 	return 0;
 }
