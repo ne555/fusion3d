@@ -241,6 +241,22 @@ int linear_search(
 	return -1;
 }
 
+template <class Vector>
+Vector
+circular_copy(
+	Vector v,
+	int begin,
+	int end
+){
+	Vector result;
+	result.reserve(v.size());
+	do{
+		result.push_back(v[begin]);
+		begin = (begin+1) % v.size();
+	}while(begin not_eq end);
+	return result;
+}
+
 void tessellate(
     nih::cloudnormal::Ptr cloud_,
     nih::TMesh mesh_,
@@ -270,7 +286,8 @@ void tessellate(
 	//¿cómo definir la orientación?
 	nih::vector normal{0, 1, 0};
 
-	for(int K = 0; K < boundary_.size(); ++K) {
+	//for(int K = 0; K < boundary_.size(); ++K) {
+	for(int K = 0; K < 1; ++K) {
 		// recorrer el contorno
 		// buscar el menor ángulo
 		auto &boundary = boundary_[K].vertices;
@@ -318,12 +335,27 @@ void tessellate(
 							    nih::extract_xyz((*borders)[indices[0]]),
 							    boundary_[K].vertices,
 							    *cloud_);
-							std::cerr << "near: " << index << '\n';
+
+							//armar la cara
+							if(mesh_
+								   ->addFace(
+									   nih::Mesh::VertexIndex(boundary[next]),
+									   nih::Mesh::VertexIndex(boundary[index]),
+									   nih::Mesh::VertexIndex(boundary[candidate]))
+								   .get()
+							   == -1)
+								std::cerr << "invalid triangle\n";
 							return;
+
+							//mismo boundary
 							// dividir en dos
 							// b = a[N:Q]
-							// a = a[Q:P] (divisions = 2)
-							// a = a[Q:C] (divisions = 3)
+							// a = a[Q:C]
+
+							pcl::Vertices new_boundary;
+							new_boundary.vertices = circular_copy(boundary, next, index);
+							boundary_.push_back(new_boundary);
+							boundary = circular_copy(boundary, index, candidate);
 						} else {
 							pcl::PointXYZI pi;
 							pi.x = new_point.x;
