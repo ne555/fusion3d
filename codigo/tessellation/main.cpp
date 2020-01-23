@@ -11,6 +11,8 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_cloud_color_handlers.h>
 
+#include <pcl/octree/octree_search.h>
+
 
 void usage(const char *program){
 	std::cerr << program << " mesh.ply\n";
@@ -31,9 +33,17 @@ void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_) {
 	std::cerr << "Points: " << cloud_->size() << '\n';
 	pcl::visualization::PCLVisualizer view("tessellation");
 	view.setBackgroundColor(0, 0, 0);
+	view.initCameraParameters();
+	view.setCameraPosition(
+		0, 3, 0, // eye
+		0, -2, 0, // target
+		0, 0, 1 // up
+	);
+	view.setCameraClipDistances(2, 3.2);
 	auto polygon_mesh = nih::tmesh_to_polygon(cloud_, mesh_);
 
 	view.addPolygonMesh(polygon_mesh, "mesh");
+	view.setRepresentationToWireframeForAllActors();
 	while(!view.wasStopped())
 		view.spinOnce(100);
 	view.close();
@@ -102,9 +112,12 @@ void subdivide_segments(
 		for(int L = 1; L < n_divisions; ++L) {
 			// agregar puntos
 			nih::pointnormal new_point;
-			auto random = segment_lenght*Eigen::MatrixXf::Random(3, 1);
+			nih::vector random = segment_lenght*Eigen::MatrixXf::Random(3, 1);
+			random.normalize();
+			random *= .1*segment_lenght;
+			//random(1) = 0; //no mover en y
 			pcl::copyPoint(
-			    nih::v2p(nih::vector(p.data) + L * segment_lenght * direction + .25*random),
+			    nih::v2p(nih::vector(p.data) + L * segment_lenght * direction + random),
 			    new_point);
 			auto new_index = mesh_->addVertex(nih::vertex_data{cloud_->size()});
 			cloud_->push_back(new_point);
@@ -213,19 +226,51 @@ nih::pointnormal divide_triangle(
 	    (*cloud_)[prev], (*cloud_)[center], (*cloud_)[next], angle, length);
 }
 
+
+template <class Cloud>
+int linear_search(
+    nih::point query,
+    const std::vector<std::uint32_t> &indices,
+    const Cloud &cloud_) {
+	for(int K = 0; K < indices.size(); ++K) {
+		nih::point candidate = nih::extract_xyz(cloud_[indices[K]]);
+		if(candidate.x == query.x and candidate.y == query.y
+		   and candidate.z == query.z)
+			return K;
+	}
+	return -1;
+}
+
 void tessellate(
     nih::cloudnormal::Ptr cloud_,
     nih::TMesh mesh_,
     std::vector<pcl::Vertices> &boundary_,
 	double length //para que no reduzca la longitud de los segmentos
 ) {
+
 	// TODO: lo que requiera ver otros contornos
-	auto &boundary = boundary_[0].vertices;
+	pcl::octree::OctreePointCloudSearch<pcl::PointXYZI> octree (length);
+	auto borders = nih::create<pcl::PointCloud<pcl::PointXYZI>>();
+	octree.setInputCloud(borders);
+	for(int K = 0; K < boundary_.size(); ++K) {
+		auto &boundary = boundary_[K].vertices;
+		for(int L = 0; L < boundary.size(); ++L) {
+			auto p = (*cloud_)[boundary[L]];
+			pcl::PointXYZI pi;
+			pi.x = p.x;
+			pi.y = p.y;
+			pi.z = p.z;
+			pi.intensity = K; // número de boundary
+			borders->push_back(pi);
+		}
+	}
+	octree.addPointsFromInputCloud();
 
 	// normal del plano que estima el hueco
 	//¿cómo definir la orientación?
 	nih::vector normal{0, 1, 0};
 
+	auto &boundary = boundary_[0].vertices;
 	// recorrer el contorno
 	// buscar el menor ángulo
 	while(boundary.size() >= 3) {
@@ -235,8 +280,8 @@ void tessellate(
 		int prev = nih::circ_prev_index(candidate, boundary.size());
 		std::cerr << "size: " << boundary.size() << '\n';
 		std::cerr << candidate << ' ' << nih::rad2deg(angle) << '\n';
-		if(angle >= M_PI)
-			return;                     // es una isla
+		if(angle >= M_PI) //isla
+			return;
 		if(angle > nih::deg2rad(75)) { // dividir en 2
 			int divisions;
 			if(angle > nih::deg2rad(135)) divisions = 3;
@@ -251,6 +296,39 @@ void tessellate(
 				cloud_
 			);
 			//TODO: Buscar si toca algún punto de borde (este u otro)
+			{
+				std::vector<int> indices(1);
+				std::vector<float> sqr_dist(1);
+				pcl::PointXYZI to_search;
+						to_search.x = new_point.x;
+						to_search.y = new_point.y;
+						to_search.z = new_point.z;
+				if(octree.nearestKSearch(to_search, 1, indices, sqr_dist)){
+					if(sqr_dist[0] < nih::square(length/2)){ //cerca de otro, usar ese
+						//suponer que está en este boundary
+						//(el número de boundary está en (*borders)[indices[0]].intensity)
+						//buscar índice del punto en el boundary
+						int index = linear_search(
+								nih::extract_xyz((*borders)[indices[0]]),
+								boundary_[0].vertices,
+								*cloud_);
+						std::cerr << "near: " << index << '\n';
+						return;
+						//dividir en dos
+						//b = a[N:Q]
+						//a = a[Q:P] (divisions = 2)
+						//a = a[Q:C] (divisions = 3)
+					}
+					else{
+						pcl::PointXYZI pi;
+						pi.x = new_point.x;
+						pi.y = new_point.y;
+						pi.z = new_point.z;
+						pi.intensity = cloud_->size();
+						octree.addPointToCloud(pi, borders);
+					}
+				}
+			}
 
 			//agregar punto
 			int new_index = cloud_->size();
@@ -296,6 +374,7 @@ void tessellate(
 			// eliminar el punto
 			boundary.erase(boundary.begin() + candidate); // ver orden
 		}
+		//visualise(cloud_, mesh_);
 	}
 }
 
@@ -312,7 +391,7 @@ int main(int argc, char **argv){
 	boundary_points_ = nih::boundary_points(mesh);
 
 	visualise(cloud, mesh);
-	tessellate(cloud, mesh, boundary_points_, 0.1);
+	tessellate(cloud, mesh, boundary_points_, 0.5);
 	//mesh->deleteVertex(nih::Mesh::VertexIndex(0));
 	//mesh->cleanUp();
 

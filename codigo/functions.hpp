@@ -21,6 +21,8 @@ namespace nih {
 	template <class CloudPtr>
 	inline TMesh create_mesh(CloudPtr cloud_, const std::vector<pcl::Vertices> &polygons);
 	inline std::vector<pcl::Vertices> boundary_points(TMesh mesh_);
+	template <class PointT>
+	inline nih::point extract_xyz(const PointT &p);
 } // namespace nih
 
 //implementation
@@ -131,6 +133,12 @@ namespace nih {
 		return holes_;
 	}
 
+	template <class PointT>
+	nih::point extract_xyz(const PointT &p){
+		nih::point result;
+		pcl::copyPoint(p, result);
+		return result;
+	}
 } // namespace nih
 
 #endif
