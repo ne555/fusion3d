@@ -330,15 +330,11 @@ void tessellate(
 				octree.nearestKSearch(to_search, 1, indices, sqr_dist);
 				// cerca de otro, usar ese
 				if(sqr_dist[0] < nih::square(length / 2)) {
-					// suponer que está en este boundary_[K].vertices
-
-					//(el número de boundary_[K].vertices está en
-					//(*borders)[indices[0]].intensity)
-
-					// buscar índice del punto en el boundary_[K].vertices
+					int ind_boundary = (*borders)[indices[0]].intensity;
+					// buscar índice del punto en el boundary
 					int index = linear_search(
 					    nih::extract_xyz((*borders)[indices[0]]),
-					    boundary_[K].vertices,
+					    boundary_[ind_boundary].vertices,
 					    *cloud_);
 
 					// armar la cara
@@ -347,7 +343,7 @@ void tessellate(
 					           nih::Mesh::VertexIndex(
 					               boundary_[K].vertices[next]),
 					           nih::Mesh::VertexIndex(
-					               boundary_[K].vertices[index]),
+					               boundary_[ind_boundary].vertices[index]),
 					           nih::Mesh::VertexIndex(
 					               boundary_[K].vertices[candidate]))
 					       .get()
@@ -357,8 +353,9 @@ void tessellate(
 					}
 
 					// actualiza los contornos
-					{
-						// mismo boundary_[K].vertices
+					if(ind_boundary == K or
+							boundary_[ind_boundary].vertices.empty() //already merged
+							){
 						// dividir en dos
 						// b = a[N:Q]
 						// a = a[Q:C]
@@ -369,6 +366,24 @@ void tessellate(
 						boundary_[K].vertices = circular_copy(
 						    boundary_[K].vertices, index, candidate);
 						std::cerr << "new boundaries: " << new_boundary.vertices.size() << ' ' << boundary_[K].vertices.size() << '\n';
+						std::cerr << "indices: " << ' ' << prev << ' ' << candidate << ' ' << next << ' ' << index << '\n';
+					}
+					else{
+						//unir
+						//a = a[N:C] + b[Q:] + b[:Q] + Q
+						//b = []
+						std::cerr << "boundary fusion\n";
+						std::cerr << K << ' ' << ind_boundary << '\n';
+						auto &a = boundary_[K].vertices;
+						auto &b = boundary_[ind_boundary].vertices;
+						std::cerr << "before: " << a.size() << ' ' <<  b.size() << '\n';
+
+						a.insert(a.begin()+next, b[index]); //Q
+						a.insert(a.begin()+next, b.begin(), b.begin()+index); //[:Q]
+						a.insert(a.begin()+next, b.begin()+index, b.end()); //[Q:]
+
+						b.clear();
+						std::cerr << "after: " << a.size() << ' ' << b.size() << '\n';
 					}
 				} else { // usar nuevo punto
 					// actualizar octree
@@ -449,7 +464,8 @@ int main(int argc, char **argv){
 	double length = 0.5;
 	if(argc == 3) length = std::stod(argv[2]);
 	//para probar, dividir los segmentos del borde
-	subdivide_segments(length, cloud, mesh, boundary_points_[0]);
+	for(int K=0; K<boundary_points_.size(); ++K)
+		subdivide_segments(length, cloud, mesh, boundary_points_[K]);
 	boundary_points_ = nih::boundary_points(mesh);
 
 	visualise(cloud, mesh);
