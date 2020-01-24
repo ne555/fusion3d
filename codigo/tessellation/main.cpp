@@ -331,6 +331,9 @@ void tessellate(
 				// cerca de otro, usar ese
 				if(sqr_dist[0] < nih::square(length / 2)) {
 					int ind_boundary = (*borders)[indices[0]].intensity;
+					if(ind_boundary < K or boundary_[ind_boundary].vertices.empty()) //ya unido
+						ind_boundary = K;
+
 					// buscar índice del punto en el boundary
 					int index = linear_search(
 					    nih::extract_xyz((*borders)[indices[0]]),
@@ -349,13 +352,19 @@ void tessellate(
 					       .get()
 					   == -1){
 						std::cerr << "invalid triangle\n";
+						std::cerr << "punto existente\n";
+						std::cerr << "boundary: " << K << ' ' << ind_boundary << ' ' << index << '\n';
+						auto &b = boundary_[K].vertices;
+						for(auto v: b)
+							std::cerr << v << ' ';
+						std::cerr << "\npoints: " << b[next] << ' ' << b[candidate] << '\n';
+						std::cerr << "existente: " << ind_boundary << ' ' << boundary_[ind_boundary].vertices[index] << '\n';
+
 						return;
 					}
 
 					// actualiza los contornos
-					if(ind_boundary == K or
-							boundary_[ind_boundary].vertices.empty() //already merged
-							){
+					if(ind_boundary == K){
 						// dividir en dos
 						// b = a[N:Q]
 						// a = a[Q:C]
@@ -367,6 +376,11 @@ void tessellate(
 						    boundary_[K].vertices, index, candidate);
 						std::cerr << "new boundaries: " << new_boundary.vertices.size() << ' ' << boundary_[K].vertices.size() << '\n';
 						std::cerr << "indices: " << ' ' << prev << ' ' << candidate << ' ' << next << ' ' << index << '\n';
+						//TODO: actualizar octree
+						//no es necesario y hasta es peligroso
+						//si A se dividió, ni A ni B pueden ser islas
+						//for(auto v: new_boundary.vertices)
+						//	(*borders)[v].intensity = boundary_.size()-1;
 					}
 					else{
 						//unir
@@ -409,6 +423,7 @@ void tessellate(
 					       .get()
 					   == -1){
 						std::cerr << "invalid triangle\n";
+						std::cerr << "nuevo punto\n";
 						return;
 					}
 					if(divisions == 2) { // close the other triangle too
@@ -422,6 +437,7 @@ void tessellate(
 						       .get()
 						   == -1){
 							std::cerr << "invalid triangle\n";
+							std::cerr << "segunda división\n";
 							return;
 						}
 						// el nuevo reemplaza al elegido en el borde
@@ -442,6 +458,7 @@ void tessellate(
 				       .get()
 				   == -1){
 					std::cerr << "invalid triangle\n";
+					std::cerr << "cerrando\n";
 					return;
 				}
 				// eliminar el punto
