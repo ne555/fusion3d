@@ -116,6 +116,7 @@ void subdivide_segments(
 			nih::vector random = Eigen::MatrixXf::Random(3, 1);
 			random.normalize();
 			random *= .1*segment_lenght;
+			random(1) = 0;
 			//random(1) = 0.07*segment_lenght*Eigen::MatrixXf::Random(1, 1)(0); //mover poco en y
 			pcl::copyPoint(
 			    nih::v2p(nih::vector(p.data) + L * segment_lenght * direction + random),
@@ -291,6 +292,7 @@ void tessellate(
 	nih::vector normal{0, 1, 0};
 
 	for(int K = 0; K < boundary_.size(); ++K) {
+		if(K==1 or K==2) continue;
 	//for(int K = 0; K < 1; ++K) {
 		// recorrer el contorno
 		// buscar el menor ángulo
