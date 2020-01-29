@@ -159,7 +159,8 @@ double angle(
     nih::pointnormal b,
     nih::pointnormal c,
     nih::vector normal) {
-	return angle(nih::p2v(a), nih::p2v(b), nih::p2v(c), normal);
+	//return angle(nih::p2v(a), nih::p2v(b), nih::p2v(c), normal);
+	return angle(nih::p2v(a), nih::p2v(b), nih::p2v(c), nih::vector_normal(b));
 }
 double angle(nih::point a, nih::point b, nih::point c, nih::vector normal) {
 	return angle(nih::p2v(a), nih::p2v(b), nih::p2v(c), normal);
