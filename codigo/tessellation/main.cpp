@@ -85,6 +85,12 @@ void subdivide_segments(
     nih::cloudnormal::Ptr cloud_,
     nih::TMesh mesh_,
     const pcl::Vertices &boundary_) {
+	//normales en y
+	for(auto &p: *cloud_){
+		p.normal_x = 0;
+		p.normal_y = 1;
+		p.normal_z = 0;
+	}
 	// recorrer los puntos del borde
 	for(int K = 0; K < boundary_.vertices.size(); ++K) {
 		// calcular longitud del segmento
@@ -116,12 +122,17 @@ void subdivide_segments(
 			nih::vector random = Eigen::MatrixXf::Random(3, 1);
 			random.normalize();
 			random *= .1*segment_lenght;
-			random(1) = 0;
+			//random(1) = 0;
 			//random(1) = 0.07*segment_lenght*Eigen::MatrixXf::Random(1, 1)(0); //mover poco en y
 			pcl::copyPoint(
 			    nih::v2p(nih::vector(p.data) + L * segment_lenght * direction + random),
 			    new_point);
 			auto new_index = mesh_->addVertex(nih::vertex_data{cloud_->size()});
+
+			//normales en y
+			new_point.normal_x = 0;
+			new_point.normal_y = 1;
+			new_point.normal_z = 0;
 			cloud_->push_back(new_point);
 			// armar las caras
 			if(mesh_->addFace(anchor, new_index, prev_index).get() == -1)
@@ -186,6 +197,7 @@ nih::vector divide_triangle(
     nih::vector next,
     double angle,
 	double length) {
+
 	// todos siempre con la misma longitud o el punto podría caer demasiado cerca
 	nih::vector a = prev-center;
 	nih::vector b = next-center;
@@ -201,6 +213,15 @@ nih::vector divide_triangle(
 	return position;
 }
 
+nih::vector interpolate(
+    nih::vector p,
+    nih::vector c,
+    nih::vector n){
+
+	nih::vector result = 2*c + p + n;
+	return result/4;
+}
+
 nih::pointnormal divide_triangle(
     nih::pointnormal prev,
     nih::pointnormal center,
@@ -214,8 +235,33 @@ nih::pointnormal divide_triangle(
 		angle,
 		length
 	);
+	//TODO:
+	//proyectar el resultado en el plano definido por
+	//normal = 2*C_n + P_n + N_n
+	//punto = (2*C + P + N)/4
+	nih::vector normal = interpolate(
+		nih::vector_normal(prev),
+		nih::vector_normal(center),
+		nih::vector_normal(next)
+	);
+	normal.normalize();
+	nih::vector punto_en_el_plano = interpolate(
+		nih::p2v(prev),
+		nih::p2v(center),
+		nih::p2v(next)
+	);
+
+	nih::vector q = position - punto_en_el_plano;
+	nih::vector proyeccion = q - q.dot(normal) * normal + punto_en_el_plano;
+
+
+	std::cerr << "normal: " << normal.transpose() << '\n';
+
 	nih::pointnormal result;
-	pcl::copyPoint(nih::v2p(position), result);
+	pcl::copyPoint(nih::v2p(proyeccion), result);
+	for(int K=0; K<3; ++K)
+		result.data_n[K] = normal(K);
+	//pcl::copyPoint(nih::v2p(position), result);
 	return result;
 }
 
@@ -292,7 +338,7 @@ void tessellate(
 	nih::vector normal{0, 1, 0};
 
 	for(int K = 0; K < boundary_.size(); ++K) {
-		if(K==1 or K==2) continue;
+		//if(K==1 or K==2) continue;
 	//for(int K = 0; K < 1; ++K) {
 		// recorrer el contorno
 		// buscar el menor ángulo
