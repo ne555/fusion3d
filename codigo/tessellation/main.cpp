@@ -85,12 +85,6 @@ void subdivide_segments(
     nih::cloudnormal::Ptr cloud_,
     nih::TMesh mesh_,
     const pcl::Vertices &boundary_) {
-	//normales en y
-	for(auto &p: *cloud_){
-		p.normal_x = 0;
-		p.normal_y = 1;
-		p.normal_z = 0;
-	}
 	// recorrer los puntos del borde
 	for(int K = 0; K < boundary_.vertices.size(); ++K) {
 		// calcular longitud del segmento
@@ -128,11 +122,16 @@ void subdivide_segments(
 			    nih::v2p(nih::vector(p.data) + L * segment_lenght * direction + random),
 			    new_point);
 			auto new_index = mesh_->addVertex(nih::vertex_data{cloud_->size()});
+			//normales
+			nih::vector pn = nih::vector_normal(p);
+			nih::vector qn = nih::vector_normal(q);
+			double alpha = double(n_divisions-L)/n_divisions;
+			nih::vector normal = pn * alpha + qn;
+			normal += random;
+			normal.normalize();
+			for(int K=0; K<3; ++K)
+				new_point.data_n[K] = normal(K);
 
-			//normales en y
-			new_point.normal_x = 0;
-			new_point.normal_y = 1;
-			new_point.normal_z = 0;
 			cloud_->push_back(new_point);
 			// armar las caras
 			if(mesh_->addFace(anchor, new_index, prev_index).get() == -1)
