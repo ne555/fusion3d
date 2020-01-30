@@ -28,6 +28,34 @@ load_triangle_mesh(const char *filename) {
 	auto mesh_ = nih::create_mesh(cloud_, polygon_mesh.polygons);
 	return std::make_tuple(cloud_, mesh_);
 }
+std::tuple<nih::cloudnormal::Ptr, nih::TMesh>
+load_triangle_mesh2(const char *filename_cloud, const char *file_polygons) {
+	pcl::PLYReader reader;
+	auto nube = nih::create<nih::cloudnormal>();
+	reader.read(filename_cloud, *nube);
+	//read polygons
+	auto mesh = nih::create<nih::Mesh>();
+	mesh->reserveVertices(nube->size());
+	for(int K = 0; K < nube->size(); ++K)
+		mesh->addVertex(nih::vertex_data{K});
+
+	std::ifstream input(file_polygons);
+	int faces;
+	const int n=3;
+	int vertex[n];
+	while(input>>faces){
+		pcl::Vertices triangle;
+		triangle.vertices.resize(3);
+		for(int K=0; K<n; ++K)
+			input >> vertex[K];
+		mesh->addFace(
+				pcl::geometry::VertexIndex(vertex[0]),
+				pcl::geometry::VertexIndex(vertex[1]),
+				pcl::geometry::VertexIndex(vertex[2]));
+	}
+
+	return std::make_tuple(nube, mesh);
+}
 
 void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_) {
 	std::cerr << "Points: " << cloud_->size() << '\n';
@@ -319,7 +347,9 @@ void tessellate(
 	pcl::octree::OctreePointCloudSearch<pcl::PointXYZI> octree(length);
 	auto borders = nih::create<pcl::PointCloud<pcl::PointXYZI> >();
 	octree.setInputCloud(borders);
+	int limit = boundary_.size();
 	for(int K = 0; K < boundary_.size(); ++K) {
+		if(K > 0 and K < boundary_.size()) continue;
 		auto &boundary = boundary_[K].vertices;
 		for(int L = 0; L < boundary.size(); ++L) {
 			auto p = (*cloud_)[boundary[L]];
@@ -524,13 +554,13 @@ int main(int argc, char **argv){
 		return 1;
 	}
 	//cargar la malla
-	auto [cloud, mesh] = load_triangle_mesh(argv[1]);
+	auto [cloud, mesh] = load_triangle_mesh2(argv[1], argv[2]);
 	auto boundary_points_ = nih::boundary_points(mesh);
 	double length = 0.5;
-	if(argc == 3) length = std::stod(argv[2]);
+	if(argc == 4) length = std::stod(argv[3]);
 	//para probar, dividir los segmentos del borde
-	for(int K=0; K<boundary_points_.size(); ++K)
-		subdivide_segments(length, cloud, mesh, boundary_points_[K]);
+	//for(int K=0; K<boundary_points_.size(); ++K)
+	//	subdivide_segments(length, cloud, mesh, boundary_points_[K]);
 	boundary_points_ = nih::boundary_points(mesh);
 
 	visualise(cloud, mesh);
