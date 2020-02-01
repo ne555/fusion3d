@@ -209,8 +209,12 @@ void subdivide_segments(
 }
 
 double angle(nih::vector a, nih::vector b, nih::vector c, nih::vector normal_suggested) {
-	double cos_ = (a-b).dot(c-b);
-	nih::vector normal = (a-b).cross(c-b);
+	nih::vector ab = a-b;
+	nih::vector cb = c-b;
+	ab.normalize();
+	cb.normalize();
+	double cos_ = ab.dot(cb);
+	nih::vector normal = (ab).cross(cb);
 	double sin_ = normal.norm();
 	if (normal.dot(normal_suggested) < 0)
 		sin_ = -sin_;
@@ -245,7 +249,8 @@ std::tuple<int, double> smallest_angle(
 		                % boundary_.size()];
 
 		double angle_ =
-		    angle((*cloud_)[prev], (*cloud_)[current], (*cloud_)[next], normal);
+		    //angle((*cloud_)[prev], (*cloud_)[current], (*cloud_)[next], normal);
+		    angle((*cloud_)[next], (*cloud_)[current], (*cloud_)[prev], normal);
 		if(angle_ < min_){
 			min_ = angle_;
 			index_min = K;
