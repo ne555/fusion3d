@@ -12,6 +12,7 @@
 
 #include <string>
 #include <vector>
+#include <cstdlib>
 
 namespace nih {
 	// no acepta islas
@@ -38,6 +39,16 @@ namespace nih {
 
 		inline void join(
 		    int prev,
+		    int candidate,
+		    int next,
+		    std::vector<std::uint32_t> &border);
+		inline pcl::Vertices split_border(
+		    int index,
+		    int candidate,
+		    int next,
+		    std::vector<std::uint32_t> &border);
+		inline void add_new(
+		    pointnormal new_point,
 		    int candidate,
 		    int next,
 		    std::vector<std::uint32_t> &border);
@@ -80,9 +91,9 @@ namespace nih {
 			octree.addPointToCloud(p, patch_);
 		}
 
-		for(int K = 0; K < to_fill.size(); ++K) {
-			auto &border = to_fill[K].vertices;
-			while(border.size() >= 3) {
+		for(int K = 0; K < to_fill.size(); ++K)
+			while(to_fill[K].vertices.size() >= 3) {
+				auto &border = to_fill[K].vertices;
 				auto [candidate, angle_] =
 				    smallest_angle(*cloud_, *mesh_, border);
 				int next = circ_next_index(candidate, border.size());
@@ -90,7 +101,8 @@ namespace nih {
 
 				if(angle_ >= M_PI) // isla, no debería ocurrir
 					break;
-				if(angle_ > deg2rad(75)) { // agregar punto
+				if(angle_ > deg2rad(75)) {
+					// punto hacia adentro para generar un triángulo
 					int divisions;
 					if(angle_ > deg2rad(135))
 						divisions = 3;
@@ -102,10 +114,33 @@ namespace nih {
 					    border[next],
 					    angle_ / divisions);
 
+					// buscar si está cerca de uno existente
+					std::vector<int> indices(1);
+					std::vector<float> sqr_dist(1);
+					octree.nearestKSearch(new_point, 1, indices, sqr_dist);
+					if(sqr_dist[0] < square(length_ / 2)) {
+						// cerca de otro, usar ese
+						// buscar índice del punto en el boundary
+						int index = linear_search(
+								(*patch_)[indices[0]],
+								border,
+								*cloud_);
+						if(index == prev or index == candidate or index == next)
+							//me alejé muy poco, cierro triángulo
+							join(prev, candidate, next, border);
+						else
+							//unión de fronteras (crea un borde)
+							to_fill.push_back(split_border(index, candidate, next, border));
+					}
+					else{
+						//usar el nuevo punto
+						add_new(new_point, candidate, next, border);
+						octree.addPointToCloud(new_point, patch_);
+					}
+
 				} else // unir los extremos
 					join(prev, candidate, next, border);
 			}
-		}
 
 		boundary_[index] = to_fill[0];
 		return patch_;
@@ -176,6 +211,54 @@ namespace nih {
 		// eliminar el punto central
 		border.erase(border.begin() + candidate);
 	}
+
+	pcl::Vertices advancing_front::split_border(
+		int index,
+		int candidate,
+		int next,
+		std::vector<std::uint32_t> &border){
+		auto new_face = mesh_->addFace(
+		    Mesh::VertexIndex(border[index]),
+		    Mesh::VertexIndex(border[candidate]),
+		    Mesh::VertexIndex(border[next]));
+		if(not new_face.isValid()) {
+			std::cerr << "invalid: split\n";
+			exit(1);
+		}
+		//actualizar contornos
+		pcl::Vertices new_border;
+		// b = a[N:I]
+		// a = a[I:C]
+		new_border.vertices = circular_copy(border, next, index);
+		border = circular_copy(border, index, candidate);
+
+		return new_border;
+	}
+
+	void advancing_front::add_new(
+		pointnormal new_point,
+		int candidate,
+		int next,
+		std::vector<std::uint32_t> &border){
+		//agregar punto a la nube y malla
+		int new_index = cloud_->size();
+		cloud_->push_back(new_point);
+		mesh_->addVertex(vertex_data{new_index});
+
+		//agregar cara
+		auto new_face = mesh_->addFace(
+		    Mesh::VertexIndex(new_index),
+		    Mesh::VertexIndex(border[candidate]),
+		    Mesh::VertexIndex(border[next]));
+		if(not new_face.isValid()) {
+			std::cerr << "invalid: add_new\n";
+			exit(1);
+		}
+
+		//actualizar borde
+		border.insert(border.begin()+next, new_index);
+	}
+
 	pointnormal advancing_front::divide_triangle(
 	    int prev, int center, int next, double angle_) const {
 		// todos siempre con la misma longitud o el punto podría caer demasiado

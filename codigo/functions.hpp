@@ -42,6 +42,13 @@ namespace nih {
 	    const pointnormal &next,
 	    double angle,
 	    double length);
+
+	//busca el punto que tiene la misma posición (xyz)
+	inline int linear_search(
+		pointnormal query,
+		const std::vector<std::uint32_t> &indices,
+		const cloudnormal &cloud_);
+
 } // namespace nih
 
 //implementation
@@ -189,28 +196,28 @@ namespace nih {
 		return angle;
 	}
 
-	namespace{
-		vector interpolate(const vector &p, const vector &c, const vector &n){
-			return (2*c + p + n)/4;
+	namespace {
+		vector interpolate(const vector &p, const vector &c, const vector &n) {
+			return (2 * c + p + n) / 4;
 		}
 		vector divide_triangle(
-			const vector &prev,
-			const vector &center,
-			const vector &next,
-			double angle,
-			double length) {
-			vector a = prev-center;
-			vector b = next-center;
-			//plano de los tres puntos
+		    const vector &prev,
+		    const vector &center,
+		    const vector &next,
+		    double angle,
+		    double length) {
+			vector a = prev - center;
+			vector b = next - center;
+			// plano de los tres puntos
 			vector normal = (b).cross(a);
 			normal.normalize();
-			//rotar el segmento
+			// rotar el segmento
 			Eigen::AngleAxisf rot(angle, normal);
 			b.normalize();
 			vector position = center + length * rot.toRotationMatrix() * b;
 			return position;
 		}
-	}
+	} // namespace
 
 	pointnormal divide_triangle(
 	    const pointnormal &prev,
@@ -238,6 +245,18 @@ namespace nih {
 		for(int K = 0; K < 3; ++K)
 			result.data_n[K] = normal(K);
 		return result;
+	}
+	int linear_search(
+	    pointnormal query,
+	    const std::vector<std::uint32_t> &indices,
+	    const cloudnormal &cloud_) {
+		for(int K = 0; K < indices.size(); ++K) {
+			const auto &candidate = cloud_[indices[K]];
+			if(candidate.x == query.x and candidate.y == query.y
+			   and candidate.z == query.z)
+				return K;
+		}
+		return -1;
 	}
 } // namespace nih
 
