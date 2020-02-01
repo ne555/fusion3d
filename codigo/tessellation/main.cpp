@@ -61,8 +61,15 @@ load_triangle_mesh2(const char *filename_cloud, const char *file_polygons) {
 }
 void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_, const pcl::Vertices &boundary) {
 	auto bound_points = nih::create<nih::cloudnormal>();
-	for(auto index: boundary.vertices)
+	for(auto index: boundary.vertices){
+		int point = mesh_->getVertexDataCloud()[index].id;
+		if(point not_eq index){
+			std::cerr << "Bad sync\n";
+			exit(1);
+		}
+		//bound_points->push_back( (*cloud_)[point] );
 		bound_points->push_back( (*cloud_)[index] );
+	}
 	std::cerr << "Points: " << cloud_->size() << '\n';
 	std::cerr << "Boundary Points: " << bound_points->size() << '\n';
 
@@ -591,7 +598,7 @@ void tessellate(
 }
 
 std::vector<int>
-connected_component(nih::TMesh mesh_, std::vector<bool> &visited, int seed) {
+connected_component(const nih::Mesh &mesh_, std::vector<bool> &visited, int seed) {
 	std::vector<int> componente;
 	std::queue<int> cola;
 	cola.push(seed);
@@ -603,7 +610,7 @@ connected_component(nih::TMesh mesh_, std::vector<bool> &visited, int seed) {
 		visited[index] = true;
 		componente.push_back(index);
 		//agrega a sus vecinos
-		auto begin = mesh_->getVertexAroundVertexCirculator(nih::Mesh::VertexIndex(index));
+		auto begin = mesh_.getVertexAroundVertexCirculator(nih::Mesh::VertexIndex(index));
 		//auto begin = mesh_->getOutgoingHalfEdgeAroundVertexCirculator(nih::Mesh::VertexIndex(index));
 		auto end = begin;
 		do {
@@ -617,9 +624,9 @@ connected_component(nih::TMesh mesh_, std::vector<bool> &visited, int seed) {
 	return componente;
 }
 
-void biggest_connected_component(nih::TMesh mesh_) {
+void biggest_connected_component(nih::Mesh &mesh_) {
 	//elimina los puntos que no pertenezcan a la superficie más grande
-	std::vector<bool> visited(mesh_->sizeVertices(), false);
+	std::vector<bool> visited(mesh_.sizeVertices(), false);
 	std::vector< std::vector<int> > componentes;
 
 	for(int K=0; K<visited.size(); ++K){
@@ -639,10 +646,24 @@ void biggest_connected_component(nih::TMesh mesh_) {
 	for(int K=0; K<componentes.size(); ++K){
 		if(K==biggest) continue;
 		for(int index : componentes[K])
-			mesh_->deleteVertex(nih::Mesh::VertexIndex(index));
+			mesh_.deleteVertex(nih::Mesh::VertexIndex(index));
 	}
-	mesh_->cleanUp();
+	mesh_.cleanUp();
 }
+
+nih::cloudnormal::Ptr resync(const nih::cloudnormal &cloud_, nih::Mesh &mesh_) {
+	auto &vertex_cloud = mesh_.getVertexDataCloud();
+	auto result_cloud = nih::create<nih::cloudnormal>();
+	result_cloud->reserve(cloud_.size());
+	int id = 0;
+	for(auto &v: vertex_cloud){
+		result_cloud->push_back(cloud_[v.id]);
+		v.id = id++;
+	}
+
+	return result_cloud;
+}
+
 
 int main(int argc, char **argv){
 	if(argc < 2){
