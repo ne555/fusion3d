@@ -41,9 +41,12 @@ load_triangle_mesh2(const char *filename_cloud, const char *file_polygons) {
 
 	std::ifstream input(file_polygons);
 	int faces;
+	input >> faces;
+	mesh->reserveFaces(faces);
 	const int n=3;
 	int vertex[n];
-	while(input>>faces){
+	int n_vertex; //3
+	while(input>>n_vertex){
 		pcl::Vertices triangle;
 		triangle.vertices.resize(3);
 		for(int K=0; K<n; ++K)
