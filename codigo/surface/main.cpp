@@ -90,7 +90,7 @@ void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale);
 
 void visualise(const captura &cloud_, nih::TMesh mesh_){
 	auto polygon_mesh = nih::tmesh_to_polygon(cloud_.cloud_, mesh_);
-	pcl::io::savePolygonFilePLY("result_pmesh.ply", polygon_mesh);
+	pcl::io::savePolygonFilePLY("result_pmesh.ply", polygon_mesh, false);
 	pcl::visualization::PCLVisualizer view("fusion");
 	view.setBackgroundColor(0, 0, 0);
 	view.addPolygonMesh(polygon_mesh, "malla");
