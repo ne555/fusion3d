@@ -59,18 +59,51 @@ load_triangle_mesh2(const char *filename_cloud, const char *file_polygons) {
 
 	return std::make_tuple(nube, mesh);
 }
+void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_, const pcl::Vertices &boundary) {
+	auto bound_points = nih::create<nih::cloudnormal>();
+	for(auto index: boundary.vertices)
+		bound_points->push_back( (*cloud_)[index] );
+	std::cerr << "Points: " << cloud_->size() << '\n';
+	std::cerr << "Boundary Points: " << bound_points->size() << '\n';
+
+	pcl::visualization::PCLVisualizer view("tessellation");
+
+	auto polygon_mesh = nih::tmesh_to_polygon(cloud_, mesh_);
+
+	view.addPolygonMesh(polygon_mesh, "mesh");
+	view.addPointCloud<nih::pointnormal>(bound_points, "boundary");
+	view.setPointCloudRenderingProperties(
+			pcl::visualization::PCL_VISUALIZER_COLOR, .7,.7,0, "boundary");
+	while(!view.wasStopped())
+		view.spinOnce(100);
+	view.close();
+}
+
+void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_, nih::cloudnormal::Ptr patch_) {
+	pcl::visualization::PCLVisualizer view("tessellation");
+
+	auto polygon_mesh = nih::tmesh_to_polygon(cloud_, mesh_);
+
+	view.addPolygonMesh(polygon_mesh, "mesh");
+	view.addPointCloud<nih::pointnormal>(patch_, "patch");
+	view.setPointCloudRenderingProperties(
+			pcl::visualization::PCL_VISUALIZER_COLOR, .7,.7,0, "patch");
+	while(!view.wasStopped())
+		view.spinOnce(100);
+	view.close();
+}
 
 void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_) {
 	std::cerr << "Points: " << cloud_->size() << '\n';
 	pcl::visualization::PCLVisualizer view("tessellation");
 	view.setBackgroundColor(0, 0, 0);
-	view.initCameraParameters();
-	view.setCameraPosition(
-		0, 3, 0, // eye
-		0, -2, 0, // target
-		0, 0, 1 // up
-	);
-	view.setCameraClipDistances(2, 3.2);
+	//view.initCameraParameters();
+	//view.setCameraPosition(
+	//	0, 3, 0, // eye
+	//	0, -2, 0, // target
+	//	0, 0, 1 // up
+	//);
+	//view.setCameraClipDistances(2, 3.2);
 	auto polygon_mesh = nih::tmesh_to_polygon(cloud_, mesh_);
 
 	view.addPolygonMesh(polygon_mesh, "mesh");
