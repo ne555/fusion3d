@@ -9,10 +9,10 @@
 
 #include "fusion_3d.hpp"
 #include "util.hpp"
-#include <pcl/surface/mls.h>
-#include <pcl/search/search.h>
 #include <pcl/PolygonMesh.h>
 #include <pcl/geometry/get_boundary.h>
+#include <pcl/search/search.h>
+#include <pcl/surface/mls.h>
 
 namespace nih {
 	inline cloud::Ptr moving_least_squares(cloud::Ptr nube, double radius);
@@ -25,6 +25,12 @@ namespace nih {
 	inline TMesh
 	create_mesh(CloudPtr cloud_, const std::vector<pcl::Vertices> &polygons);
 	inline std::vector<pcl::Vertices> boundary_points(TMesh mesh_);
+	// elimina los puntos que no pertenezcan a la superficie más grande
+	inline void biggest_connected_component(Mesh &mesh_);
+	// elimina los puntos de la nube que no están en la malla
+	// además VertexIndex == id
+	inline cloudnormal::Ptr resync(const cloudnormal &cloud_, Mesh &mesh_);
+
 	template <class PointT>
 	inline point extract_xyz(const PointT &p);
 	inline vector vector_normal(const pointnormal &p);
@@ -43,15 +49,15 @@ namespace nih {
 	    double angle,
 	    double length);
 
-	//busca el punto que tiene la misma posición (xyz)
+	// busca el punto que tiene la misma posición (xyz)
 	inline int linear_search(
-		pointnormal query,
-		const std::vector<std::uint32_t> &indices,
-		const cloudnormal &cloud_);
+	    pointnormal query,
+	    const std::vector<std::uint32_t> &indices,
+	    const cloudnormal &cloud_);
 
 } // namespace nih
 
-//implementation
+// implementation
 namespace nih {
 	cloud::Ptr moving_least_squares(cloud::Ptr nube, double radius) {
 		int orden = 3;
@@ -141,6 +147,79 @@ namespace nih {
 		}
 
 		return mesh_;
+	}
+
+	cloudnormal::Ptr resync(const cloudnormal &cloud_, Mesh &mesh_) {
+		auto &vertex_cloud = mesh_.getVertexDataCloud();
+		auto result_cloud = create<cloudnormal>();
+		result_cloud->reserve(cloud_.size());
+		int id = 0;
+		for(auto &v : vertex_cloud) {
+			result_cloud->push_back(cloud_[v.id]);
+			v.id = id++;
+		}
+
+		return result_cloud;
+	}
+	namespace {
+		std::vector<int> connected_component(
+		    const Mesh &mesh_, std::vector<bool> &visited, int seed) {
+			std::vector<int> componente;
+			std::queue<int> cola;
+			cola.push(seed);
+			while(not cola.empty()) {
+				int index = cola.front();
+				cola.pop();
+
+				if(visited[index])
+					continue;
+				visited[index] = true;
+				componente.push_back(index);
+				// agrega a sus vecinos
+				auto begin = mesh_.getVertexAroundVertexCirculator(
+				    Mesh::VertexIndex(index));
+				// auto begin =
+				// mesh_->getOutgoingHalfEdgeAroundVertexCirculator(Mesh::VertexIndex(index));
+				auto end = begin;
+				do {
+					if(not begin.isValid())
+						break;
+					int vecino = begin.getTargetIndex().get();
+					if(not visited[vecino])
+						cola.push(vecino);
+				} while(++begin not_eq end);
+			}
+
+			return componente;
+		}
+	} // namespace
+	void biggest_connected_component(Mesh &mesh_) {
+		// elimina los puntos que no pertenezcan a la superficie más grande
+		std::vector<bool> visited(mesh_.sizeVertices(), false);
+		std::vector<std::vector<int> > componentes;
+
+		for(int K = 0; K < visited.size(); ++K) {
+			if(visited[K])
+				continue;
+			componentes.push_back(connected_component(mesh_, visited, K));
+		}
+		// obtener la de mayor tamaño
+		int biggest = std::max_element(
+		                  componentes.begin(),
+		                  componentes.end(),
+		                  [](const auto &a, const auto &b) {
+			                  return a.size() < b.size();
+		                  })
+		              - componentes.begin();
+
+		// eliminar el resto
+		for(int K = 0; K < componentes.size(); ++K) {
+			if(K == biggest)
+				continue;
+			for(int index : componentes[K])
+				mesh_.deleteVertex(Mesh::VertexIndex(index));
+		}
+		mesh_.cleanUp();
 	}
 
 	std::vector<pcl::Vertices> boundary_points(TMesh mesh_) {
