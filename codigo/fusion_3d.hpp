@@ -39,7 +39,7 @@ namespace nih {
 
 	inline point v2p(vector v);
 	inline vector p2v(point p);
-	inline vector p2v(pointnormal p);
+	inline vector p2v(pointnormal p); //only takes xyz
 	// operations element to element
 	inline vector prod(vector a, const vector &b);
 	inline vector div(vector a, const vector &b);

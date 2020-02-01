@@ -16,11 +16,14 @@ namespace nih {
 		cloudnormal::Ptr cloud_;
 		nih::TMesh mesh_;
 		std::vector<pcl::Vertices> &boundary_;
-
 		double length_;
-		pcl::octree::OctreePointCloudSearch<pcl::PointXYZI> octree;
 
 		cloudnormal::Ptr patch_;
+
+		inline static std::tuple<int, double> smallest_angle(
+		    const cloudnormal &cloud_,
+		    const Mesh &mesh_,
+		    const std::vector<std::uint32_t> &border);
 	};
 } // namespace nih
 
@@ -60,6 +63,28 @@ namespace nih {
 
 		boundary_[index] = to_fill[0];
 		return patch_;
+	}
+
+	std::tuple<int, double> advancing_front::smallest_angle(
+	    const cloudnormal &cloud_,
+	    const Mesh &mesh_,
+	    const std::vector<std::uint32_t> &border) {
+		double min_ = 4 * M_PI;
+		int index_min = 0;
+
+		for(int K = 0; K < border.size(); ++K) {
+			int current = border[K];
+			int prev = circ_prev_index(K, border.size());
+			int next = circ_next_index(K, border.size());
+
+			double angle_ = angle(cloud_[next], cloud_[current], cloud_[prev]);
+			if(angle_ < min_) {
+				min_ = angle_;
+				index_min = K;
+			}
+		}
+
+		return std::make_tuple(index_min, min_);
 	}
 } // namespace nih
 
