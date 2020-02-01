@@ -384,20 +384,22 @@ circular_copy(
 	return result;
 }
 
-void tessellate(
+nih::cloudnormal::Ptr
+tessellate(
     nih::cloudnormal::Ptr cloud_,
     nih::TMesh mesh_,
     std::vector<pcl::Vertices> &boundary_,
-    double length // para que no reduzca la longitud de los segmentos
+    double length, // para que no reduzca la longitud de los segmentos
+	int index
 ) {
+
+	auto patch_points = nih::create<nih::cloudnormal>();
 
 	// TODO: lo que requiera ver otros contornos
 	pcl::octree::OctreePointCloudSearch<pcl::PointXYZI> octree(length);
 	auto borders = nih::create<pcl::PointCloud<pcl::PointXYZI> >();
 	octree.setInputCloud(borders);
-	int limit = boundary_.size();
 	for(int K = 0; K < boundary_.size(); ++K) {
-		if(K > 0 and K < boundary_.size()) continue;
 		auto &boundary = boundary_[K].vertices;
 		for(int L = 0; L < boundary.size(); ++L) {
 			auto p = (*cloud_)[boundary[L]];
@@ -415,26 +417,28 @@ void tessellate(
 	//¿cómo definir la orientación?
 	nih::vector normal{0, 1, 0};
 
+	int limit = boundary_.size();
 	for(int K = 0; K < boundary_.size(); ++K) {
+		if(K >= 0 and K < limit and K not_eq index) continue;
 		//if(K==1 or K==2) continue;
 	//for(int K = 0; K < 1; ++K) {
 		// recorrer el contorno
 		// buscar el menor ángulo
 		auto &boundary = boundary_[K].vertices;
 		while(boundary_[K].vertices.size() >= 3) {
-			auto [candidate, angle] =
+			auto [candidate, angle_] =
 			    smallest_angle(cloud_, mesh_, boundary_[K].vertices, normal);
 			int next =
 			    nih::circ_next_index(candidate, boundary_[K].vertices.size());
 			int prev =
 			    nih::circ_prev_index(candidate, boundary_[K].vertices.size());
 			std::cerr << "size: " << boundary_[K].vertices.size() << '\n';
-			std::cerr << candidate << ' ' << nih::rad2deg(angle) << '\n';
-			if(angle >= M_PI) // isla
+			std::cerr << candidate << ' ' << nih::rad2deg(angle_) << '\n';
+			if(angle_ >= M_PI) // isla
 				break;
-			if(angle > nih::deg2rad(75)) { // dividir en 2
+			if(angle_ > nih::deg2rad(75)) { // dividir en 2
 				int divisions;
-				if(angle > nih::deg2rad(135))
+				if(angle_ > nih::deg2rad(135))
 					divisions = 3;
 				else
 					divisions = 2;
@@ -443,7 +447,7 @@ void tessellate(
 				    boundary_[K].vertices[prev],
 				    boundary_[K].vertices[candidate],
 				    boundary_[K].vertices[next],
-				    angle / divisions,
+				    angle_ / divisions,
 				    length,
 				    cloud_);
 				// buscar si está cerca de uno existente
@@ -466,8 +470,59 @@ void tessellate(
 					    boundary_[ind_boundary].vertices,
 					    *cloud_);
 
-					// armar la cara
+					if(ind_boundary == K and 
+							(index == prev or index == candidate or index == next)){
+						//no es unión, armar nuevo
+					pcl::PointXYZI pi;
+					pi.x = new_point.x;
+					pi.y = new_point.y;
+					pi.z = new_point.z;
+					pi.intensity = K;
+					octree.addPointToCloud(pi, borders);
+					// agregar punto
+					int new_index = cloud_->size();
+					mesh_->addVertex(nih::vertex_data{new_index});
+					cloud_->push_back(new_point);
+					patch_points->push_back(new_point);
+
+					// agregar caras
 					if(mesh_
+					       ->addFace(
+					           nih::Mesh::VertexIndex(
+					               boundary_[K].vertices[next]),
+					           nih::Mesh::VertexIndex(new_index),
+					           nih::Mesh::VertexIndex(
+					               boundary_[K].vertices[candidate]))
+					       .get()
+					   == -1){
+						std::cerr << "invalid triangle\n";
+						std::cerr << "nuevo punto\n";
+						return patch_points;
+					}
+					if(divisions == 2) { // close the other triangle too
+						if(mesh_
+						       ->addFace(
+						           nih::Mesh::VertexIndex(new_index),
+						           nih::Mesh::VertexIndex(
+						               boundary_[K].vertices[prev]),
+						           nih::Mesh::VertexIndex(
+						               boundary_[K].vertices[candidate]))
+						       .get()
+						   == -1){
+							std::cerr << "invalid triangle\n";
+							std::cerr << "segunda división\n";
+							return patch_points;
+						}
+						// el nuevo reemplaza al elegido en el borde
+						boundary_[K].vertices[candidate] = new_index;
+					} else {
+						boundary_[K].vertices.insert(
+						    boundary_[K].vertices.begin() + next, new_index);
+					}
+						continue;
+					}
+					// armar la cara
+					else if(mesh_
 					       ->addFace(
 					           nih::Mesh::VertexIndex(
 					               boundary_[K].vertices[next]),
@@ -486,7 +541,16 @@ void tessellate(
 						std::cerr << "\npoints: " << b[next] << ' ' << b[candidate] << '\n';
 						std::cerr << "existente: " << ind_boundary << ' ' << boundary_[ind_boundary].vertices[index] << '\n';
 
-						return;
+
+						auto invalido = nih::create<nih::cloudnormal>();
+						invalido->push_back( (*cloud_)[boundary_[K].vertices[prev]] );
+						invalido->push_back( (*cloud_)[boundary_[K].vertices[candidate]] );
+						invalido->push_back( (*cloud_)[boundary_[K].vertices[next]] );
+						invalido->push_back( (*cloud_)[boundary_[ind_boundary].vertices[index]] );
+						invalido->push_back(new_point);
+					visualise(cloud_, mesh_, invalido);
+
+						return patch_points;
 					}
 
 					// actualiza los contornos
@@ -537,6 +601,7 @@ void tessellate(
 					int new_index = cloud_->size();
 					mesh_->addVertex(nih::vertex_data{new_index});
 					cloud_->push_back(new_point);
+					patch_points->push_back(new_point);
 
 					// agregar caras
 					if(mesh_
@@ -550,7 +615,7 @@ void tessellate(
 					   == -1){
 						std::cerr << "invalid triangle\n";
 						std::cerr << "nuevo punto\n";
-						return;
+						return patch_points;
 					}
 					if(divisions == 2) { // close the other triangle too
 						if(mesh_
@@ -564,7 +629,7 @@ void tessellate(
 						   == -1){
 							std::cerr << "invalid triangle\n";
 							std::cerr << "segunda división\n";
-							return;
+							return patch_points;
 						}
 						// el nuevo reemplaza al elegido en el borde
 						boundary_[K].vertices[candidate] = new_index;
@@ -585,7 +650,27 @@ void tessellate(
 				   == -1){
 					std::cerr << "invalid triangle\n";
 					std::cerr << "cerrando\n";
-					return;
+
+					int p = boundary_[K].vertices[prev];
+					int c = boundary_[K].vertices[candidate];
+					int n = boundary_[K].vertices[next];
+
+					nih::vector asdf;
+					double angle_ =
+						angle((*cloud_)[p], (*cloud_)[c], (*cloud_)[n], asdf);
+					std::cout << "angle: " << nih::rad2deg(angle_) <<'\n';
+					angle_ =
+						angle((*cloud_)[n], (*cloud_)[c], (*cloud_)[p], asdf);
+					std::cout << "angle: " << nih::rad2deg(angle_) <<'\n';
+					std::cout << "point: " << (*cloud_)[c] << '\n';
+
+					pcl::Vertices invalido;
+					invalido.vertices.resize(3);
+					invalido.vertices[0] = boundary_[K].vertices[next];
+					invalido.vertices[1] = boundary_[K].vertices[prev];
+					invalido.vertices[2] = boundary_[K].vertices[candidate];
+					visualise(cloud_, mesh_, invalido);
+					return patch_points;
 				}
 				// eliminar el punto
 				boundary_[K].vertices.erase(
