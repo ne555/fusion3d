@@ -36,6 +36,12 @@ namespace nih {
 	    const vector &b,
 	    const vector &c,
 	    const vector &normal_suggested);
+	inline pointnormal divide_triangle(
+	    const pointnormal &prev,
+	    const pointnormal &center,
+	    const pointnormal &next,
+	    double angle,
+	    double length);
 } // namespace nih
 
 //implementation
@@ -181,6 +187,57 @@ namespace nih {
 			sin_ = -sin_;
 		double angle = atan2(-sin_, -cos_) + M_PI; // range[0; 2pi]
 		return angle;
+	}
+
+	namespace{
+		vector interpolate(const vector &p, const vector &c, const vector &n){
+			return (2*c + p + n)/4;
+		}
+		vector divide_triangle(
+			const vector &prev,
+			const vector &center,
+			const vector &next,
+			double angle,
+			double length) {
+			vector a = prev-center;
+			vector b = next-center;
+			//plano de los tres puntos
+			vector normal = (b).cross(a);
+			normal.normalize();
+			//rotar el segmento
+			Eigen::AngleAxisf rot(angle, normal);
+			b.normalize();
+			vector position = center + length * rot.toRotationMatrix() * b;
+			return position;
+		}
+	}
+
+	pointnormal divide_triangle(
+	    const pointnormal &prev,
+	    const pointnormal &center,
+	    const pointnormal &next,
+	    double angle,
+	    double length) {
+		auto position =
+		    divide_triangle(p2v(prev), p2v(center), p2v(next), angle, length);
+		// proyectar el resultado en el plano definido por
+		// normal = 2*C_n + P_n + N_n
+		// punto = (2*C + P + N)/4
+		vector normal = interpolate(
+		    vector_normal(prev), vector_normal(center), vector_normal(next));
+		normal.normalize();
+		vector punto_en_el_plano =
+		    interpolate(p2v(prev), p2v(center), p2v(next));
+
+		vector q = position - punto_en_el_plano;
+		vector proyeccion = q - q.dot(normal) * normal + punto_en_el_plano;
+
+		pointnormal result;
+		for(int K = 0; K < 3; ++K)
+			result.data[K] = proyeccion(K);
+		for(int K = 0; K < 3; ++K)
+			result.data_n[K] = normal(K);
+		return result;
 	}
 } // namespace nih
 
