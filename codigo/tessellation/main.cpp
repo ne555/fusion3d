@@ -587,6 +587,61 @@ void tessellate(
 			//visualise(cloud_, mesh_);
 		}
 	}
+	return patch_points;
+}
+
+std::vector<int>
+connected_component(nih::TMesh mesh_, std::vector<bool> &visited, int seed) {
+	std::vector<int> componente;
+	std::queue<int> cola;
+	cola.push(seed);
+	while(not cola.empty()){
+		int index = cola.front();
+		cola.pop();
+
+		if(visited[index]) continue;
+		visited[index] = true;
+		componente.push_back(index);
+		//agrega a sus vecinos
+		auto begin = mesh_->getVertexAroundVertexCirculator(nih::Mesh::VertexIndex(index));
+		//auto begin = mesh_->getOutgoingHalfEdgeAroundVertexCirculator(nih::Mesh::VertexIndex(index));
+		auto end = begin;
+		do {
+			if(not begin.isValid()) break;
+			int vecino = begin.getTargetIndex().get();
+			if(not visited[vecino])
+				cola.push(vecino);
+		} while(++begin not_eq end);
+	}
+
+	return componente;
+}
+
+void biggest_connected_component(nih::TMesh mesh_) {
+	//elimina los puntos que no pertenezcan a la superficie más grande
+	std::vector<bool> visited(mesh_->sizeVertices(), false);
+	std::vector< std::vector<int> > componentes;
+
+	for(int K=0; K<visited.size(); ++K){
+		if(visited[K]) continue;
+		componentes.push_back(connected_component(mesh_, visited, K));
+	}
+	//obtener la de mayor tamaño
+	int biggest = std::max_element(
+		componentes.begin(),
+		componentes.end(),
+		[](const auto &a, const auto &b){
+			return a.size() < b.size();
+		}
+	) - componentes.begin();
+
+	//eliminar el resto
+	for(int K=0; K<componentes.size(); ++K){
+		if(K==biggest) continue;
+		for(int index : componentes[K])
+			mesh_->deleteVertex(nih::Mesh::VertexIndex(index));
+	}
+	mesh_->cleanUp();
 }
 
 int main(int argc, char **argv){

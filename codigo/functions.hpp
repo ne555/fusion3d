@@ -84,7 +84,9 @@ namespace nih {
 			auto begin = mesh_->getVertexAroundFaceCirculator(pcl::geometry::FaceIndex(K));
 			auto end = begin;
 			do{
-				face.vertices.push_back(begin.getTargetIndex().get());
+				int index = begin.getTargetIndex().get();
+				int point = mesh_->getVertexDataCloud()[index].id;
+				face.vertices.push_back(point);
 			}while(++begin not_eq end);
 			result.polygons.push_back(face);
 		}
