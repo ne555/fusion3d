@@ -1,10 +1,12 @@
 #include <iostream>
 #include <utility>
+#include <queue>
 
 #include "fusion_3d.hpp"
 #include "filter.hpp"
 #include "util.hpp"
 #include "functions.hpp"
+#include "tessellation/advancing_front.hpp"
 
 #include <pcl/PolygonMesh.h>
 #include <pcl/io/ply_io.h>
