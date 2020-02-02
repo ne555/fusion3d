@@ -277,7 +277,7 @@ namespace nih {
 
 	namespace {
 		vector interpolate(const vector &p, const vector &c, const vector &n) {
-			return (2 * c + p + n) / 4;
+			return (c + p + n) / 3;
 		}
 		vector divide_triangle(
 		    const vector &prev,
