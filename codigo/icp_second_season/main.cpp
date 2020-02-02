@@ -6,11 +6,12 @@
 #include "fusion_3d.hpp"
 #include "functions.hpp"
 
-#include "pairwise_alignment_sc.hpp"
-
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_cloud_color_handlers.h>
 #include <pcl/common/colors.h>
+
+#include <pcl/registration/ndt.h>
+#include <pcl/registration/icp.h>
 
 void usage(const char *program) {
 	std::cerr << program << " directory "
@@ -43,7 +44,7 @@ void visualise(const std::vector<cloud_with_transformation> &clouds){
 	}
 	while(!view.wasStopped())
 		view.spinOnce(100);
-	view.close();
+	//view.close();
 }
 
 int main(int argc, char **argv){
@@ -65,7 +66,7 @@ int main(int argc, char **argv){
 	while(input >> filename) {
 		std::cerr << '.';
 		auto first = nih::load_cloud_ply(directory + filename);
-		double resolution = nih::cloud_resolution<nih::point>(first);
+		resolution = nih::cloud_resolution<nih::point>(first);
 
 		cloud_with_transformation c;
 		c.cloud_ = nih::preprocess(nih::moving_least_squares(first, 6 * resolution));
@@ -86,7 +87,57 @@ int main(int argc, char **argv){
 	for(auto &c: clouds)
 		pcl::transformPointCloudWithNormals(*c.cloudnormal_, *c.cloudnormal_, c.transformation_);
 
+	//segunda alineación
+	std::cerr << "Alinear\n";
+	auto result = nih::create<nih::cloudnormal>();
+	pcl::IterativeClosestPointWithNormals<nih::pointnormal, nih::pointnormal> icp;
+	icp.setInputSource(clouds[1].cloudnormal_);
+	icp.setInputTarget(clouds[0].cloudnormal_);
+	icp.setUseReciprocalCorrespondences(true);
+	//icp.setRANSACOutlierRejectionThreshold(10*resolution);
+	icp.setMaxCorrespondenceDistance(5*resolution);
+
+	icp.align(*result);
+	nih::transformation tr;
+	tr = icp.getFinalTransformation();
+	if(icp.hasConverged()){
+		//std::cerr << "Iterations: " << icp.getFinalNumIteration() << '\n';
+		std::cerr << "Fitness: " << icp.getFitnessScore(10*resolution) << '\n';
+		std::cerr << tr.matrix() << '\n';
+
+		Eigen::Matrix3f rotation, scale;
+		tr.computeRotationScaling(&rotation, &scale);
+		//show_rotation(rotation, out);
+		std::cerr << tr.translation().transpose() << '\n';
+		Eigen::AngleAxisf aa;
+		aa.fromRotationMatrix(rotation);
+		std::cerr << "angle: " << nih::rad2deg(aa.angle()) << '\t';
+		std::cerr << "axis: " << aa.axis().transpose() << '\t';
+	}
+	else
+		std::cerr << "Failed\n";
+	std::cerr << "Fin\n";
+#if 0
+	pcl::NormalDistributionsTransform<nih::pointnormal, nih::pointnormal> ndt;
+	ndt.setInputTarget(clouds[0].cloudnormal_);
+	ndt.setInputSource(clouds[1].cloudnormal_);
+	ndt.setResolution(resolution);
+	ndt.align(*result);
+	nih::transformation tr;
+	tr = ndt.getFinalTransformation();
+	if(ndt.hasConverged()){
+		std::cerr << "Iterations: " << ndt.getFinalNumIteration() << '\n';
+		std::cerr << "Fitness: " << ndt.getFitnessScore(10*resolution) << '\n';
+		std::cerr << tr.matrix() << '\n';
+	}
+	else
+		std::cerr << "Failed\n";
+	std::cerr << "Fin\n";
+#endif
+	
 	//visualizar
+	visualise(clouds);
+	clouds[1].cloudnormal_ = result;
 	visualise(clouds);
 
 
