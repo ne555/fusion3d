@@ -15,8 +15,8 @@
 #include <cstdlib>
 
 namespace nih {
-	// no acepta islas
 	class advancing_front {
+	// no acepta islas
 	public:
 		inline advancing_front(
 		    cloudnormal::Ptr cloud_,
@@ -34,7 +34,6 @@ namespace nih {
 
 		inline static std::tuple<int, double> smallest_angle(
 		    const cloudnormal &cloud_,
-		    const Mesh &mesh_,
 		    const std::vector<std::uint32_t> &border);
 
 		inline void join(
@@ -58,7 +57,6 @@ namespace nih {
 
 		inline void debug_invalid_triangle(
 		    std::string message,
-		    double angle,
 		    int prev,
 		    int candidate,
 		    int next) const;
@@ -83,6 +81,20 @@ namespace nih {
 		std::vector<pcl::Vertices> to_fill;
 		to_fill.push_back(boundary_[index]);
 
+		//length es el promedio de los lados del contorno
+		std::cerr << "global length: " << this->length_ << '\n';
+		{
+			double total = 0;
+			auto &border = boundary_[index].vertices;
+			for(int K=0; K<border.size(); ++K){
+				int current = border[K];
+				int next = border[circ_next_index(K, border.size())];
+				total += distance((*cloud_)[current], (*cloud_)[next]);
+			}
+			this->length_ = total / border.size();
+			std::cerr << "local length: " << this->length_ << '\n';
+		}
+
 		// para detectar puntos cercanos a los nuevos
 		pcl::octree::OctreePointCloudSearch<pointnormal> octree(length_);
 		octree.setInputCloud(patch_);
@@ -95,12 +107,14 @@ namespace nih {
 			while(to_fill[K].vertices.size() >= 3) {
 				auto &border = to_fill[K].vertices;
 				auto [candidate, angle_] =
-				    smallest_angle(*cloud_, *mesh_, border);
+				    smallest_angle(*cloud_, border);
 				int next = circ_next_index(candidate, border.size());
 				int prev = circ_prev_index(candidate, border.size());
 
-				if(angle_ >= M_PI) // isla, no debería ocurrir
+				if(angle_ >= M_PI){ // isla, no debería ocurrir
+					std::cerr << '#';
 					break;
+				}
 				if(angle_ > deg2rad(75)) {
 					// punto hacia adentro para generar un triángulo
 					int divisions;
@@ -125,21 +139,34 @@ namespace nih {
 								(*patch_)[indices[0]],
 								border,
 								*cloud_);
-						if(index == prev or index == candidate or index == next)
+						if(index == -1){
+							//cerca de un punto que ya no forma parte del borde
+							//corto
+							std::cerr << '*';
+							break;
+						}
+						if(index == prev or index == candidate or index == next){
+							std::cerr << 'm';
 							//me alejé muy poco, cierro triángulo
 							join(prev, candidate, next, border);
-						else
+						}
+						else{
 							//unión de fronteras (crea un borde)
+							std::cerr << 'u';
 							to_fill.push_back(split_border(index, candidate, next, border));
+						}
 					}
 					else{
 						//usar el nuevo punto
+						std::cerr << '.';
 						add_new(new_point, candidate, next, border);
 						octree.addPointToCloud(new_point, patch_);
 					}
 
-				} else // unir los extremos
+				} else{ // unir los extremos
+					std::cerr << '|';
 					join(prev, candidate, next, border);
+				}
 			}
 
 		boundary_[index] = to_fill[0];
@@ -148,15 +175,14 @@ namespace nih {
 
 	std::tuple<int, double> advancing_front::smallest_angle(
 	    const cloudnormal &cloud_,
-	    const Mesh &mesh_,
 	    const std::vector<std::uint32_t> &border) {
 		double min_ = 4 * M_PI;
 		int index_min = 0;
 
 		for(int K = 0; K < border.size(); ++K) {
 			int current = border[K];
-			int prev = circ_prev_index(K, border.size());
-			int next = circ_next_index(K, border.size());
+			int prev = border[circ_prev_index(K, border.size())];
+			int next = border[circ_next_index(K, border.size())];
 
 			double angle_ = angle(cloud_[next], cloud_[current], cloud_[prev]);
 			if(angle_ < min_) {
@@ -170,11 +196,15 @@ namespace nih {
 
 	void advancing_front::debug_invalid_triangle(
 	    std::string message,
-	    double angle,
 	    int prev,
 	    int candidate,
 	    int next) const {
-		std::cerr << message << "bad triangle: " << angle << '\n';
+		double angle_ = angle(
+			        (*cloud_)[prev],
+			        (*cloud_)[candidate],
+			        (*cloud_)[next]);
+		std::cerr << message << " bad triangle: ";
+		std::cerr << prev << ' ' << candidate << ' ' << next << ' ' << rad2deg(angle_) << '\n';
 
 		pcl::visualization::PCLVisualizer view(message);
 		auto polygon_mesh = tmesh_to_polygon(cloud_, mesh_);
@@ -186,7 +216,12 @@ namespace nih {
 		view.addPolygonMesh(polygon_mesh, "mesh");
 		view.addPointCloud<pointnormal>(issue, "issue");
 		view.setPointCloudRenderingProperties(
-		    pcl::visualization::PCL_VISUALIZER_COLOR, .7, .7, 0, "patch");
+			pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "issue");
+		view.setPointCloudRenderingProperties(
+		    pcl::visualization::PCL_VISUALIZER_COLOR, .7, .7, 0, "issue");
+		view.addPointCloud<pointnormal>(patch_, "patch_");
+		view.setPointCloudRenderingProperties(
+		    pcl::visualization::PCL_VISUALIZER_COLOR, .7, 0, 0, "patch_");
 		while(!view.wasStopped())
 			view.spinOnce(100);
 		view.close();
@@ -200,10 +235,6 @@ namespace nih {
 		if(not new_face.isValid()) {
 			debug_invalid_triangle(
 			    "cerrando",
-			    angle(
-			        (*cloud_)[border[prev]],
-			        (*cloud_)[border[candidate]],
-			        (*cloud_)[border[next]]),
 			    border[prev],
 			    border[candidate],
 			    border[next]);
@@ -223,6 +254,12 @@ namespace nih {
 		    Mesh::VertexIndex(border[next]));
 		if(not new_face.isValid()) {
 			std::cerr << "invalid: split\n";
+			debug_invalid_triangle(
+			    "split",
+			    border[index],
+			    border[candidate],
+			    border[next]);
+
 			exit(1);
 		}
 		//actualizar contornos
