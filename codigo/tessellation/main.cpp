@@ -217,67 +217,8 @@ void subdivide_segments(
 	mesh_->cleanUp();
 }
 
-double angle(nih::vector a, nih::vector b, nih::vector c, nih::vector normal_suggested) {
-	nih::vector ab = a-b;
-	nih::vector cb = c-b;
-	ab.normalize();
-	cb.normalize();
-	double cos_ = ab.dot(cb);
-	nih::vector normal = (ab).cross(cb);
-	double sin_ = normal.norm();
-	if (normal.dot(normal_suggested) < 0)
-		sin_ = -sin_;
-	double angle = atan2(-sin_, -cos_)+M_PI; //range[0; 2pi]
-	return angle;
-}
-
-double angle(
-    nih::pointnormal a,
-    nih::pointnormal b,
-    nih::pointnormal c,
-    nih::vector normal) {
-	//return angle(nih::p2v(a), nih::p2v(b), nih::p2v(c), normal);
-	return angle(nih::p2v(a), nih::p2v(b), nih::p2v(c), nih::vector_normal(b));
-}
-double angle(nih::point a, nih::point b, nih::point c, nih::vector normal) {
-	return angle(nih::p2v(a), nih::p2v(b), nih::p2v(c), normal);
-}
-
-std::tuple<int, double> smallest_angle(
-    nih::cloudnormal::Ptr cloud_,
-    nih::TMesh mesh_,
-    const std::vector<std::uint32_t> &boundary_,
-	nih::vector normal) {
-	double min_ = 4 * M_PI;
-	int index_min = 0;
-	for(int K = 0; K < boundary_.size(); ++K) {
-		int current = boundary_[K];
-		int next = boundary_[(K + 1) % boundary_.size()];
-		int prev = boundary_
-		               [(K + boundary_.size() - 1)
-		                % boundary_.size()];
-
-		double angle_ =
-		    //angle((*cloud_)[prev], (*cloud_)[current], (*cloud_)[next], normal);
-		    angle((*cloud_)[next], (*cloud_)[current], (*cloud_)[prev], normal);
-		if(angle_ < min_){
-			min_ = angle_;
-			index_min = K;
-		}
-	}
-
-	return std::make_tuple(index_min, min_);
-}
 
 
-nih::vector interpolate(
-    nih::vector p,
-    nih::vector c,
-    nih::vector n){
-
-	nih::vector result = 2*c + p + n;
-	return result/4;
-}
 
 int main(int argc, char **argv){
 	if(argc < 2){
