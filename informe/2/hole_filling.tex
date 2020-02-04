@@ -1,0 +1,63 @@
+\chapter{Módulo de rellenado de huecos}
+	%Poisson
+	La clase pcl::Poisson provee algoritmos de reconstrucción basados en %cite Poisson surface reconstruction
+	siendo el principal parámetro la profundidad del octree utilizado,
+	impactando directamente en la resolución de la malla resultante.
+
+
+	Se transforma el problema en una ecuación de Poisson
+	\[\Delta\chi \equiv \nabla \cdot\nabla\chi = \nabla \vec{n}\]
+
+	Se realiza una discretización del dominio mediante un octree, ya que sólo
+	interesa la solución de la función en la proximidad de la superficie a
+	reconstruir.
+	Luego se definen funciones de soporte local que aproximen una gaussiana.
+
+	Una vez resuelto el problema en el dominio, se extrae la isosuperficie mediante una variante de marching cubes.
+
+	Como resultado se tendrá una malla triangular que no presenta huecos.
+
+
+	%mi método
+	%ver paper
+	advancing front
+	Definir isla
+	Eliminar islas
+
+	Dado un boundary a rellenar
+		Buscar los segmentos que generen el menor ángulo
+		caso \alpha < 75
+			unir los extremos
+		\alpha < 135
+			agregar un punto en la bisectriz
+		\alpha < pi
+			agregar un punto en un tercio del ángulo
+		\alpha >= pi
+			no debería ocurrir
+
+		Verificar que el nuevo punto no caiga muy cerca de otro ya existente
+		En ese caso usar el existente
+			Dividir el boundary en dos, procesar cada sección de forma independiente.
+
+		De esta forma se tiene un frente que avanza desde el contorno hacia adentro, terminando por encontrarse con un frente opuesto y cerrando el hueco.
+
+
+	Ubicación del nuevo punto
+		Una vez determinado los tres puntos que definen el menor ángulo: 
+			\theta = \widehat{PCN}
+
+		se define el plano \alpha mediante los tres puntos.
+		se crea un nuevo punto Q sobre \alpha, ubicado en la bisectriz del ángulo, a una distancia step de C
+		se define el plano \beta como aquel cuya normal es el promedio de las normales de los tres puntos y pasa por el promedio de los tres puntos
+		\[
+		O = \frac{P+C+N}{3}
+		n = \frac{P_n + C_n + N_n} {|P_n + C_n + N_n|}
+		\]
+
+		se proyecta Q en \beta
+
+		`step' es constante en todo el proceso, siendo el promedio de las longitudes de los segmentos que forman el contorno del hueco
+
+
+		Con este método se pueden rellenar agujeros pequeños, obteniéndose una malla bastante regular.
+		Sin embargo, debido a la localidad con la que se generan nuevos puntos, el frente puede diverger o pretender unirse a puntos que no forman parte del contorno del hueco, perdiendo la propiedad de manifold
