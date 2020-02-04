@@ -1,0 +1,27 @@
+\chapter{Módulo de fusión}
+	Al agregar una vista se obtendrá nueva información del objeto en aquellos
+	puntos que no eran antes visibles.
+	Además, en las zonas solapadas confirmará o refutará la información ya presente.
+
+	El módulo de fusión se encargará de combinar esta información para obtener
+	finalmente una malla que represente la porción observada del objeto.
+
+	Cada punto de una vista tendrá asociado un valor de confianza que indica la
+	probabilidad de que el punto no sea un outlier.
+	Este valor se inicializa según el ángulo de su normal respecto a la línea
+	de la cámara y su distancia al centro de la captura.
+
+	Cuando se agrega un nuevo punto, se busca el más cercano en la nube global
+	Si la distancia supera un umbral, se considera que es un nuevo punto. Caso
+	contrario, se ajustan la posición y normal del punto en la nube global
+	según los niveles de confianza de ambos.  Además, se contará desde cuántas
+	vistas es observado cada punto.
+
+
+	Finalmente se descartarán aquellos puntos que hayan sido observados desde sólo una vista y tengan bajo nivel de confianza.
+
+	%diagramas de clase
+
+	%informes de prueba
+
+	%casos de uso/funcionalidades resueltas
