@@ -1,6 +1,18 @@
 #pragma once
 #ifndef PAIRWISE_ALIGNMENT_SC_HPP
 #define PAIRWISE_ALIGNMENT_SC_HPP
+#include <pcl/registration/ia_ransac.h>
+#include <pcl/registration/icp.h>
+#include <pcl/registration/icp_nl.h>
+#include <pcl/registration/ndt.h>
+#include <pcl/registration/correspondence_estimation.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/features/multiscale_feature_persistence.h>
+
+#include <pcl/features/fpfh.h>
+#include <pcl/features/normal_3d.h>
+
+#include <pcl/keypoints/iss_3d.h>
 
 namespace nih {
 	class pairwise_alignment {
@@ -9,7 +21,6 @@ namespace nih {
 		cloud::Ptr result;
 		normal::Ptr source_normal, target_normal;
 		transformation current, previous, gt_transformation;
-		camera ground_truth, aligned, initial;
 
 		inline cloud::Ptr
 		iss_keypoints(cloud::Ptr input, double resolution) const;
@@ -22,13 +33,10 @@ namespace nih {
 
 	public:
 		inline pcl::PointCloud<pcl::Normal>::Ptr
-		compute_normals(cloud::Ptr input, bool camera = false) const;
-		inline pairwise_alignment(transformation initial_cam);
-		inline void set_ground_truth(transformation);
+		compute_normals(cloud::Ptr input) const;
 		inline void set_source_cloud(cloud::Ptr);
 		inline cloud::Ptr align();
 		inline void next_iteration();
-		inline void error_report() const;
 
 		inline void visualise() const;
 	};
@@ -36,18 +44,6 @@ namespace nih {
 
 // implementation
 namespace nih {
-	pairwise_alignment::pairwise_alignment(transformation initial_cam) {
-		initial = transform(initial, initial_cam);
-		initial.target = {0, 0, -1};
-		initial.up = {0, 1, 0};
-	}
-
-	void pairwise_alignment::set_ground_truth(transformation gt) {
-		ground_truth = transform(initial, gt);
-		gt_transformation = gt;
-		// current = gt;
-	}
-
 	void pairwise_alignment::set_source_cloud(cloud::Ptr cloud) {
 		source = cloud;
 		source_normal = compute_normals(source);
@@ -80,7 +76,6 @@ namespace nih {
 		point bottom_left_back, upper_right_front;
 		pcl::getMinMax3D(*input, bottom_left_back, upper_right_front);
 
-		using p2v;
 		vector diff = p2v(upper_right_front) - p2v(bottom_left_back);
 		double model_resolution = diff[0] / sqrt(input->size());
 
@@ -103,7 +98,7 @@ namespace nih {
 		    pcl::Normal,
 		    pcl::FPFHSignature33> >();
 		fpfh->setInputCloud(input);
-		fpfh->setInputNormals(this->compute_normals(input, false));
+		fpfh->setInputNormals(this->compute_normals(input));
 		fpfh->setSearchMethod(
 		    boost::make_shared<pcl::search::KdTree<pcl::PointXYZ> >());
 
@@ -156,17 +151,13 @@ namespace nih {
 	}
 
 	pcl::PointCloud<pcl::Normal>::Ptr
-	pairwise_alignment::compute_normals(cloud::Ptr input, bool camera) const {
+	pairwise_alignment::compute_normals(cloud::Ptr input) const {
 		// compute normals
 		auto normals = boost::make_shared<pcl::PointCloud<pcl::Normal> >();
 		// double separation = 0.0025163032114505768; // compute this
 
 		pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
-		if(camera)
-			ne.setViewPoint(
-			    ground_truth.eye[0], ground_truth.eye[1], ground_truth.eye[2]);
-		else
-			ne.setViewPoint(0, 0, 1);
+		ne.setViewPoint(0, 0, 1);
 
 		auto kdtree = boost::make_shared<pcl::search::KdTree<pcl::PointXYZ> >();
 		ne.setSearchMethod(kdtree);
@@ -247,7 +238,6 @@ namespace nih {
 		// is done in 0 position transform the whole cloud
 		pcl::transformPointCloud(
 		    *this->source, *result, previous * sc_ia_transf * icp_transf);
-		aligned = transform(initial, previous * sc_ia_transf * icp_transf);
 		current = previous * sc_ia_transf * icp_transf;
 #endif
 
@@ -262,90 +252,6 @@ namespace nih {
 		// aligned = ground_truth;
 	}
 
-	void pairwise_alignment::error_report() const {
-		camera aux = transform(initial, previous);
-		double eye = (ground_truth.eye - aligned.eye).norm()
-		             / (ground_truth.eye - aux.eye).norm(),
-		       target = ground_truth.target.dot(aligned.target)
-		                / (ground_truth.target.norm() * aligned.target.norm()),
-		       up = ground_truth.up.dot(aligned.up)
-		            / (ground_truth.up.norm() * aligned.up.norm());
-		target = acos(target) * 180 / M_PI;
-		up = acos(up) * 180 / M_PI;
-
-		std::cerr << std::scientific << eye;             // distance
-		std::cerr << ' ' << target << ' ' << up << '\n'; // angles (in degrees)
-	}
-
-	void pairwise_alignment::visualise() const {
-		auto view =
-		    boost::make_shared<pcl::visualization::PCLVisualizer>("fpfh test");
-		int v1;
-		int v2;
-
-		view->createViewPort(0, 0.0, 0.5, 1.0, v1);
-		view->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
-		view->setBackgroundColor(0, 0, 0, v1);
-		view->setBackgroundColor(1, 1, 1, v2);
-
-		auto source = boost::make_shared<cloud>();
-		auto target = boost::make_shared<cloud>();
-		pcl::transformPointCloud(*this->source, *source, previous);
-		pcl::transformPointCloud(*this->target, *target, previous);
-
-		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
-		    sources_cloud_color(source, 255, 0, 0);
-		view->addPointCloud(
-		    source, sources_cloud_color, "sources_cloud_v1", v1);
-		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
-		    target_cloud_color(target, 0, 255, 0);
-		view->addPointCloud(target, target_cloud_color, "target_cloud_v1", v1);
-		view->setPointCloudRenderingProperties(
-		    pcl::visualization::PCL_VISUALIZER_POINT_SIZE,
-		    1,
-		    "sources_cloud_v1");
-
-		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
-		    aligned_cloud_color(this->result, 255, 0, 0);
-		view->addPointCloud(
-		    this->result, aligned_cloud_color, "aligned_cloud_v2", v2);
-		view->addPointCloud(target, target_cloud_color, "target_cloud_v2", v2);
-		view->setPointCloudRenderingProperties(
-		    pcl::visualization::PCL_VISUALIZER_POINT_SIZE,
-		    1,
-		    "aligned_cloud_v2");
-		view->setPointCloudRenderingProperties(
-		    pcl::visualization::PCL_VISUALIZER_POINT_SIZE,
-		    1,
-		    "target_cloud_v2");
-
-#if 0
-	cloud::Ptr source_iss = compute_keypoints(source);
-	cloud::Ptr target_iss = compute_keypoints(target);
-	pcl::registration::
-	    CorrespondenceEstimation<pcl::FPFHSignature33, pcl::FPFHSignature33>
-	        crude_cor_est;
-
-	auto cru_correspondences = boost::make_shared<pcl::Correspondences>();
-	crude_cor_est.setInputSource(
-	    feature_fpfh(source_iss, source_normal, source));
-	crude_cor_est.setInputTarget(
-	    feature_fpfh(target_iss, target_normal, target));
-	crude_cor_est.determineReciprocalCorrespondences(*cru_correspondences);
-	cout << "crude size is:" << cru_correspondences->size() << endl;
-	view->addCorrespondences<pcl::PointXYZ>(
-	    source_iss,
-	    target_iss,
-	    *cru_correspondences,
-	    "correspondence",
-	    v1); // Add display corresponding point pairs
-#endif
-		while(!view->wasStopped()) {
-			// view->spin();
-			view->spinOnce(100);
-			// boost::this_thread::sleep(boost::posix_time::microseconds(100000));
-		}
-	}
 } // namespace nih
 
 #endif

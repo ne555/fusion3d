@@ -8,6 +8,7 @@
 #include <cmath>
 
 #include "fusion_3d.hpp"
+#include "filter.hpp"
 #include "util.hpp"
 #include <pcl/PolygonMesh.h>
 #include <pcl/geometry/get_boundary.h>

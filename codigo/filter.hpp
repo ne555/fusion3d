@@ -16,7 +16,16 @@ namespace nih {
 	struct vertex_data {
 		int id;
 	};
-	using Mesh = pcl::geometry::TriangleMesh<pcl::geometry::DefaultMeshTraits<vertex_data> >;
+	struct mesh_traits{
+		typedef vertex_data VertexData;
+		typedef pcl::geometry::NoData HalfEdgeData;
+		typedef pcl::geometry::NoData EdgeData;
+		typedef pcl::geometry::NoData FaceData;
+		//typedef boost::true_type IsManifold;
+		typedef boost::false_type IsManifold;
+	};
+	//using Mesh = pcl::geometry::TriangleMesh<pcl::geometry::DefaultMeshTraits<vertex_data> >;
+	using Mesh = pcl::geometry::TriangleMesh<mesh_traits>;
 	using TMesh = Mesh::Ptr;
 
 	class cloud_with_normal {
