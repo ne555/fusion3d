@@ -1,0 +1,114 @@
+\chapter{Módulo de registración}
+	%¿Qué es la registración?
+	Dado un conjunto de nubes de puntos correspondientes a distintas vistas de
+	un objeto, la registración consiste en calcular las transformaciones de
+	rotación y translación que lleven a cada vista a un sistema global de forma
+	que las zonas comunes encajen perfectamente.
+
+	Los métodos de registración seguirán los siguientes pasos:
+	\begin{enumerate}
+		\item Selección de puntos de la entrada (\emph{keypoints}).
+		\item Cálculo de descriptores y determinación de correspondencias.
+		\item Rechazo de correspondencias.
+		\item Alineación.
+	\end{enumerate}
+	Variaciones en estos pasos permiten la implementación de diversos métodos.
+
+		%pseudocódigo
+		%ref{FPFH}
+	Como medida de reducción de ruido y para evitar considerar puntos outliers
+	durante la alineación, se realizó un preproceso de las nubes de entrada.
+	%ver que suavice y que se llame así
+	Primeramente se ajustaron los puntos a una superficie estimada mediante el
+	método de mínimos cuadrados móviles y luego se descartaron puntos de poca
+	confianza, como ser aquellos cerca de los bordes o cuyas normales sean
+	ortogonales a la cámara.
+
+	\section{Keypoints}
+		ISS:
+		%descripción
+		Por cada punto $p$ de la nube se calcula la matriz de covarianza con
+		todos los puntos que caen dentro de una esfera de radio $r$ centrada en
+		$p$.
+		Un punto es detectado como keypoint si los eigenvalores de esta matriz
+		de covarianza son suficientemente disímiles y además presenta la mayor disimiluted entre sus vecinos.
+
+		La clase pcl::ISSKeypoint3D permite identificar estos keypoints, permitiendo definir el radio de la esfera y el nivel de disimilitud.
+		%ver bien el problema
+		Sin embargo, no pudieron encontrarse los parámetros adecuados.
+		Se obtuvieron muy pocos keypoints, imposibilitando la detección de outliers,
+		y además estos no resultaban representativos ya que sus correspondientes en la otra nube se encontraban demasiado alejados.
+
+		Multiscale persistence:
+		%descripción
+		Por cada punto de la nube se calcula su descriptor para distintos tamaños de vecindad (escala).
+		A partir de todos los descriptores en todas las escalas se estima una distribución gaussiana que los aproxime.
+		Los keypoints quedan definidos como aquellos puntos cuyos descriptores se encuentran alejados de la media.
+
+		Se utilizó Fast Point Feature Histograms (FPFH) como descriptor debido a su bajo costo computacional.
+
+		all:
+		Se realiza un submuestreo de los puntos de la nube simplemente para
+		reducir el costo computacional.
+		Nuevamente, y por las mismas razones, el descriptor elegido fue FPFH.
+		El algoritmo de rechazo de correspondencias se encargará de eliminar outliers y asegurar la convergencia.
+
+	\section{Alineación}
+	En el caso de los keypoints de multiscale persistence se utilizó el
+	algoritmo de sample consensus initial alignment (SAC-IA) para realizar la
+	primera alineación.
+
+	Este algoritmo selecciona de forma aleatoria keypoints de la nube, busca
+	puntos cercanos en la otra nube, seleccionando nuevamente de forma
+	aleatoria, y calcula la transformación que los alinee, obteniéndose una
+	medida del error de la transformación.
+
+	Este proceso se repite varias veces, quedándose con la transformación que
+	produjo el menor error de alineación.
+
+	Mediante este método, se obtuvieron buenos resultados en la mayoría de las
+	capturas de `happy' %enf
+	donde los ángulos eran cercanos a 25. %grados 
+	Sin embargo, algunas alineaciones presentaban problemas de deslizamiento.
+	En el caso de `bunny', cuyos ángulos eran cercanos a 45, %grados
+	los resultados no fueron satisfactorios, presentándose confusión en las
+	correspondencias del cuerpo e ignorando completamente las orejas.
+
+
+	%El que tengo ahora
+	Se utilizan todos los puntos de la nube.
+
+	En cada punto se calcula un descriptor FPFH que se corresponderá con el más
+	cercano utilizando una distancia de chi cuadrado.
+
+	Luego se procede al rechazo de correspondencias erróneas.
+	Por cada punto se calcula el marco de referencia provisto por el algoritmo de ISS. %citar
+	Este marco de referencia nos permite calcular la transformación de
+	alineación por cada correspondencia.
+	Entonces, utilizando las suposiciones de ubicación de la cámara en la
+	obtención de las capturas, se descartan aquellas correspondencias que
+	requieren un movimiento en $y$ excesivo o una rotación por un eje no
+	vertical. 
+
+	Cada correspondencia entonces define un ángulo de giro $\theta$ sobre el
+	eje $y$ y una translación en el plano $xz$.
+	Se observará entonces una agrupación de los parámetros de estas
+	transformaciones, mediante el algoritmo de k-means se buscará el centroide
+	del clúster más grande.
+
+	Las pruebas sobre `happy' y `bunny' dieron una distancia de aproximadamente
+	5 %grados
+	comparados al \emph{ground truth}.
+
+
+	\section{Refinamiento}
+	Una vez obtenida la alineación inicial, se procedió a realizar una segunda
+	alineación mediante ICP.
+	Se consideraron sólo las áreas solapadas y se restringió el
+	espacio de búsqueda de las correspondencias.
+
+	Luego, para reducir el error propagado por cada alineación, se propuso una
+	corrección de bucle.
+	Se ajustó la última captura para que correspondiese con la primera, y
+	esta transformación se agregó a las otras alineaciones con un peso
+	proporcional a su posición en el bucle.
