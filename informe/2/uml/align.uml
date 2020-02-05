@@ -1,6 +1,8 @@
 @startuml
 	skinparam monochrome true
 	skinparam shadowing false
+	'skinparam defaultFontName Tex Gyre Pagella
+	'skinparam dpi 300
 	hide circle
 	hide empty members
 
