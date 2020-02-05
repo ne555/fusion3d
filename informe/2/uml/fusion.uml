@@ -7,12 +7,16 @@
 	class cloud{}
 	class transformation{}
 
-	class fusion{}
+	class fusion{
+		merge()
+		discard()
+		triangulate()
+	}
 	class mesh{}
 	class polygon{}
 
-	cloud - transformation
-	fusion o- cloud
+	cloud -- transformation
+	cloud o- fusion
 	fusion - polygon
 	mesh *-- polygon
 	mesh *-- cloud

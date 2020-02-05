@@ -4,10 +4,14 @@
 	hide circle
 	hide empty members
 
-	class hole_filling{}
+	class hole_filling{
+		fill()
+		split()
+		join()
+	}
 	class mesh{}
 	class boundary{}
 
-	boundary -o mesh
-	mesh - hole_filling
+	hole_filling - mesh
+	mesh o-- boundary
 @enduml

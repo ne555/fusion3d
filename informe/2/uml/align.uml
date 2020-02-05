@@ -13,6 +13,9 @@
 	}
 
 	class align{
+		compute_correspondences()
+		filter_correspondences()
+		compute_transformation()
 	}
 
 	class transformation{
@@ -21,6 +24,9 @@
 	class anchor{
 		feature
 		reference_frame
+
+		compute_transformation()
+		distance()
 	}
 
 	cloud *-- point
