@@ -1,0 +1,32 @@
+@startuml
+	skinparam monochrome true
+	skinparam shadowing false
+	hide circle
+	hide empty members
+
+	class point{
+		position
+		normal
+	}
+
+	class cloud{
+	}
+
+	class align{
+	}
+
+	class transformation{
+	}
+
+	class anchor{
+		feature
+		reference_frame
+	}
+
+	cloud *-- point
+	align - transformation
+	align - anchor
+	anchor - anchor
+	anchor - cloud
+
+@enduml
