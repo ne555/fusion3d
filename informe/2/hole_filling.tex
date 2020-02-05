@@ -26,13 +26,13 @@
 
 	Dado un boundary a rellenar
 		Buscar los segmentos que generen el menor ángulo
-		caso \alpha < 75
+		caso $\alpha < 75$
 			unir los extremos
-		\alpha < 135
+		$\alpha < 1354$
 			agregar un punto en la bisectriz
-		\alpha < pi
+		$\alpha < \pi$
 			agregar un punto en un tercio del ángulo
-		\alpha >= pi
+		$\alpha \geq \pi$
 			no debería ocurrir
 
 		Verificar que el nuevo punto no caiga muy cerca de otro ya existente
@@ -44,17 +44,17 @@
 
 	Ubicación del nuevo punto
 		Una vez determinado los tres puntos que definen el menor ángulo: 
-			\theta = \widehat{PCN}
+			$\theta = \widehat{PCN}$
 
-		se define el plano \alpha mediante los tres puntos.
-		se crea un nuevo punto Q sobre \alpha, ubicado en la bisectriz del ángulo, a una distancia step de C
-		se define el plano \beta como aquel cuya normal es el promedio de las normales de los tres puntos y pasa por el promedio de los tres puntos
+		se define el plano $\alpha$ mediante los tres puntos.
+		se crea un nuevo punto Q sobre $\alpha$, ubicado en la bisectriz del ángulo, a una distancia step de C
+		se define el plano $\beta$ como aquel cuya normal es el promedio de las normales de los tres puntos y pasa por el promedio de los tres puntos
 		\[
 		O = \frac{P+C+N}{3}
 		n = \frac{P_n + C_n + N_n} {|P_n + C_n + N_n|}
 		\]
 
-		se proyecta Q en \beta
+		se proyecta Q en $\beta$
 
 		`step' es constante en todo el proceso, siendo el promedio de las longitudes de los segmentos que forman el contorno del hueco
 
