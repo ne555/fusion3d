@@ -4,21 +4,22 @@
 	hide circle
 	hide empty members
 
-	class cloud{}
-	class transformation{}
+	class Nube{}
+	class Transformación{}
 
-	class fusion{
-		merge()
-		discard()
-		triangulate()
+	class Fusión{
+		unir()
+		descartar()
+		triangular()
 	}
-	class mesh{}
-	class edge_list{}
 
-	cloud -- transformation
-	cloud o- fusion
-	mesh -- fusion
-	mesh *- edge_list
-	mesh *-- cloud
+	class Malla{}
+	class DCEL{}
+
+	Nube -- Transformación
+	Nube o- Fusión
+	Malla -- Fusión
+	Malla *- DCEL
+	Malla *-- Nube
 
 @enduml

@@ -33,20 +33,20 @@
 		\end{figure}
 
 		\begin{itemize}
-			\item {\bfseries align:} se encarga de obtener la \emph{transformation} que
-				permita alinear dos \emph{cloud} entre sí.  Para esto establece
-				correspondencias entre los \emph{anchor}.
-			\item {\bfseries anchor:} a partir de puntos salientes de \emph{cloud} calcula
-				\emph{feature} (descriptores) que permita asociarlos y un
-				\emph{reference\_frame} para obtener una estimación de la
-				\emph{transformation}.
-			\item {\bfseries cloud:} representa una vista del objeto que se desea alinear.
-				Es una colección de \emph{point} sin organización. Clase
+			\item {\bfseries Registración:} se encarga de obtener la \emph{Transformación} que
+				permita alinear dos \emph{Nubes} entre sí.  Para esto establece
+				correspondencias entre los \emph{Anclaje}.
+			\item {\bfseries Anclaje:} a partir de puntos salientes de \emph{Nube} calcula
+				\emph{descriptores}  que permitan asociarlos y un
+				\emph{marco\_de\_referencia} para obtener una estimación de la
+				\emph{Transformación}.
+			\item {\bfseries Nube:} representa una vista del objeto que se desea alinear.
+				Es una colección de \emph{Puntos} sin organización. Clase
 				provista por PCL.
-			\item {\bfseries point:} contiene las coordenadas $xyz$ obtenidas por el
+			\item {\bfseries Punto:} contiene las coordenadas $xyz$ obtenidas por el
 				dispositivo de captura. El algoritmo estimará las normales.
-			\item {\bfseries transformation:} representa una transformación rígida
-				(rotación y translación) que será aplicada a una \emph{cloud}
+			\item {\bfseries Transformación:} representa una transformación rígida
+				(rotación y translación) que será aplicada a una \emph{Nube}
 				para alinearla.
 		\end{itemize}
 

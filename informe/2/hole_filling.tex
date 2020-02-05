@@ -1,4 +1,21 @@
 \chapter{Módulo de rellenado de huecos}
+
+	\section{Diagrama de clases}
+		En la figura~\ref{fig:filling_class} se presentan las clases principales y sus interacciones.
+		A continuación se presenta una breve descripción de las mismas.
+		\begin{figure}
+			\Imagen{uml/hole_filling.png}
+			\caption{\label{fig:filling_class}Diagrama de clases del módulo de registración}
+		\end{figure}
+
+		\begin{itemize}
+			\item {\bfseries Relleno\_de\_huecos:} La clase se encargará de estimar
+				nuevos puntos en zonas donde se carece de información (huecos)
+				y triangularlos para que la \emph{Malla} sea cerrada.
+			\item {\bfseries Borde:} Es una colección de puntos ordenados
+				que representa un borde de un hueco en la \emph{Malla}.
+		\end{itemize}
+
 	%Poisson
 	La clase pcl::Poisson provee algoritmos de reconstrucción basados en %cite Poisson surface reconstruction
 	siendo el principal parámetro la profundidad del octree utilizado,

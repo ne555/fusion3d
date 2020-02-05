@@ -4,14 +4,14 @@
 	hide circle
 	hide empty members
 
-	class hole_filling{
-		fill()
-		split()
-		join()
+	class Relleno_de_huecos{
+		rellenar()
+		dividir()
+		unir()
 	}
-	class mesh{}
-	class boundary{}
+	class Malla{}
+	class Borde{}
 
-	hole_filling - mesh
-	mesh o-- boundary
+	Relleno_de_huecos - Malla
+	Malla o-- Borde
 @enduml

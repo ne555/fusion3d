@@ -4,35 +4,33 @@
 	hide circle
 	hide empty members
 
-	class point{
-		position
+	class Punto{
+		posición
 		normal
 	}
 
-	class cloud{
+	class Nube{}
+
+	class Registración{
+		establecer_correspondencias()
+		filtrar_correspondencias()
+		calcular_transformación()
 	}
 
-	class align{
-		compute_correspondences()
-		filter_correspondences()
-		compute_transformation()
+	class Transformación{}
+
+	class Anclaje{
+		descriptor
+		marco_de_referencia
+
+		calcular_transformación(Anclaje)
+		distancia(Anclaje)
 	}
 
-	class transformation{
-	}
-
-	class anchor{
-		feature
-		reference_frame
-
-		compute_transformation()
-		distance()
-	}
-
-	cloud *-- point
-	cloud - transformation
-	anchor - align
-	align -- transformation
-	anchor -- cloud
+	Nube *-- Punto
+	Nube - Transformación
+	Anclaje - Registración
+	Registración -- Transformación
+	Anclaje -- Nube
 
 @enduml
