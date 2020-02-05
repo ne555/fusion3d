@@ -55,8 +55,26 @@
 		\end{itemize}
 
 	\section{Keypoints}
-	\lstset{title=Iss keypoints,caption=Determinación de los keypoints mediante ISS,label{alg:iss}}
-	\lstinputlisting{iss.py}
+	%\lstset{title=Iss keypoints,caption=Determinación de los keypoints mediante ISS,label{alg:iss}}
+	%\lstinputlisting{iss.py}
+
+	\begin{algorithm}
+		\begin{algorithmic}[1]
+			\Function{ISS keypoints}{nube}
+				\State keypoints $\gets\emptyset$
+				\ForAll{$p \in \mbox{nube.puntos}$}
+					\State vecinos $\gets$ obtener puntos cercanos(nube, p, $r_1$)
+					\State m $\gets$ matriz de covarianza(vecinos)
+					\State $\lambda$ = eigenvalores(m)
+					\If{$\lambda_1/\lambda_2 > \mbox{umbral}_1$ and $\lambda_2/\lambda_3 > \mbox{umbral}_2$}
+						\State keypoints.insert(p)
+					\EndIf
+				\EndFor
+				\State\Return Non-Max Suppression(keypoints, $r_2$)
+			\EndFunction
+		\end{algorithmic}
+		\caption{\label{alg:iss}Determinación de los keypoints mediante ISS}
+	\end{algorithm}
 
 		ISS:
 		%descripción

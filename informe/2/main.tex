@@ -1,14 +1,12 @@
 \documentclass{pfc}
-\usepackage{listings}
+\usepackage{algorithmicx}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
 
-\renewcommand{\lstlistingname}{Algoritmo}
-\lstset{language=python,
-	breaklines=true,
-	breakatwhitespace=true,
-	tabsize=2,
-	escapechar=\%,
-	captionpos=b,
-}
+\makeatletter
+ \renewcommand{\ALG@name}{Algoritmo}
+\makeatother
+\renewcommand{\algorithmicfunction}{}
 
 \title{Diseño y desarrollo}
 
