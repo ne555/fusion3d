@@ -1,0 +1,21 @@
+@startuml
+	skinparam monochrome true
+	skinparam shadowing false
+	hide circle
+	hide empty members
+
+	class cloud{}
+	class transformation{}
+	class cloud_with_transformation{}
+
+	class fusion{}
+	class mesh{}
+	class polygon{}
+
+	cloud_with_transformation *-- transformation
+	cloud_with_transformation *-- cloud
+	fusion - cloud_with_transformation
+	fusion - mesh
+	mesh *-- polygon
+
+@enduml

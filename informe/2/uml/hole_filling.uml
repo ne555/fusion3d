@@ -1,0 +1,13 @@
+@startuml
+	skinparam monochrome true
+	skinparam shadowing false
+	hide circle
+	hide empty members
+
+	class hole_filling{}
+	class mesh{}
+	class boundary{}
+
+	boundary - mesh
+	mesh - hole_filling
+@enduml
