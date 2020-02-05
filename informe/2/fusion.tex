@@ -23,6 +23,21 @@
 	Finalmente se descartarán aquellos puntos que hayan sido observados desde sólo una vista y tengan bajo nivel de confianza.
 
 	%diagramas de clase
+	\section{Diagrama de clases}
+		En la figura~\ref{fig:fusion_class} se presentan las clases principales y sus interacciones.
+		A continuación se presenta una breve descripción de las mismas.
+		\begin{figure}
+			\Imagen{uml/fusion.png}
+			\caption{\label{fig:fusion_class}Diagrama de clases del módulo de fusión}
+		\end{figure}
+
+		\begin{itemize}
+			\item {\bfseries fusion:} unirá las \emph{cloud} ya alineadas para
+				obtener una superficie global que represente al objeto.
+				Esto supone corregir la posición de los puntos, descartar
+				aquellos considerados como ruido y triangular la superficie.
+			\item {\bfseries mesh:} triangulación de la \emph{cloud} representada por un grafo de conectividades (\emph{edge\_list}).
+		\end{itemize}
 
 	%informes de prueba
 

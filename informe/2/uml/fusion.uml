@@ -13,12 +13,12 @@
 		triangulate()
 	}
 	class mesh{}
-	class polygon{}
+	class edge_list{}
 
 	cloud -- transformation
 	cloud o- fusion
-	fusion - polygon
-	mesh *-- polygon
+	mesh -- fusion
+	mesh *- edge_list
 	mesh *-- cloud
 
 @enduml
