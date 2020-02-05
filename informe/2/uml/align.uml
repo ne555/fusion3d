@@ -25,9 +25,8 @@
 
 	cloud *-- point
 	cloud - transformation
-	align - anchor
-	align - transformation
-	anchor - anchor
-	anchor - cloud
+	anchor - align
+	align -- transformation
+	anchor -- cloud
 
 @enduml
