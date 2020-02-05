@@ -24,6 +24,32 @@
 	confianza, como ser aquellos cerca de los bordes o cuyas normales sean
 	ortogonales a la cámara.
 
+	\section{Diagrama de clases}
+		En la figura~\ref{fig:align_class} se presentan las clases principales y sus interacciones.
+		A continuación se presenta una breve descripción de las mismas.
+		\begin{figure}
+			\Imagen{uml/align.png}
+			\caption{\label{fig:align_class}Diagrama de clases del módulo de registración}
+		\end{figure}
+
+		\begin{itemize}
+			\item {\bfseries align:} se encarga de obtener la \emph{transformation} que
+				permita alinear dos \emph{cloud} entre sí.  Para esto establece
+				correspondencias entre los \emph{anchor}.
+			\item {\bfseries anchor:} a partir de puntos salientes de \emph{cloud} calcula
+				\emph{feature} (descriptores) que permita asociarlos y un
+				\emph{reference\_frame} para obtener una estimación de la
+				\emph{transformation}.
+			\item {\bfseries cloud:} representa una vista del objeto que se desea alinear.
+				Es una colección de \emph{point} sin organización. Clase
+				provista por PCL.
+			\item {\bfseries point:} contiene las coordenadas $xyz$ obtenidas por el
+				dispositivo de captura. El algoritmo estimará las normales.
+			\item {\bfseries transformation:} representa una transformación rígida
+				(rotación y translación) que será aplicada a una \emph{cloud}
+				para alinearla.
+		\end{itemize}
+
 	\section{Keypoints}
 		ISS:
 		%descripción

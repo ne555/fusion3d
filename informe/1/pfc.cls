@@ -42,3 +42,7 @@ Ingeniería en Informática\\
 
 \widowpenalty 10000
 \clubpenalty 10000
+
+\newcommand{\Imagen}[1]{\includegraphics[max width=.9\textwidth, max height=.9\textheight, keepaspectratio]{#1}}
+
+\endinput
