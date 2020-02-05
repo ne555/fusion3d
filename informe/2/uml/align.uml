@@ -24,8 +24,9 @@
 	}
 
 	cloud *-- point
-	align - transformation
+	cloud - transformation
 	align - anchor
+	align - transformation
 	anchor - anchor
 	anchor - cloud
 

@@ -8,6 +8,6 @@
 	class mesh{}
 	class boundary{}
 
-	boundary - mesh
+	boundary -o mesh
 	mesh - hole_filling
 @enduml
