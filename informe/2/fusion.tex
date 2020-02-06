@@ -1,26 +1,11 @@
 \chapter{Módulo de fusión}
 	%¿citas?
 	%en el de loop correction (surfel)
-	Al agregar una vista se obtendrá nueva información del objeto en aquellos
-	puntos que no eran antes visibles.
-	Además, en las zonas solapadas confirmará o refutará la información ya presente.
+	Cada nueva vista agregará información del objeto en zonas que no eran antes visibles
+	y además confirmará o refutará la información ya presente en las zonas comunes a las otras vistas.
 
 	El módulo de fusión se encargará de combinar esta información para obtener
 	finalmente una malla que represente la porción observada del objeto.
-
-	Cada punto de una vista tendrá asociado un valor de confianza que indica la
-	probabilidad de que el punto no sea un outlier.
-	Este valor se inicializa según el ángulo de su normal respecto a la línea
-	de la cámara y su distancia al centro de la captura.
-
-	Cuando se agrega un nuevo punto, se busca el más cercano en la nube global
-	Si la distancia supera un umbral, se considera que es un nuevo punto. Caso
-	contrario, se ajustan la posición y normal del punto en la nube global
-	según los niveles de confianza de ambos.  Además, se contará desde cuántas
-	vistas es observado cada punto.
-
-
-	Finalmente se descartarán aquellos puntos que hayan sido observados desde sólo una vista y tengan bajo nivel de confianza.
 
 	%diagramas de clase
 	\section{Diagrama de clases}
@@ -42,3 +27,44 @@
 	%informes de prueba
 
 	%casos de uso/funcionalidades resueltas
+	\section{Método}
+	Se utilizará una representación de \emph{surfel} para cada punto similar a la propuesta en %ref in-hand scanning
+	debido a la facilidad de implementación de las funciones de actualización de los puntos.
+
+	Cada surfel tendrá asociado un valor de confianza y las vistas en las que
+	fue observado.  El valor de confianza nos indica la probabilidad de que sus
+	valores de posición y normal no sean producto de un error de muestreo.
+	Este valor se inicializará según el ángulo de su normal respecto a la línea
+	de la cámara y a su distancia al centro de la captura.
+
+
+	El algoritmo~\ref{alg:surfel} describe el agregado de una nueva vista.
+	Por cada punto de la vista se busca qué surfel lo contiene y se actualiza
+	su posición y normal ponderando según el nivel de confianza.
+	En caso de que haya caído fuera del dominio de la reconstrucción actual, se
+	considera que es un nuevo punto y se lo agrega.
+
+	\begin{algorithm}
+		\begin{algorithmic}[1]
+			\Function{Agregar vista}{vista, reconstrucción}
+				\ForAll{$p \in \mbox{vista.puntos}$}
+					\State surfel $\gets$ reconstrucción.buscar(p)
+					\If surfel = $\emptyset$
+						\State reconstrucción.agregar(p)
+					\Else
+						\State surfel.actualizar(p)
+					\EndIf
+				\EndFor
+			\EndFunction
+		\end{algorithmic}
+		\caption{\label{alg:surfel}Actualización de la reconstrucción al agregar una nueva vista.}
+	\end{algorithm}
+
+	Al terminar de procesar todas las vistas habrá surfels que hayan sido
+	observados desde sólo una posición y tengan un nivel de confianza bajo.
+	Estos serán considerados como ruido y serán eliminados de la
+	reconstrucción.
+
+	Finalmente se procederá a la obtención de una triangulación de los surfels.
+	Para esto se utilizó el algoritmo de \emph{Greedy Projection Triangulation} que provee PCL.
+
