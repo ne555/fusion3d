@@ -4,7 +4,7 @@
 	hide circle
 	hide empty members
 
-	class Relleno_de_huecos{
+	class "Relleno de huecos"{
 		rellenar()
 		dividir()
 		unir()
@@ -12,6 +12,6 @@
 	class Malla{}
 	class Borde{}
 
-	Relleno_de_huecos - Malla
-	Malla o-- Borde
+	"Relleno de huecos" "0..1" -- "1" Malla
+	Malla "1" o- "*" Borde
 @enduml

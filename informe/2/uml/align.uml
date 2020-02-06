@@ -29,10 +29,10 @@
 		distancia(Anclaje)
 	}
 
-	Nube *-- Punto
-	Nube - Transformación
-	Anclaje - Registración
-	Registración -- Transformación
-	Anclaje -- Nube
+	Nube "1" *-- "*" Punto
+	Nube "0..1" - "1" Transformación
+	Anclaje "*" - "1" Registración
+	Registración "0..1" -- "1" Transformación
+	Anclaje "*" -- "1" Nube
 
 @enduml

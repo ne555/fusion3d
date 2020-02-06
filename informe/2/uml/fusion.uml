@@ -16,10 +16,10 @@
 	class Malla{}
 	class DCEL{}
 
-	Nube -- Transformación
-	Nube o- Fusión
-	Malla -- Fusión
-	Malla *- DCEL
-	Malla *-- Nube
+	Nube "0..1" -- "1" Transformación
+	Nube "*" -o "0..1" Fusión
+	Malla "0..1" -- "0..1" Fusión
+	Malla "0..1" *- "0..1" DCEL
+	Malla "0..1" *-- "0..1" Nube
 
 @enduml
