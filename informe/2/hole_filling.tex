@@ -31,62 +31,75 @@
 		De esta forma, una arista que defina sólo un triángulo formará parte de un hueco,
 		y podrá obtenerse el contorno del mismo recorriendo el grafo de conectividades. 
 
-		Para realizar el rellenado se implementó una variante del método de \emph{advancing front}. %citar
+		Para realizar el rellenado se implementó una variante del método de \emph{advancing front}, %citar
+		descripta en el algoritmo~\ref{alg:adv_front}. Los nuevos puntos
+		insertados son elegidos de forma que los triángulos resultantes sean
+		aproximadamente equiláteros, como se detalla en el algoritmo~\ref{alg:new_point}.
+
+		Si el nuevo punto cae cerca de alguno ya existente se utilizará aquel.
+		Esto supone una división en dos del advancing front actual.
+
 		\begin{algorithm}
 			\begin{algorithmic}[1]
-				\Function{Advancing front}{Contorno}
+				\Function{Advancing front}{Malla, Contorno}
 					\State AF $\gets$ Contorno
 					\Repeat
 					\State $\alpha = \widehat{PCN} =$ ángulo mínimo(Contorno)
-					\Until $\mbox{Contorno} \neq \emptyset$
+					\If{$\alpha < 75^{\circ}$}
+						\State Malla.agregar triángulo(P, C, N)
+						\State AF.eliminar punto(C)
+					\ElsIf{$\alpha < 135^{\circ}$}
+						\State nuevo $\gets$ crear punto(P, C, N, $\alpha/2$)
+						\State Malla.agregar punto(nuevo)
+						\State Malla.agregar triángulo(nuevo, C, N)
+						\State AF.insertar punto(nuevo)
+					\ElsIf{$\alpha < 180^{\circ}$}
+						\State nuevo $\gets$ crear punto(P, C, N, $\alpha/3$)
+						\State Malla.agregar punto(nuevo)
+						\State Malla.agregar triángulo(nuevo, C, N)
+						\State AF.insertar punto(nuevo)
+					\EndIf
+					\Until $\mbox{AF} \neq \emptyset$
 				\EndFunction
 			\end{algorithmic}
+			\caption{\label{alg:adv_front}Relleno de huecos mediante el método de \emph{advancing front}}
+		\end{algorithm}
+
+		\begin{algorithm}
+			\begin{algorithmic}[1]
+				\Function{crear punto}{P, C, N, $\theta$}
+					\State planoA $\gets$ plano(P, C, N)
+					\State planoB $\gets \left\{
+						\begin{tabular}{l}
+							.punto $\gets$ promedio(P, C, N) \\
+							.normal $\gets$ promedio(P.normal, C.normal, N.normal)
+						\end{tabular}
+						\right.$
+					\State Q $\gets$ rotar(
+						punto = N,
+						origen = C,
+						\Statex normal = planoA.normal,
+						ángulo = $\theta$
+						)
+					\State \Return proyección(Q, planoB)
+				\EndFunction
+			\end{algorithmic}
+			\caption{\label{alg:new_point}Creación del nuevo punto}
 		\end{algorithm}
 
 
-	%mi método
-	%ver paper
-	advancing front
-	Definir isla
-	Eliminar islas
 
-	Dado un boundary a rellenar
-		Buscar los segmentos que generen el menor ángulo
-		caso $\alpha < 75$
-			unir los extremos
-		$\alpha < 1354$
-			agregar un punto en la bisectriz
-		$\alpha < \pi$
-			agregar un punto en un tercio del ángulo
-		$\alpha \geq \pi$
-			no debería ocurrir
-
-		Verificar que el nuevo punto no caiga muy cerca de otro ya existente
-		En ese caso usar el existente
-			Dividir el boundary en dos, procesar cada sección de forma independiente.
-
-		De esta forma se tiene un frente que avanza desde el contorno hacia adentro, terminando por encontrarse con un frente opuesto y cerrando el hueco.
-
-
-	Ubicación del nuevo punto
-		Una vez determinado los tres puntos que definen el menor ángulo: 
-			$\theta = \widehat{PCN}$
-
-		se define el plano $\alpha$ mediante los tres puntos.
-		se crea un nuevo punto Q sobre $\alpha$, ubicado en la bisectriz del ángulo, a una distancia step de C
-		se define el plano $\beta$ como aquel cuya normal es el promedio de las normales de los tres puntos y pasa por el promedio de los tres puntos
-		\[
-		O = \frac{P+C+N}{3}
-		n = \frac{P_n + C_n + N_n} {|P_n + C_n + N_n|}
-		\]
-
-		se proyecta Q en $\beta$
-
-		`step' es constante en todo el proceso, siendo el promedio de las longitudes de los segmentos que forman el contorno del hueco
 
 
 		Con este método se pueden rellenar agujeros pequeños, obteniéndose una malla bastante regular.
-		Sin embargo, debido a la localidad con la que se generan nuevos puntos, el frente puede diverger o pretender unirse a puntos que no forman parte del contorno del hueco, perdiendo la propiedad de manifold
+		Sin embargo, debido a la localidad con la que se generan los nuevos
+		puntos, el frente puede diverger o pretender unirse a puntos que no
+		forman parte del contorno del hueco, resultando una malla mal formada,
+		con aristas que corresponden a más de dos caras.
+		Para evitar la divergencia es necesario definir una superficie de
+		soporte que asegure que los nuevos puntos no excedan los límites del
+		hueco.
+
 
 	\section{Método B}
 	%Poisson
