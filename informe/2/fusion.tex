@@ -28,7 +28,7 @@
 
 	%casos de uso/funcionalidades resueltas
 	\section{Método}
-	Se utilizará una representación de \emph{surfel} para cada punto similar a la propuesta en %ref in-hand scanning
+	Se utilizará una representación de \emph{surfel} para cada punto similar a la propuesta en \cite{5457479} %ref in-hand scanning
 	debido a la facilidad de implementación de las funciones de actualización de los puntos.
 
 	Cada surfel tendrá asociado un valor de confianza y las vistas en las que
@@ -60,11 +60,15 @@
 		\caption{\label{alg:surfel}Actualización de la reconstrucción al agregar una nueva vista.}
 	\end{algorithm}
 
-	Al terminar de procesar todas las vistas habrá surfels que hayan sido
+	Al terminar de procesar todas las vistas, habrá surfels que hayan sido
 	observados desde sólo una posición y tengan un nivel de confianza bajo.
 	Estos serán considerados como ruido y serán eliminados de la
 	reconstrucción.
 
-	Finalmente se procederá a la obtención de una triangulación de los surfels.
+	Finalmente, se procederá a la obtención de una triangulación de los surfels.
 	Para esto se utilizó el algoritmo de \emph{Greedy Projection Triangulation} que provee PCL.
 
+	\begin{figure}
+		\Imagen{img/bun_reconst}
+		\caption{\label{fig:surface}Superficie reconstruída.}
+	\end{figure}
