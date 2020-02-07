@@ -17,7 +17,7 @@
 		\end{figure}
 
 		\begin{itemize}
-			\item {\bfseries Relleno de huecos:} La clase se encargará de estimar
+			\item {\bfseries Relleno de huecos:} La clase se encarga de estimar
 				nuevos puntos en zonas donde se carece de información (huecos)
 				y triangularlos para que la \emph{Malla} sea cerrada.
 			\item {\bfseries Borde:} Es una colección de puntos ordenados
@@ -25,9 +25,9 @@
 		\end{itemize}
 
 	\section{Método A}
-		Con el fin de simplificar la identificación de los huecos primeramente se eliminaron
+		Con el fin de simplificar la identificación de los huecos primeramente se eliminan
 		todas las islas al quedarse únicamente con la componente conectada que
-		contenía la mayor cantidad de puntos.
+		contiene la mayor cantidad de puntos.
 		De esta forma, una arista que defina sólo un triángulo formará parte de un hueco,
 		y podrá obtenerse el contorno del mismo recorriendo el grafo de conectividades. 
 
@@ -35,9 +35,8 @@
 		descripta en el algoritmo~\ref{alg:adv_front}. Los nuevos puntos
 		insertados son elegidos de forma que los triángulos resultantes sean
 		aproximadamente equiláteros, como se detalla en el algoritmo~\ref{alg:new_point}.
-
-		Si el nuevo punto cae cerca de alguno ya existente se utilizará aquel.
-		Esto supone una división en dos del advancing front actual.
+		Si el nuevo punto cae cerca de alguno ya existente, se utiliza aquel,
+		actualizando de forma apropiada el advancing front.
 
 		\begin{algorithm}
 			\begin{algorithmic}[1]
@@ -108,12 +107,12 @@
 
 	\section{Método B}
 	%Poisson
-	La clase pcl::Poisson provee algoritmos de reconstrucción basados en \cite{Kazhdan:2006:PSR:1281957.1281965} %cite Poisson surface reconstruction
+	La clase pcl::Poisson provee algoritmos de reconstrucción basados en \cite{Kazhdan:2006:PSR:1281957.1281965}, %cite Poisson surface reconstruction
 	siendo el principal parámetro la profundidad del octree utilizado,
 	impactando directamente en la resolución de la malla resultante.
 
 
-	Se transforma el problema en una ecuación de Poisson
+	Entonces, se convierte el problema en la resolución de una ecuación de Poisson de la forma:
 	\[\Delta\chi \equiv \nabla \cdot\nabla\chi = \nabla \vec{n}\]
 
 	Se realiza una discretización del dominio mediante un octree, ya que sólo
@@ -121,9 +120,9 @@
 	reconstruir.
 	Luego se definen funciones de soporte local que aproximen una gaussiana.
 
-	Una vez resuelto el problema en el dominio, se extrae la isosuperficie mediante una variante de marching cubes.
+	Una vez resuelto el problema en el dominio, se extrae la isosuperficie mediante una variante del método de marching cubes.
 
-	La malla resultante presenta un hueco en la base (figura~\ref{fig:fill_poisson}.
+	La malla resultante presenta un hueco en la base (figura~\ref{fig:fill_poisson}).
 	Ya que los puntos del contorno del hueco pertenecen a un mismo plano, es posible rellenarlo mediante el método de \emph{advancing front}.
 
 	\begin{figure}

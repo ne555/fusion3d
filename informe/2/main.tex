@@ -12,10 +12,25 @@
 
 \begin{document}
 	\maketitle
+	El proceso de reconstrucción tridimensional generalmente se divide en tres etapas:
+	\begin{enumerate}
+		\item Registración: donde se determinan las transformaciones necesarias
+			para llevar cada vista a su correcta posición en un marco de
+			referencia global.
+		\item Fusión: donde se unifica el aporte de cada vista para obtener una
+			superficie que las englobe.
+		\item Relleno de huecos: donde se asegura que la superficie global sea
+			cerrada, es decir, que encierre un volumen.
+	\end{enumerate}
+	Cada una de estas etapas se corresponde con un módulo del sistema.
+	A continuación se describirán los detalles de diseño e implementación de
+	los métodos propuestos para cada módulo, junto con sus resultados
+	preliminares.
+
 	\include{align}
 	\include{fusion}
 	\include{hole_filling}
-	\include{conclusiones}
+	%\include{conclusiones}
 	\bibliographystyle{alpha}
 	\bibliography{biblio}
 \end{document}

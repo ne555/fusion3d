@@ -1,23 +1,23 @@
 \chapter{Módulo de fusión}
 	%¿citas?
 	%en el de loop correction (surfel)
-	Cada nueva vista agregará información del objeto en zonas que no eran antes visibles
-	y además confirmará o refutará la información ya presente en las zonas comunes a las otras vistas.
+	Cada nueva vista agrega información del objeto en zonas que no eran antes visibles
+	y además confirma o refuta la información ya presente en las zonas comunes a las otras vistas.
 
-	El módulo de fusión se encargará de combinar esta información para obtener
+	El módulo de fusión se encarga de combinar esta información para obtener
 	finalmente una malla que represente la porción observada del objeto.
 
 	%diagramas de clase
 	\section{Diagrama de clases}
 		En la figura~\ref{fig:fusion_class} se presentan las clases principales y sus interacciones.
-		A continuación se presenta una breve descripción de las mismas.
+		A continuación se presenta una breve descripción de las más importantes.
 		\begin{figure}
 			\Imagen{uml/fusion.pdf}
 			\caption{\label{fig:fusion_class}Diagrama de clases del módulo de fusión}
 		\end{figure}
 
 		\begin{itemize}
-			\item {\bfseries Fusión:} unirá las \emph{Nubes} ya alineadas para
+			\item {\bfseries Fusión:} une las \emph{Nubes} ya alineadas para
 				obtener una superficie global que represente al objeto.
 				Esto supone corregir la posición de los puntos, descartar
 				aquellos considerados como ruido y triangular la superficie.
@@ -28,13 +28,13 @@
 
 	%casos de uso/funcionalidades resueltas
 	\section{Método}
-	Se utilizará una representación de \emph{surfel} para cada punto similar a la propuesta en \cite{5457479} %ref in-hand scanning
+	Se utiliza una representación de \emph{surfel} para cada punto similar a la propuesta en \cite{5457479} %ref in-hand scanning
 	debido a la facilidad de implementación de las funciones de actualización de los puntos.
 
-	Cada surfel tendrá asociado un valor de confianza y las vistas en las que
+	Cada surfel tiene asociado un valor de confianza y las vistas en las que
 	fue observado.  El valor de confianza nos indica la probabilidad de que sus
 	valores de posición y normal no sean producto de un error de muestreo.
-	Este valor se inicializará según el ángulo de su normal respecto a la línea
+	Este valor se inicializa según el ángulo de su normal respecto a la línea
 	de la cámara y a su distancia al centro de la captura.
 
 
@@ -62,11 +62,11 @@
 
 	Al terminar de procesar todas las vistas, habrá surfels que hayan sido
 	observados desde sólo una posición y tengan un nivel de confianza bajo.
-	Estos serán considerados como ruido y serán eliminados de la
+	Estos son considerados como ruido y eliminados de la
 	reconstrucción.
 
-	Finalmente, se procederá a la obtención de una triangulación de los surfels.
-	Para esto se utilizó el algoritmo de \emph{Greedy Projection Triangulation} que provee PCL.
+	Finalmente, se procede a la obtención de una triangulación de los surfels.
+	Para esto se utiliza el algoritmo de \emph{Greedy Projection Triangulation} que provee PCL.
 
 	\begin{figure}
 		\Imagen{img/bun_reconst}

@@ -166,8 +166,12 @@
 
 			%gráficos
 			\begin{figure}
-				\Imagen{img/sac_45_90}
-				\caption{\label{fig:align_sac}Alineación de las vistas \texttt{bun045} (verde) y \texttt{bun090} (rojo) utilizando \emph{sample consensus}.}
+				%\Imagen{img/sac_45_90}
+				\Imagen{img/bun_sac_270_315}
+				\caption{\label{fig:align_sac}Ejemplo de fallo del algoritmo de \emph{sample consensus} producto de malas correspondencias
+				en la alineación de las vistas
+				\texttt{bun270} (verde) y \texttt{bun315} (rojo).}
+				%\texttt{bun045} (verde) y \texttt{bun090} (rojo).}
 			\end{figure}
 
 
@@ -222,6 +226,11 @@
 		\begin{figure}
 			\Imagen{img/cluster_happy}
 			\caption{\label{fig:clust_happy}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{happy}.}
+		\end{figure}
+
+		\begin{figure}
+			\Imagen{img/bun_clust_270_315}
+			\caption{\label{fig:clust_bun_good}Alineación exitosa entre las capturas \texttt{bun270} (verde) y \texttt{bun316} (rojo) mediante el uso de marcos de referencia en cada punto.}
 		\end{figure}
 
 
