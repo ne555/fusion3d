@@ -90,7 +90,16 @@ void visualise(const pcl::PointCloud<pcl::PointXYZI>::Ptr nube, double scale);
 
 void visualise(const captura &cloud_, nih::TMesh mesh_){
 	auto polygon_mesh = nih::tmesh_to_polygon(cloud_.cloud_, mesh_);
-	pcl::io::savePolygonFilePLY("result_pmesh.ply", polygon_mesh, false);
+	pcl::io::savePolygonFilePLY("result_polymesh.ply", polygon_mesh, false);
+	std::ofstream poly("result_pmesh.ply");
+	poly << polygon_mesh.polygons.size() << '\n';
+	for(const auto &t: polygon_mesh.polygons){
+		poly << t.vertices.size();
+		for(auto v: t.vertices)
+			poly << ' ' << v;
+		poly << '\n';
+	}
+
 	pcl::visualization::PCLVisualizer view("fusion");
 	view.setBackgroundColor(0, 0, 0);
 	view.addPolygonMesh(polygon_mesh, "malla");
@@ -491,7 +500,7 @@ int main(int argc, char **argv) {
 
 	auto result = fusionar(clouds, 1.5*resolution);
 #if 1
-	auto tmesh = triangulate_3d(result.cloud_, 5*resolution);
+	auto tmesh = triangulate_3d(result.cloud_, 2*resolution);
 	visualise(result, tmesh);
 #else
 	visualise(result, 1);

@@ -1,7 +1,7 @@
 %vim: set filetype=tex:
 
 \ProvidesClass{pfc}
-\LoadClass[a4paper]{report}
+\LoadClass[a4paper,twocolumn]{report}
 \RequirePackage{polyglossia} %reemplaza a babel
 \setmainlanguage{spanish}
 
@@ -43,6 +43,6 @@ Ingeniería en Informática\\
 \widowpenalty 10000
 \clubpenalty 10000
 
-\newcommand{\Imagen}[1]{\centering\includegraphics[max width=.9\textwidth, max height=.9\textheight, keepaspectratio]{#1}}
+\newcommand{\Imagen}[1]{\centering\includegraphics[max width=.9\linewidth, max height=.9\textheight, keepaspectratio]{#1}}
 
 \endinput

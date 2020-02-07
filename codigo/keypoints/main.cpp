@@ -25,6 +25,13 @@
 #include <string>
 #include <ctime>
 
+void transform_mesh(pcl::PolygonMesh &mesh, nih::transformation t){
+	auto aux = nih::create<nih::cloud>();
+	pcl::fromPCLPointCloud2(mesh.cloud, *aux);
+	pcl::transformPointCloud(*aux, *aux, t);
+	pcl::toPCLPointCloud2(*aux, mesh.cloud);
+}
+
 void usage(const char *program) {
 	std::cerr << program << " directory "
 	          << "conf_file\n";
@@ -115,7 +122,7 @@ int main(int argc, char **argv) {
 	//param.method = 4; //curvature
 	// lectura de datos de entrada
 	//HARRIS=0 	NOBLE=1 	LOWE=2 	TOMASI=3 	CURVATURE=4 
-	while(std::cout << "params: " and std::cin>>ratio>>umbral>>param.method){
+	//while(std::cout << "params: " and std::cin>>ratio>>umbral>>param.method){
 
 	double radio = 3*resolution_orig;
 
@@ -127,20 +134,28 @@ int main(int argc, char **argv) {
 
 	global_resolution = resolution_orig;
 	// detección de keypoints
-	auto key_source = keypoints_harris3(
-	    nube_source.points, nube_source.normals, radio, "intensidad.source");
-	auto key_target = keypoints_harris3(
-	    nube_target.points, nube_target.normals, radio,  "intensidad.target");
+	//auto key_source = keypoints_harris3(
+	//    nube_source.points_, nube_source.normals_, radio, "intensidad.source");
+	//auto key_target = keypoints_harris3(
+	//    nube_target.points_, nube_target.normals_, radio,  "intensidad.target");
+	//auto key_source = keypoints_iss(nube_source.points_, nube_source.normals_, resolution_orig);
+	//auto key_target = keypoints_iss(nube_target.points_, nube_target.normals_, resolution_orig);
+	auto key_source = keypoints_fpfh(nube_source.points_, nube_source.normals_, resolution_orig);
+	auto key_target = keypoints_fpfh(nube_target.points_, nube_target.normals_, resolution_orig);
 
+	auto source_mesh = triangulate2(nube_source.points_, 5*resolution_orig);
+	auto target_mesh = triangulate2(nube_target.points_, 5*resolution_orig);
 
 	// alineación (con ground truth)
 	pcl::transformPointCloud(
-	    *nube_source.points, *nube_source.points, transf_b);
+	    *nube_source.points_, *nube_source.points_, transf_b);
 	pcl::transformPointCloud(
-	    *nube_target.points, *nube_target.points, transf_a);
+	    *nube_target.points_, *nube_target.points_, transf_a);
 	pcl::transformPointCloud(*key_source, *key_source, transf_b);
 	pcl::transformPointCloud(*key_target, *key_target, transf_a);
 
+	transform_mesh(*source_mesh, transf_b);
+	transform_mesh(*target_mesh, transf_a);
 
 	// correspondencias
 	pcl::registration::CorrespondenceEstimation<nih::point, nih::point>
@@ -163,7 +178,7 @@ int main(int argc, char **argv) {
 	}
 
 	//info
-	std::cerr << "points: " << nube_source.points->size() << ' ' << nube_target.points->size() << '\n';
+	std::cerr << "points: " << nube_source.points_->size() << ' ' << nube_target.points_->size() << '\n';
 	std::cerr << "keypoints: " << key_source->size() << ' ' << key_target->size() << '\n';
 	std::cerr << "correspondences: " << correspondencias->size() << '\n';
 	std::cerr << "survivors: " << key_s->size() << ' ' << key_t->size() << '\n';
@@ -171,18 +186,18 @@ int main(int argc, char **argv) {
 	// visualización
 	auto view =
 	    boost::make_shared<pcl::visualization::PCLVisualizer>("keypoints");
-	view->setBackgroundColor(0, 0, 0);
+	view->setBackgroundColor(255, 255, 255);
 	int v1 ,v2;
 	view->createViewPort(0, 0.0, 0.5, 1.0, v1);
 	view->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
+	view->setBackgroundColor(1, 1, 1);
 
-	auto source_mesh = triangulate2(nube_source.points, 3*nube_source.resolution);
-	auto target_mesh = triangulate2(nube_target.points, 3*nube_target.resolution);
+	//double resolution = nih::get_resolution(nube_source.points_);
 	//view->addPointCloud(nube_source.points, "source", v1);
 	//view->addPointCloud(nube_target.points, "target", v2);
 	view->addPolygonMesh(*source_mesh, "source1", v1);
-	//view->addPolygonMesh(*target_mesh, "target1", v1);
-	//view->addPolygonMesh(*source_mesh, "source2", v2);
+	view->addPolygonMesh(*target_mesh, "target1", v1);
+	view->addPolygonMesh(*source_mesh, "source2", v2);
 	view->addPolygonMesh(*target_mesh, "target2", v2);
 
 	view->addPointCloud(key_source, "key_source1", v1);
@@ -201,21 +216,21 @@ int main(int argc, char **argv) {
 	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0,.7,0, "key_target2");
 
 
-	view->addSphere((*key_source)[0], ratio*resolution_orig, "esfera",v2);
+	//view->addSphere((*key_source)[0], ratio*resolution_orig, "esfera",v2);
 	int asdf = 0;
 	while(!view->wasStopped()){
-		asdf = asdf%key_source->size();
-		view->removeShape ("esfera");
-		view->addSphere((*key_source)[asdf], 8*resolution_orig, "esfera",v2);
-		view->setShapeRenderingProperties(
-			pcl::visualization::PCL_VISUALIZER_COLOR,
-			0, 1, 1,
-			"esfera");
-		++asdf;
+		//asdf = asdf%key_source->size();
+		//view->removeShape ("esfera");
+		//view->addSphere((*key_source)[asdf], 8*resolution_orig, "esfera",v2);
+		//view->setShapeRenderingProperties(
+		//	pcl::visualization::PCL_VISUALIZER_COLOR,
+		//	0, 1, 1,
+		//	"esfera");
+		//++asdf;
 		view->spinOnce(100);
 	}
 	view->close();
-	}
+	//}
 
 	return 0;
 }

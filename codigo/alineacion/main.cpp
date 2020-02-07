@@ -62,7 +62,6 @@ namespace nih {
 
 	void show_rotation(const Eigen::Matrix3f &rotation, std::ostream &out = std::cout);
 	void show_transformation(const transformation &t, std::ostream &out = std::cout);
-	void write_transformation(const transformation &t, std::ostream &out = std::cout);
 	class alignment {
 		struct reference_frame {
 			Eigen::Matrix3f eigenvectors_; // column order
@@ -151,6 +150,8 @@ int main(int argc, char **argv) {
 
 	nih::alignment align;
 	align.set_resolution(resolution);
+	std::ofstream partial(config+"_partial");
+
 	while(input >> filename) {
 		names.push_back(filename);
 
@@ -162,7 +163,10 @@ int main(int argc, char **argv) {
 		// set parameters...
 
 		source.transformation_ = align.align(source, target);
-		//nih::show_transformation(source.transformation_, std::cerr);
+		std::cerr << filename << ' ';
+		nih::show_transformation(source.transformation_, std::cerr);
+		partial << filename << " p ";
+		nih::write_transformation(source.transformation_, partial);
 		source.transformation_ = target.transformation_ * source.transformation_;
 		clouds.emplace_back(std::move(source));
 	}
@@ -375,12 +379,6 @@ namespace nih {
 		out << "axis: " << aa.axis().transpose() << '\t';
 		out << "dist_y: " << 1-abs(aa.axis().dot(Eigen::Vector3f::UnitY())) << '\n';
 	}
-	void write_transformation(const transformation &t, std::ostream &out){
-		Eigen::Quaternion<float> rotation(t.rotation());
-		out << t.translation().transpose() << ' ';
-		out << rotation.vec().transpose() << ' ' << rotation.w() << '\n';
-	}
-
 	// class alignment
 	alignment::alignment()
 	    : sample_ratio_(0.25),
@@ -423,6 +421,13 @@ namespace nih {
 			    Eigen::Vector3f::UnitY(),
 			    target_,
 			    correspondences_);
+			{
+				std::cerr << "translaciones:\n";
+				for(auto t: translations){
+					std::cerr << t.transpose() << '\n';
+				}
+			}
+
 			auto translation_mean = nih::mean(translations.begin(), translations.end());
 			std::tie(translation_result, trans_label) =
 			    biggest_cluster(translations, n_clusters_);

@@ -79,10 +79,11 @@ void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_, const pcl::Vertic
 
 	auto polygon_mesh = nih::tmesh_to_polygon(cloud_, mesh_);
 
+	view.setBackgroundColor(1, 1, 1);
 	view.addPolygonMesh(polygon_mesh, "mesh");
 	view.addPointCloud<nih::pointnormal>(bound_points, "boundary");
 	view.setPointCloudRenderingProperties(
-			pcl::visualization::PCL_VISUALIZER_COLOR, .7,.7,0, "boundary");
+			pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0.5, 0, "boundary");
 	while(!view.wasStopped())
 		view.spinOnce(100);
 	view.close();
@@ -92,11 +93,16 @@ void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_, nih::cloudnormal:
 	pcl::visualization::PCLVisualizer view("tessellation");
 
 	auto polygon_mesh = nih::tmesh_to_polygon(cloud_, mesh_);
+	view.setBackgroundColor(1, 1, 1);
 
 	view.addPolygonMesh(polygon_mesh, "mesh");
+	//view.setPointCloudRenderingProperties(
+	//	pcl::visualization::PCL_VISUALIZER_COLOR,
+	//	0, 0.5, 0,
+	//	"mesh");
 	view.addPointCloud<nih::pointnormal>(patch_, "patch");
 	view.setPointCloudRenderingProperties(
-			pcl::visualization::PCL_VISUALIZER_COLOR, .7,.7,0, "patch");
+			pcl::visualization::PCL_VISUALIZER_COLOR, .7,0,0, "patch");
 	while(!view.wasStopped())
 		view.spinOnce(100);
 	view.close();
@@ -229,8 +235,13 @@ int main(int argc, char **argv){
 	auto [cloud, mesh] = load_triangle_mesh2(argv[1], argv[2]);
 	double length = nih::cloud_resolution<nih::pointnormal>(cloud);
 	if(argc == 4) length = std::stod(argv[3]);
-	nih::biggest_connected_component(*mesh);
-	cloud = nih::resync(*cloud, *mesh); //XXX: ¡Important!
+	//nih::biggest_connected_component(*mesh);
+	//cloud = nih::resync(*cloud, *mesh); //XXX: ¡Important!
+
+	pcl::PLYWriter writer;
+	writer.write("no_island.ply", *cloud);
+
+
 	auto boundary_points_ = nih::boundary_points(mesh);
 	visualise(cloud, mesh);
 	int index;

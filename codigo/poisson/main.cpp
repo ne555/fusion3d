@@ -18,6 +18,7 @@
 #include "functions.hpp"
 
 void visualise(const pcl::PolygonMesh mesh_, nih::cloudnormal::Ptr cloud_){
+	pcl::io::savePolygonFilePLY("result_polymesh.ply", mesh_, false);
 	pcl::visualization::PCLVisualizer view("poisson");
 	view.setBackgroundColor(1, 1, 1);
 	view.addPolygonMesh(mesh_, "mesh");
