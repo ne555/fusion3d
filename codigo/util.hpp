@@ -6,18 +6,36 @@
 #include <cmath>
 
 namespace nih {
+	/**
+	 * \addtogroup general
+	 * @{
+	 */
 	template <class T>
 	inline T square(T x);
 	inline double deg2rad(double x);
 	inline double rad2deg(double x);
+	/**
+	 * Para moverse en buffers circulares
+	 */
 	inline int circ_next_index(int index, int size);
 	inline int circ_prev_index(int index, int size);
+	/**
+	 * Copia el buffer circular en el rango [begin, end]
+	 */
 	template <class Vector>
 	inline Vector circular_copy(Vector v, int begin, int end);
+
+	/**
+	 * Promedio de un contenedor.
+	 */
 	template <class T>
 	inline typename std::iterator_traits<T>::value_type mean(T beg, T end);
+	/**
+	 * Desviación estándar de un contenedor.
+	 */
 	template <class T>
 	inline typename std::iterator_traits<T>::value_type stddev(T beg, T end);
+	/**@}*/
 }
 
 // implementation

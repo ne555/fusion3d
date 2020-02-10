@@ -20,6 +20,13 @@
 #include <vector>
 
 namespace nih {
+	/**
+	 * \defgroup general Funciones generales
+	 * @{
+	 */
+	/**@name Alias
+	 * @{
+	 */
 	typedef pcl::PointCloud<pcl::PointXYZ> cloud;
 	typedef pcl::PointCloud<pcl::Normal> normal;
 	typedef pcl::PointCloud<pcl::PointNormal> cloudnormal;
@@ -29,33 +36,85 @@ namespace nih {
 	typedef Eigen::Vector3f vector;
 	typedef pcl::PointCloud<pcl::FPFHSignature33> signature;
 	typedef pcl::Correspondences correspondences;
+	/**@}*/
 
+	/**
+	 * Todo culpa de PCL, no se puede crear casi nada en el `stack`.
+	 */
 	template <class T>
 	inline boost::shared_ptr<T> create();
+
+	/**
+	 * ¿No hay versión con normales?
+	 */
 	inline cloud::Ptr load_cloud_ply(std::string filename);
+
+	/**@name Transformaciones
+	 * @{
+	 * Las transformaciones se guardan en formato translación, cuaternión [t|q]
+	 * siendo la total `T = t*q`.  En la base de datos de stanford
+	 * se requiere `T = t*q.inverse()` para las vistas, y `T = q.inverse()*t`
+	 * para la cámara, corregido en la base de datos `corrected`
+	 */
 	inline transformation get_transformation(std::ifstream &input);
 	inline void write_transformation(const transformation &t, std::ostream &out);
+	/**@}*/
+
+
+
+	/**
+	 * Estimación de las normales, cámara en {0, 0, 1}
+	 */
 	inline normal::Ptr compute_normals(cloud::Ptr nube, double distance);
 
+	/** @name Operaciones con puntos y vectores
+	 * @{
+	 */
+	/**
+	 * Vector desde el origen a la posición _xyz_
+	 */
 	inline point v2p(vector v);
 	inline vector p2v(point p);
 	inline vector p2v(pointnormal p); //only takes xyz
-	// operations element to element
+	/**
+	 * Operaciones aplicadas elemento a elemento
+	 */
 	inline vector prod(vector a, const vector &b);
 	inline vector div(vector a, const vector &b);
+
+	/**
+	 * Distancia entre las posiciones _xyz_ de los puntos.
+	 */
 	inline double distance(const point &a, const point &b);
 	inline double distance(const pointnormal &a, const pointnormal &b);
+	/**@}*/
 
 	// information
 	// espacio esperado entre puntos (proyecta en z=0)
+	/**
+	 * Proyectado en `z=0`, rango en `x` sobre la \f$\sqrt n\f$
+	 */
 	inline double get_resolution(cloud::Ptr input);
+
+	/**
+	 * Índice del punto más cercano al de `query'
+	 */
 	template <class PointT>
-	inline int get_index(const PointT &center, pcl::search::KdTree<PointT> &kdtree);
+	inline int get_index(const PointT &query, pcl::search::KdTree<PointT> &kdtree);
+
+
+	/**
+	 * Submuestreo mediante grilla de vóxeles.
+	 */
 	inline cloud::Ptr subsampling(cloud::Ptr nube, double alfa);
 
-	//returns a cloud with distance information
+	/**
+	 * Calcula la distancia |a - b| limitada al `threshold'.
+	 * Puntos fuera de ese límite son descartados.
+	 */
 	inline pcl::PointCloud<pcl::PointXYZI>::Ptr
 	cloud_diff_with_threshold(cloud::Ptr a, cloud::Ptr b, double threshold);
+	/**@}*/
 } // namespace nih
 
 
@@ -74,10 +133,10 @@ namespace nih {
 	}
 
 	template <class PointT>
-	int get_index(const PointT &center, pcl::search::KdTree<PointT> &kdtree){
+	int get_index(const PointT &query, pcl::search::KdTree<PointT> &kdtree){
 		std::vector<int> indices(1);
 		std::vector<float> distances(1);
-		kdtree.nearestKSearch(center, 1, indices, distances);
+		kdtree.nearestKSearch(query, 1, indices, distances);
 		return indices[0];
 	}
 

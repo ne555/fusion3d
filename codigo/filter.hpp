@@ -12,22 +12,37 @@
 #include <vector>
 
 namespace nih {
-	// to obtain points on borders
+	/**
+	 * \defgroup preproceso Preproceso
+	 * @{
+	 */
+
+	/**
+	 * Para mantener la sincronía entre la malla y la nube de puntos al
+	 * eliminar vértices.
+	 */
 	struct vertex_data {
 		int id;
 	};
+
+	/** ¿Por qué IsManifold con false?
+	 * pcl dice only non-manifold vertices can be represented
+	 */
 	struct mesh_traits{
 		typedef vertex_data VertexData;
 		typedef pcl::geometry::NoData HalfEdgeData;
 		typedef pcl::geometry::NoData EdgeData;
 		typedef pcl::geometry::NoData FaceData;
-		//typedef boost::true_type IsManifold;
 		typedef boost::false_type IsManifold;
 	};
-	//using Mesh = pcl::geometry::TriangleMesh<pcl::geometry::DefaultMeshTraits<vertex_data> >;
 	using Mesh = pcl::geometry::TriangleMesh<mesh_traits>;
 	using TMesh = Mesh::Ptr;
 
+	/**
+	 * Agregación de la nube de puntos y la transformación.
+	 * ¿Por qué no unir `points_' y `normals_'?
+	 * ¿Es tan peligroso que sean públicos?
+	 */
 	class cloud_with_normal {
 	public:
 		cloud_with_normal() :
@@ -39,12 +54,31 @@ namespace nih {
 		normal::Ptr normals_;
 		transformation transformation_;
 	};
-	// returns isolated vertices
+	/**
+	 * Devuelve los índices de los puntos que se encuentran aislados.
+	 */
 	inline std::vector<int> delete_big_edges(TMesh mesh, cloud::Ptr nube, double threshold);
-// returns vertices to delete
+	/**
+	 * Devuelve los índices de los puntos a eliminar
+	 */
 	inline std::vector<int> kill_near(const std::vector<int> &bad_points, cloud::Ptr nube, double distance);
+
+	/**
+	 * Elimina puntos de poca confianza, como ser:
+	 * - puntos aislados
+	 * - puntos de contorno
+	 * - puntos cuyas normales sean ortogonales a la cámara
+	 */
 	inline cloud_with_normal preprocess(cloud::Ptr nube);
+
+	/**
+	 * Triangulación Delaunay de los puntos proyectados en `z=0`.
+	 * Se utilizan estas mismas conexiones en el espacio para identificar los
+	 * puntos aislados y de contorno.
+	 */
 	inline TMesh triangulate(cloud::Ptr nube);
+
+	/**@}*/
 } // namespace nih
 
 // implementation
@@ -131,7 +165,7 @@ namespace nih {
 	}
 
 	cloud_with_normal preprocess(cloud::Ptr nube) {
-		// los umbrales son miembros de una clase
+		// extraer los umbrales a miembros de una clase
 		// con estos valores por defecto
 		double model_resolution = get_resolution(nube);
 		double edge_max_size = 3 * model_resolution;
