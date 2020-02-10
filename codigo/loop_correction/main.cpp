@@ -7,6 +7,7 @@
 #include "filter.hpp"
 #include "util.hpp"
 #include "functions.hpp"
+#include "refine.hpp"
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_cloud_color_handlers.h>
 #include <pcl/common/colors.h>
@@ -19,15 +20,25 @@
 #include <fstream>
 auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("clouds");
 
+	template <class Cloud>
+	void write_cloud_ply(const Cloud &cloud_, std::string filename) {
+		pcl::PLYWriter writer;
+		writer.write(filename, cloud_);
+	}
+
 namespace{
 	int beg = 0;
 	int end = 0;
 }
 
+#if 0
 struct cloud_with_transformation{
 	nih::cloud::Ptr cloud_;
 	nih::transformation transformation_;
 };
+#else
+typedef nih::cloud_with_normal cloud_with_transformation;
+#endif
 
 void usage(const char *program) {
 	std::cerr << program << " directory "
@@ -41,7 +52,7 @@ void visualise(const std::vector<cloud_with_transformation> &nubes, int beg, int
 	for(size_t K = 0; K not_eq dist+1; ++K){
 		pcl::RGB color = pcl::GlasbeyLUT::at(beg);
 		std::cerr << beg << ' ' << color << '\n';
-		view->addPointCloud<nih::point>(nubes[beg].cloud_, std::to_string(beg));
+		view->addPointCloud<nih::point>(nubes[beg].points_, std::to_string(beg));
 		view->setPointCloudRenderingProperties(
 			pcl::visualization::PCL_VISUALIZER_COLOR,
 			color.r/255.0,
@@ -57,9 +68,9 @@ void visualise(const std::vector<cloud_with_transformation> &nubes, int beg, int
 void visualise_diff(
     const cloud_with_transformation &a, const cloud_with_transformation &b) {
 	view->removeAllPointClouds();
-	double resolution = nih::get_resolution(a.cloud_);
+	double resolution = nih::get_resolution(a.points_);
 	auto diff =
-	    nih::cloud_diff_with_threshold(a.cloud_, b.cloud_, 10 * resolution);
+	    nih::cloud_diff_with_threshold(a.points_, b.points_, 10 * resolution);
 
 	for(auto &p : diff->points)
 		p.intensity /= resolution;
@@ -131,7 +142,7 @@ int main(int argc, char **argv) {
 		std::cerr << '.';
 
 		cloud_with_transformation c;
-		c.cloud_ = nih::load_cloud_ply(directory + filename);
+		c.points_ = nih::load_cloud_ply(directory + filename);
 		char partial; input >> partial;
 		auto t = nih::get_transformation(input);
 		if(partial=='p')
@@ -140,9 +151,14 @@ int main(int argc, char **argv) {
 			c.transformation_ = t;
 		prev = c.transformation_;
 		clouds.push_back(c);
-
 	}
 
+	//loop correction
+	//loop_correction(clouds);
+	for(auto &c: clouds)
+		pcl::transformPointCloud(*c.points_, *c.points_, c.transformation_);
+
+#if 0
 	//aplicar las transformaciones (mantener almacenado)
 	for(auto &c: clouds)
 		pcl::transformPointCloud(*c.cloud_, *c.cloud_, c.transformation_);
@@ -159,9 +175,14 @@ int main(int argc, char **argv) {
 	elch.compute();
 	auto end = clock();
 	std::cerr << "elch took " << double(end-start)/CLOCKS_PER_SEC << '\n';
+#endif
 
+	//save the clouds
+	for(int K=0; K<clouds.size(); ++K){
+		write_cloud_ply(*clouds[K].points_, "bun"+std::to_string(K)+".ply");
+	}
 
-	visualise_wrapper(clouds);
+	//visualise_wrapper(clouds);
 	return 0;
 }
 
