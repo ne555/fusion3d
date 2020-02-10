@@ -16,33 +16,56 @@
 #include <pcl/surface/mls.h>
 
 namespace nih {
+	/** Suavizado de la nube mediante el médoto de mínimos cuadrados móviles */
 	inline cloud::Ptr moving_least_squares(cloud::Ptr nube, double radius);
+
+	/** Promedio de las distancias entre pares más cercanos de la nube */
 	template <class PointT>
 	inline double
 	cloud_resolution(typename pcl::PointCloud<PointT>::ConstPtr cloud_);
+
+	/** @name Mesh
+	 * @{
+	 * Conversiones entre los formatos de `PolygonMesh` y `geometry::Mesh`.
+	 * `geometry` usa grafo de medias aristas, pero no tiene funciones para
+	 * visualizado o entrada/salida */
 	template <class CloudPtr>
 	inline pcl::PolygonMesh tmesh_to_polygon(CloudPtr cloud_, TMesh mesh_);
 	template <class CloudPtr>
 	inline TMesh
 	create_mesh(CloudPtr cloud_, const std::vector<pcl::Vertices> &polygons);
+	/**@}*/
+
+	/** Obtención de los puntos de borde.
+	 * Ordenado por el tamaño del hueco.  */
 	inline std::vector<pcl::Vertices> boundary_points(TMesh mesh_);
-	// elimina los puntos que no pertenezcan a la superficie más grande
+
+	/** Elimina las islas al eliminar los puntos que no pertenezcan a la superficie más grande */
 	inline void biggest_connected_component(Mesh &mesh_);
-	// elimina los puntos de la nube que no están en la malla
-	// además VertexIndex == id
+
+	/** Elimina los puntos de la nube que no están presentes en la malla.
+	 * Además, ajusta los `id` para que se correspondan con los índices.  */
 	inline cloudnormal::Ptr resync(const cloudnormal &cloud_, Mesh &mesh_);
 
+	/** Considerar sólo la posición de los puntos */
 	template <class PointT>
 	inline point extract_xyz(const PointT &p);
+	/** Extraer la normal del punto */
 	inline vector vector_normal(const pointnormal &p);
 
+	/** Ángulo descripto por los tres puntos */
 	inline double
 	angle(const pointnormal &a, const pointnormal &b, const pointnormal &c);
+
+	/** Función auxiliar de la anterior.
+	 * ¿La escondo?  */
 	inline double angle(
 	    const vector &a,
 	    const vector &b,
 	    const vector &c,
 	    const vector &normal_suggested);
+
+	/** Obtener el nuevo punto en el algoritmo de advancing front */
 	inline pointnormal divide_triangle(
 	    const pointnormal &prev,
 	    const pointnormal &center,
@@ -50,7 +73,8 @@ namespace nih {
 	    double angle,
 	    double length);
 
-	// busca el punto que tiene la misma posición (xyz)
+	/** Busca el punto que tiene la misma posición _xyz_,
+	 * considerándo sólo los definidos por los índices en el vector */
 	inline int linear_search(
 	    pointnormal query,
 	    const std::vector<std::uint32_t> &indices,
