@@ -15,31 +15,53 @@
 #include <pcl/keypoints/iss_3d.h>
 
 namespace nih {
+	/** \defgroup registration Registración
+	 * @{ */
+	/** Método Sample Consensus */
 	class pairwise_alignment {
 	public:
+		/** ¿Por qué está todo público? */
 		cloud::Ptr source, target;
 		cloud::Ptr result;
 		normal::Ptr source_normal, target_normal;
 		transformation current, previous, gt_transformation;
 
+		/** Método ISS para obtener puntos salientes */
 		inline cloud::Ptr
 		iss_keypoints(cloud::Ptr input, double resolution) const;
-		cloud::Ptr compute_keypoints(cloud::Ptr input) const;
-		// compute_features;
+
+		/** Obtener los keypoints.
+		 * Utiliza persistencia multiescala de los descriptores FPFH */
+		inline cloud::Ptr compute_keypoints(cloud::Ptr input) const;
+
+		/** Cálculo de los descriptores */
 		inline pcl::PointCloud<pcl::FPFHSignature33>::Ptr feature_fpfh(
 		    cloud::Ptr input, normal::Ptr normals, cloud::Ptr surface) const;
 
-		double separation = 0.0025163032114505768; // compute this
+		/** Debería llamar a get_resolution()
+		 * o mejor cloud_resolution()
+		 * Este valor funca con happy, falla con bunny
+		 * ¿Habrá sido este el problema? */
+		double separation = 0.0025163032114505768;
 
 	public:
+		/** Estimación de las normales */
 		inline pcl::PointCloud<pcl::Normal>::Ptr
 		compute_normals(cloud::Ptr input) const;
+
+		/** Nube a alinear */
 		inline void set_source_cloud(cloud::Ptr);
+		/** Devuelve la nube alineada.
+		 * ¿devolver la transformación? */
 		inline cloud::Ptr align();
+		/** La que fue antes alineada se convierte ahora
+		 * en el objetivo de la próxima */
 		inline void next_iteration();
 
+		/** No implementado ¿? */
 		inline void visualise() const;
 	};
+	/**@}*/
 } // namespace nih
 
 // implementation
