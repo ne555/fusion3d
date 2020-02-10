@@ -59,7 +59,7 @@ namespace nih{
 			inline void merge(const captura &b);
 
 			/** Para visualizar, la intensidad refleja la confianza
-			 * \TODO: devolver XYZINormal
+			 * TODO: devolver XYZINormal
 			 * */
 			inline pcl::PointCloud<pcl::PointXYZI>::Ptr
 			with_intensity() const;
@@ -67,12 +67,12 @@ namespace nih{
 			/** Ajusta la confianza según la cantidad de observaciones */
 			inline void normalise();
 			/** Elimina los puntos observados desde una sola posición
-			 * \TODO: salvar aquellos con mucha confianza */
+			 * TODO: salvar aquellos con mucha confianza */
 			inline void clean();
 	};
 
 	/** Realiza la fusión de las capturas en el vector
-	 * \TODO: mover dentro de la clase fusion*/
+	 * TODO: mover dentro de la clase fusion*/
 	inline captura
 	fusionar(const std::vector<captura> &clouds, double threshold);
 
