@@ -3,6 +3,7 @@
 #include "util.hpp"
 
 #include "pairwise_alignment_kmeans.hpp"
+#include "refine.hpp"
 
 #include <fstream>
 #include <iostream>

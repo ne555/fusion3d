@@ -143,8 +143,10 @@ namespace nih {
 
 	public:
 		inline alignment();
+		/** Alinea `source` a `target` devolviendo la transformación
+		 * Setea source.transformation */
 		inline transformation
-		align(const cloud_with_normal &source, const cloud_with_normal &target);
+		align(cloud_with_normal &source, const cloud_with_normal &target);
 		/** setters de los parámetros */
 		inline void set_sample_ratio(double sample_ratio);
 		inline void set_feature_radius(double feature_radius);
@@ -351,7 +353,7 @@ namespace nih {
 	      max_iterations_(3),
 	      n_clusters_(3) {}
 	transformation
-	alignment::align(const cloud_with_normal &source, const cloud_with_normal &target) {
+	alignment::align(cloud_with_normal &source, const cloud_with_normal &target) {
 		if(resolution_ == 0)
 			resolution_ = get_resolution(source.points_);
 		source_.initialise(
@@ -365,9 +367,6 @@ namespace nih {
 
 		filter_y_threshold();
 		std::vector<double> angles = filter_rotation_axis();
-		//for(auto &K: angles)
-		//	std::cerr << rad2deg(K) << ' ';
-		//std::cerr << '\n';
 		// iterate clustering
 		double angle_result = 0;
 		vector translation_result(0, 0, 0);
@@ -383,12 +382,6 @@ namespace nih {
 			    Eigen::Vector3f::UnitY(),
 			    target_,
 			    correspondences_);
-			{
-				std::cerr << "translaciones:\n";
-				for(auto t: translations){
-					std::cerr << t.transpose() << '\n';
-				}
-			}
 
 			auto translation_mean = nih::mean(translations.begin(), translations.end());
 			std::tie(translation_result, trans_label) =
@@ -397,8 +390,9 @@ namespace nih {
 			filter(angles, trans_label);
 		}
 
-		return create_transformation(
+		source.transformation = create_transformation(
 		    angle_result, {0, 1, 0}, translation_result);
+		return source.transformation;
 	}
 
 	void alignment::filter_y_threshold() {
