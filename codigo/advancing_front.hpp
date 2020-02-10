@@ -15,52 +15,69 @@
 #include <cstdlib>
 
 namespace nih {
+	/**\defgroup hole Relleno de huecos
+	 * @{ */
+	/** Método de advancing front.
+	 * No acepta islas */
 	class advancing_front {
-	// no acepta islas
 	public:
 		inline advancing_front(
 		    cloudnormal::Ptr cloud_,
 		    TMesh mesh_,
 		    std::vector<pcl::Vertices> &boundary_);
+		/** Rellena el hueco indicado */
 		inline cloudnormal::Ptr tessellate(int index);
 
 	private:
 		cloudnormal::Ptr cloud_;
 		TMesh mesh_;
 		std::vector<pcl::Vertices> &boundary_;
+		/** Distancia a la que se ubicará el nuevo punto.
+		 * Es el promedio de las aristas del borde a rellenar.*/
 		double length_;
 
+		/** Puntos agregados durante el relleno */
 		cloudnormal::Ptr patch_;
 
+		/** Menor ángulo sobre el borde.
+		 * Según su valor, se procederá a cerrar los extremos o agregar un punto */
 		inline static std::tuple<int, double> smallest_angle(
 		    const cloudnormal &cloud_,
 		    const std::vector<std::uint32_t> &border);
 
+		/** Une los extremos del triángulo */
 		inline void join(
 		    int prev,
 		    int candidate,
 		    int next,
 		    std::vector<std::uint32_t> &border);
+
+		/** Al utilizar un punto ya existente, el hueco se parte en dos */
 		inline pcl::Vertices split_border(
 		    int index,
 		    int candidate,
 		    int next,
 		    std::vector<std::uint32_t> &border);
+
+		/** Triángulo a partir de un nuevo punto */
 		inline void add_new(
 		    pointnormal new_point,
 		    int candidate,
 		    int next,
 		    std::vector<std::uint32_t> &border);
 
+		/** Obtiene el nuevo punto a insertar */
 		inline pointnormal
 		divide_triangle(int prev, int center, int next, double angle_) const;
 
+		/** Visualización del fallo del algoritmo */
 		inline void debug_invalid_triangle(
 		    std::string message,
 		    int prev,
 		    int candidate,
 		    int next) const;
 	};
+	/** @} */
 } // namespace nih
 
 // implementation
