@@ -40,6 +40,7 @@ namespace nih {
 	inline boost::shared_ptr<T> create();
 
 	/**¿No hay versión con normales?*/
+	/** Entrada/salida (bueno, entrada nomás) */
 	inline cloud::Ptr load_cloud_ply(std::string filename);
 
 	/**@name Transformacione
