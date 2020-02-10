@@ -12,126 +12,147 @@
 
 namespace nih {
 	/** Submuestrear 1 en `ratio' puntos de la nube */
-	cloud::Ptr index_sampling(cloud::Ptr cloud, double ratio);
+	inline cloud::Ptr index_sampling(cloud::Ptr cloud, double ratio);
 
 	/** Obtención de correspondencias.
 	 * Busca los pares más cercanos y que sean recíprocos */
 	template <class Feature>
-	correspondences best_reciprocal_matches(Feature source, Feature target);
+	inline correspondences best_reciprocal_matches(Feature source, Feature target);
 	
 	/** Función auxiliar. ¿La escondo? */
 	template <class Feature>
-	correspondences best_matches(Feature source, Feature target);
+	inline correspondences best_matches(Feature source, Feature target);
 
 	/** Distancia \f$\chi^2\f$ entre histogramas */
-	double
+	inline double
 	distance(const pcl::FPFHSignature33 &a, const pcl::FPFHSignature33 &b);
 
 	/** Obtención de la matriz de transformación a partir de una translación y
 	 * una rotación */
-	transformation
+	inline transformation
 	create_transformation(double angle, vector axis, vector translation);
 
 	/** Devuelve el centro del clúster de mayor tamaño.
 	 * El vector indica, por cada elemento, si pertenece o no a este clúster */
 	template <class T>
-	std::tuple<T, std::vector<bool> >
+	inline std::tuple<T, std::vector<bool> >
 	biggest_cluster(std::vector<T> v, int n_clusters);
 
 	/** Devuelve el centro del clúster más cercano a `target`
 	 * El vector indica, por cada elemento, si pertenece o no a este clúster */
-	std::tuple<vector, std::vector<bool> >
+	inline std::tuple<vector, std::vector<bool> >
 	nearest_cluster(std::vector<vector> v, int n_clusters, const vector &target);
-	std::tuple<double, std::vector<bool> >
+	inline std::tuple<double, std::vector<bool> >
 	nearest_cluster(std::vector<double> v, int n_clusters, const double &target);
 
 	/** dkm::kmeans requiere que cada elemento se represente mediante un
 	 * arreglo de floats */
-	std::vector<std::array<float, 3> >
+	inline std::vector<std::array<float, 3> >
 	to_vec_array(const std::vector<vector> &v);
-	std::vector<std::array<double, 1> >
+	inline std::vector<std::array<double, 1> >
 	to_vec_array(const std::vector<double> &v);
 
 	/** Recupera la transformación de los datos que exigía dkm::kmeans */
-	vector from_vec_array(const std::array<float, 3> &v);
-	double from_vec_array(const std::array<double, 1> &v);
+	inline vector from_vec_array(const std::array<float, 3> &v);
+	inline double from_vec_array(const std::array<double, 1> &v);
 
 	/** Elimina los elementos no marcados como supervivientes */
 	template <class Container>
-	void filter(Container &c, std::vector<bool> survivor);
+	inline void filter(Container &c, std::vector<bool> survivor);
 
 	/** Moda de un contenedor */
 	template <class Iter>
-	typename Iter::value_type mode(Iter begin, Iter end);
+	inline typename Iter::value_type mode(Iter begin, Iter end);
 
 	/** Muestra la rotación como ángulo/eje y su distancia al eje vertical */
-	void show_rotation(const Eigen::Matrix3f &rotation, std::ostream &out = std::cout);
+	inline void show_rotation(const Eigen::Matrix3f &rotation, std::ostream &out = std::cout);
 	/** Muestra la matriz de transformación como operaciones
 	 * de translación y rotación */
-	void show_transformation(const transformation &t, std::ostream &out = std::cout);
+	inline void show_transformation(const transformation &t, std::ostream &out = std::cout);
 
 	/** Alineación utilizando todos los puntos y filtrando correspondencias por
 	 * transformaciones inválidas y kmeans */
 	class alignment {
+
+		/** Marco de referencia para identificar la transformación (rotación) */
 		struct reference_frame {
-			Eigen::Matrix3f eigenvectors_; // column order
+			/** Eigenvectores como columnas de la matriz */
+			Eigen::Matrix3f eigenvectors_;
 			float eigenvalues_[3];
-			reference_frame solve_ambiguity() const;
-			Eigen::Matrix3f
+
+			/** Rotación sobre de los eigenvectores sobre la normal */
+			inline reference_frame solve_ambiguity() const;
+
+			/** Rotación necesaria para alinear los marcos de referencia */
+			inline Eigen::Matrix3f
 			compute_rotation(const reference_frame &target) const;
 		};
 
+		/** Punto de anclaje para la alineación.  Contiene un descriptor y
+		 * marco de referencia para cada punto de la nube*/
 		struct anchor {
 			cloud::Ptr keypoints_;
 			signature::Ptr features_;
 			const cloud_with_normal *cloud_;
 			pcl::KdTreeFLANN<point> kdtree;
-			anchor();
-			void initialise(
+			inline anchor();
+			inline void initialise(
 			    const cloud_with_normal &cloud,
 			    double sample_ratio,
 			    double feature_radius);
 
-			void sampling(double ratio);
-			void redirect(const cloud_with_normal &cloud);
-			void compute_features(double radius);
-			reference_frame
+			/** Submuestreo de la nube de entrada */
+			inline void sampling(double ratio);
+			/** Cambio de la nube de entrada */
+			inline void redirect(const cloud_with_normal &cloud);
+			/** Cálculo de descriptores */
+			inline void compute_features(double radius);
+			/** Cálculo del marco de referencia del punto `index` */
+			inline reference_frame
 			compute_reference_frame(int index, double radius) const;
-			std::vector<vector> compute_translations(
+
+			/** Para cada punto, calcula la translación definida por la
+			 * correspondencia y la rotación */
+			inline std::vector<vector> compute_translations(
 			    double angle,
 			    const vector &axis,
 			    const anchor &target,
-			    const correspondences &correspondences_);
+			    const correspondences &correspondences_) const;
 		};
 
 		anchor source_, target_;
 		correspondences correspondences_;
 
-		// functions
-		void filter_y_threshold();
-		std::vector<double> filter_rotation_axis();
-		bool valid_angle(const Eigen::Matrix3f &rotation, double &angle);
+		/** Filtrado por translación en y */
+		inline void filter_y_threshold();
+		/** Filtrado por distancia del eje de giro al eje vertical */
+		inline std::vector<double> filter_rotation_axis();
+
+		/** Devuelve el ángulo representado en la matriz de rotación,
+		 * y si el eje de rotación es vertical*/
+		inline bool valid_angle(const Eigen::Matrix3f &rotation, double &angle);
 
 		// parameters
-		double sample_ratio_;
-		double feature_radius_;
-		double resolution_;
-		double y_threshold_;
-		double axis_threshold_;
-		int max_iterations_;
-		int n_clusters_;
+		double sample_ratio_; ///<submuestreo
+		double feature_radius_; ///<radio del descriptor
+		double resolution_; ///<a calcular de la entrada (igual para todas)
+		double y_threshold_; ///<umbral de movimiento en y
+		double axis_threshold_; ///<umbral de distancia al eje vertical
+		int max_iterations_; ///<iteraciones de kmeans
+		int n_clusters_; ///<cantidad de clústers para kmeans
 
 	public:
-		alignment();
-		transformation
+		inline alignment();
+		inline transformation
 		align(const cloud_with_normal &source, const cloud_with_normal &target);
-		void set_sample_ratio(double sample_ratio);
-		void set_feature_radius(double feature_radius);
-		void set_resolution(double resolution);
-		void set_y_threshold_(double y_threshold);
-		void set_axis_threshold_(double axis_threshold); // angle in radians
-		void set_max_iterations_cluster(int max_iterations);
-		void set_n_clusters(int n_clusters);
+		/** setters de los parámetros */
+		inline void set_sample_ratio(double sample_ratio);
+		inline void set_feature_radius(double feature_radius);
+		inline void set_resolution(double resolution);
+		inline void set_y_threshold_(double y_threshold);
+		inline void set_axis_threshold_(double axis_threshold); // angle in radians
+		inline void set_max_iterations_cluster(int max_iterations);
+		inline void set_n_clusters(int n_clusters);
 	};
 
 } // namespace nih
@@ -521,7 +542,7 @@ namespace nih {
 	    double angle,
 	    const vector &axis,
 	    const anchor &target,
-	    const correspondences &correspondences_) {
+	    const correspondences &correspondences_) const {
 		std::vector<vector> result;
 		transformation rot(Eigen::AngleAxisf(angle, axis));
 		for(auto K : correspondences_) {
