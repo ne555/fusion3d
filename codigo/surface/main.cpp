@@ -402,6 +402,7 @@ int main(int argc, char **argv) {
 			resolution = nih::cloud_resolution<nih::pointnormal>(cloudnormal_);
 			desvio *= resolution;
 		}
+#if 0
 		bool partial;
 		{
 			char c;
@@ -411,6 +412,7 @@ int main(int argc, char **argv) {
 		auto t = nih::get_transformation(input);
 		if(partial)
 			t = prev * t;
+#endif
 		clouds.push_back( {cloudnormal_, t, resolution} );
 		transformations.push_back(t);
 		prev = t;

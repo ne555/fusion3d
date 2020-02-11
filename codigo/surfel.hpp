@@ -2,6 +2,9 @@
 #ifndef SURFEL_HPP
 #define SURFEL_HPP
 
+#include "fusion_3d.hpp"
+#include <pcl/surface/gp3.h>
+
 namespace nih {
 	// /** ¿global? */
 	// double desvio; ///no se usa, después agregar
@@ -166,98 +169,91 @@ namespace nih {
 		return create_mesh(cloud_, polygons);
 	}
 
-	class fusion {
-	public:
-		fusion(double threshold) : cloud_(), threshold_(threshold) {}
-		std::vector<int> counter;
-		captura cloud_;
-		double threshold_;
+	fusion::fusion(double threshold) : cloud_(), threshold_(threshold) {}
+	void fusion::append(const captura &a) {
+		int size = a.cloud_->size();
+		counter.insert(counter.end(), size, 1);
+		cloud_.concatenate(a);
+	}
 
-		void append(const captura &a) {
-			int size = a.cloud_->size();
-			counter.insert(counter.end(), size, 1);
-			cloud_.concatenate(a);
-		}
+	void fusion::running_avg(int index_a, const captura &b, int index_b) {
+		(*cloud_.cloud_)[index_a] = weighted_average(
+		    cloud_.confidence[index_a],
+		    (*cloud_.cloud_)[index_a],
+		    b.confidence[index_b],
+		    (*b.cloud_)[index_b]);
 
-		void running_avg(int index_a, const captura &b, int index_b) {
-			(*cloud_.cloud_)[index_a] = weighted_average(
-			    cloud_.confidence[index_a],
-			    (*cloud_.cloud_)[index_a],
-			    b.confidence[index_b],
-			    (*b.cloud_)[index_b]);
+		cloud_.confidence[index_a] += b.confidence[index_b];
+		++counter[index_a];
+	}
 
-			cloud_.confidence[index_a] += b.confidence[index_b];
-			++counter[index_a];
-		}
+	void fusion::merge(const captura &b) {
+		const auto &cloud_a = cloud_.cloud_;
+		const auto &cloud_b = b.cloud_;
 
-		void merge(const captura &b) {
-			const auto &cloud_a = cloud_.cloud_;
-			const auto &cloud_b = b.cloud_;
+		auto copia = cloud_a->makeShared();
+		pcl::search::KdTree<nih::pointnormal> kdtree_a;
+		kdtree_a.setInputCloud(
+		    copia); // una copia porque se modifican los puntos
 
-			auto copia = cloud_a->makeShared();
-			pcl::search::KdTree<nih::pointnormal> kdtree_a;
-			kdtree_a.setInputCloud(
-			    copia); // una copia porque se modifican los puntos
+		pcl::search::KdTree<nih::pointnormal> kdtree_b;
+		kdtree_b.setInputCloud(cloud_b);
 
-			pcl::search::KdTree<nih::pointnormal> kdtree_b;
-			kdtree_b.setInputCloud(cloud_b);
+		// por cada punto de la nueva nube
+		for(int K = 0; K < cloud_b->size(); ++K) {
+			auto p = (*cloud_b)[K];
+			// busca el más cercano en la reconstrucción
+			int a_index = nih::get_index(p, kdtree_a);
+			auto q = (*copia)[a_index];
+			double distance_ = nih::distance(p, q);
+			int b_index = nih::get_index(q, kdtree_b);
 
-			// por cada punto de la nueva nube
-			for(int K = 0; K < cloud_b->size(); ++K) {
-				auto p = (*cloud_b)[K];
-				// busca el más cercano en la reconstrucción
-				int a_index = nih::get_index(p, kdtree_a);
-				auto q = (*copia)[a_index];
-				double distance_ = nih::distance(p, q);
-				int b_index = nih::get_index(q, kdtree_b);
-
-				// si están cerca, promedia
-				if(distance_ < threshold_ and b_index == K)
-					running_avg(a_index, b, b_index);
-				// sino, agrega
-				else {
-					cloud_.cloud_->push_back(p);
-					cloud_.confidence.push_back(b.confidence[K]);
-					counter.push_back(1);
-				}
+			// si están cerca, promedia
+			if(distance_ < threshold_ and b_index == K)
+				running_avg(a_index, b, b_index);
+			// sino, agrega
+			else {
+				cloud_.cloud_->push_back(p);
+				cloud_.confidence.push_back(b.confidence[K]);
+				counter.push_back(1);
 			}
 		}
+	}
 
-		pcl::PointCloud<pcl::PointXYZI>::Ptr with_intensity() const {
-			const auto &cloud_a = cloud_.cloud_;
-			auto result = nih::create<pcl::PointCloud<pcl::PointXYZI> >();
-			for(int K = 0; K < cloud_a->size(); ++K) {
-				auto p = (*cloud_a)[K];
-				pcl::PointXYZI pi;
-				pi.x = p.x;
-				pi.y = p.y;
-				pi.z = p.z;
-				// pi.intensity = counter[K];
-				pi.intensity = cloud_.confidence[K] / counter[K];
+	pcl::PointCloud<pcl::PointXYZI>::Ptr fusion::with_intensity() const {
+		const auto &cloud_a = cloud_.cloud_;
+		auto result = nih::create<pcl::PointCloud<pcl::PointXYZI> >();
+		for(int K = 0; K < cloud_a->size(); ++K) {
+			auto p = (*cloud_a)[K];
+			pcl::PointXYZI pi;
+			pi.x = p.x;
+			pi.y = p.y;
+			pi.z = p.z;
+			// pi.intensity = counter[K];
+			pi.intensity = cloud_.confidence[K] / counter[K];
 
-				result->push_back(pi);
+			result->push_back(pi);
+		}
+		return result;
+	}
+
+	void fusion::normalise() {
+		for(int K = 0; K < cloud_.confidence.size(); ++K)
+			cloud_.confidence[K] /= counter[K];
+		// cloud_.confidence[K] = counter[K];
+	}
+
+	void fusion::clean() {
+		captura cleaned;
+		for(int K = 0; K < counter.size(); ++K)
+			if(counter[K] > 1) {
+				cleaned.cloud_->push_back((*cloud_.cloud_)[K]);
+				cleaned.confidence.push_back(cloud_.confidence[K]);
 			}
-			return result;
-		}
 
-		void normalise() {
-			for(int K = 0; K < cloud_.confidence.size(); ++K)
-				cloud_.confidence[K] /= counter[K];
-			// cloud_.confidence[K] = counter[K];
-		}
-
-		void clean() {
-			captura cleaned;
-			for(int K = 0; K < counter.size(); ++K)
-				if(counter[K] > 1) {
-					cleaned.cloud_->push_back((*cloud_.cloud_)[K]);
-					cleaned.confidence.push_back(cloud_.confidence[K]);
-				}
-
-			cloud_.cloud_ = cleaned.cloud_;
-			cloud_.confidence = std::move(cleaned.confidence);
-		}
-	};
+		cloud_.cloud_ = cleaned.cloud_;
+		cloud_.confidence = std::move(cleaned.confidence);
+	}
 
 	captura fusionar(const std::vector<captura> &clouds, double threshold) {
 		fusion result(threshold);
@@ -272,12 +268,10 @@ namespace nih {
 		return result.cloud_;
 	}
 
-	std::vector<cloud::Ptr> seccionar(
-		cloud_with_normal a,
-		cloud_with_normal b,
-		double threshold) {
+	std::vector<cloud::Ptr>
+	seccionar(cloud_with_normal a, cloud_with_normal b, double threshold) {
 		std::vector<cloud::Ptr> result(4);
-		for(auto &c: result)
+		for(auto &c : result)
 			c = create<cloud>();
 
 		pcl::search::KdTree<point> kdtree;
@@ -295,7 +289,7 @@ namespace nih {
 		}
 
 		kdtree.setInputCloud(a.points_);
-		//lo mismo para b
+		// lo mismo para b
 		for(const auto &p : b.points_->points) {
 			int a_index = get_index(p, kdtree);
 			double distance_ = distance(p, (*a.points_)[a_index]);
