@@ -1,6 +1,7 @@
 #pragma once
 #ifndef SURFEL_HPP
 #define SURFEL_HPP
+
 namespace nih {
 	// /** ¿global? */
 	// double desvio; ///no se usa, después agregar

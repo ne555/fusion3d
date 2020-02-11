@@ -19,9 +19,8 @@
 #include <iostream>
 #include <fstream>
 
-using nih::cloud_with_normal;
-boost::shared_ptr<pcl::visualization::PCLVisualizer> view;
-//auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("clouds");
+using cloud_with_normal = nih::cloud_with_transformation;
+auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("clouds");
 
 	template <class Cloud>
 	void write_cloud_ply(const Cloud &cloud_, std::string filename) {
@@ -55,7 +54,7 @@ void visualise(const std::vector<cloud_with_normal> &nubes, int beg, int end){
 	for(size_t K = 0; K not_eq dist+1; ++K){
 		pcl::RGB color = pcl::GlasbeyLUT::at(beg);
 		std::cerr << beg << ' ' << color << '\n';
-		view->addPointCloud<nih::point>(nubes[beg].points_, std::to_string(beg));
+		view->addPointCloud<nih::pointnormal>(nubes[beg].cloud_, std::to_string(beg));
 		view->setPointCloudRenderingProperties(
 			pcl::visualization::PCL_VISUALIZER_COLOR,
 			color.r/255.0,
@@ -71,12 +70,14 @@ void visualise(const std::vector<cloud_with_normal> &nubes, int beg, int end){
 void visualise_diff(
     const cloud_with_normal &a, const cloud_with_normal &b) {
 	view->removeAllPointClouds();
-	double resolution = nih::get_resolution(a.points_);
+	double resolution = nih::cloud_resolution<nih::pointnormal>(a.cloud_);
 	auto diff =
-	    nih::cloud_diff_with_threshold(a.points_, b.points_, 10 * resolution);
+	    nih::cloud_diff_with_threshold(a.cloud_, b.cloud_, 10 * resolution);
 
-	for(auto &p : diff->points)
-		p.intensity /= resolution;
+	for(auto &p : diff->points){
+		p.intensity /= nih::square(resolution);
+		p.intensity =  sqrt(p.intensity);
+	}
 	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI>
 	    color(diff, "intensity");
 
@@ -145,16 +146,18 @@ int main(int argc, char **argv) {
 	while(input >> filename) {
 		std::cerr << '.';
 
-		cloud_with_normal c;
+		nih::cloud_with_normal c;
 		c.points_ = nih::load_cloud_ply(directory + filename);
 		if(first){
 			resolution = nih::cloud_resolution<nih::point>(c.points_);
 			first = not first;
 		}
+		//suavizar y obtener normales
 		c = nih::preprocess(nih::moving_least_squares(c.points_, 6 * resolution));
 
 		char partial; input >> partial;
 		c.transformation_ = nih::get_transformation(input);
+		//unir points_ y normals_
 		auto current = nih::join_cloud_and_normal(c);
 		if(partial=='p'){
 			//corrección por icp (ahora que están cerca)
@@ -182,6 +185,8 @@ int main(int argc, char **argv) {
 
 	//loop correction
 	std::cerr << "Corrección de bucle\n";
+	std::cerr << "Error de bucle: ";
+	nih::show_transformation(clouds.back().transformation_, std::cerr, resolution);
 	nih::loop_correction(clouds);
 
 	for(auto &c: clouds)
@@ -217,7 +222,7 @@ int main(int argc, char **argv) {
 		write_cloud_ply(*clouds[K].cloud_, "bun"+std::to_string(K)+".ply");
 	}
 
-	//visualise_wrapper(clouds);
+	visualise_wrapper(clouds);
 	return 0;
 }
 
