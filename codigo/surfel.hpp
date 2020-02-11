@@ -5,8 +5,6 @@ namespace nih {
 	// /** ¿global? */
 	// double desvio; ///no se usa, después agregar
 
-	typedef cloud_with_normal cloud_with_transformation;
-
 	/** Entrada/salida de datos */
 	inline cloud_with_normal load_cloud_normal(std::string filename);
 	template <class Cloud>
@@ -277,6 +275,42 @@ namespace nih {
 		result.clean();
 
 		return result.cloud_;
+	}
+
+	std::vector<cloud::Ptr> seccionar(
+		cloud_with_normal a,
+		cloud_with_normal b,
+		double threshold) {
+		std::vector<cloud::Ptr> result(4);
+		for(auto &c: result)
+			c = create<cloud>();
+
+		pcl::search::KdTree<point> kdtree;
+		kdtree.setInputCloud(b.points_);
+
+		// por cada punto en a
+		for(const auto &p : a.points_->points) {
+			// buscar el más cercano en b
+			int b_index = get_index(p, kdtree);
+			double distance_ = distance(p, (*b.points_)[b_index]);
+			if(distance_ < threshold)
+				result[1]->push_back(p);
+			else
+				result[0]->push_back(p);
+		}
+
+		kdtree.setInputCloud(a.points_);
+		//lo mismo para b
+		for(const auto &p : b.points_->points) {
+			int a_index = get_index(p, kdtree);
+			double distance_ = distance(p, (*a.points_)[a_index]);
+			if(distance_ < threshold)
+				result[2]->push_back(p);
+			else
+				result[3]->push_back(p);
+		}
+
+		return result;
 	}
 } // namespace nih
 

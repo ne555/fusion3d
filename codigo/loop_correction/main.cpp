@@ -18,6 +18,8 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+
+using nih::cloud_with_normal;
 auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("clouds");
 
 	template <class Cloud>
@@ -37,7 +39,7 @@ struct cloud_with_transformation{
 	nih::transformation transformation_;
 };
 #else
-typedef nih::cloud_with_normal cloud_with_transformation;
+//typedef nih::cloud_with_normal cloud_with_transformation;
 #endif
 
 void usage(const char *program) {
@@ -45,7 +47,7 @@ void usage(const char *program) {
 	          << "conf_file\n";
 }
 
-void visualise(const std::vector<cloud_with_transformation> &nubes, int beg, int end){
+void visualise(const std::vector<cloud_with_normal> &nubes, int beg, int end){
 	view->removeAllPointClouds();
 	std::cerr << "From " << beg << " to " << end << '\n';
 	int dist = (end - beg + nubes.size()) % nubes.size();
@@ -66,7 +68,7 @@ void visualise(const std::vector<cloud_with_transformation> &nubes, int beg, int
 }
 
 void visualise_diff(
-    const cloud_with_transformation &a, const cloud_with_transformation &b) {
+    const cloud_with_normal &a, const cloud_with_normal &b) {
 	view->removeAllPointClouds();
 	double resolution = nih::get_resolution(a.points_);
 	auto diff =
@@ -90,8 +92,8 @@ void visualise_diff(
 
 void keyboardEventOccurred(
     const pcl::visualization::KeyboardEvent &event, void *data) {
-	const std::vector<cloud_with_transformation> &nubes =
-	    *static_cast<const std::vector<cloud_with_transformation> *>(data);
+	const std::vector<cloud_with_normal> &nubes =
+	    *static_cast<const std::vector<cloud_with_normal> *>(data);
 
 	if(event.keyDown()) {
 		std::string key = event.getKeySym();
@@ -115,7 +117,7 @@ void keyboardEventOccurred(
 	}
 }
 
-void visualise_wrapper(const std::vector<cloud_with_transformation> &nubes){
+void visualise_wrapper(const std::vector<cloud_with_normal> &nubes){
 	view->setBackgroundColor(0, 0, 0);
 	view->registerKeyboardCallback(keyboardEventOccurred, (void *)&nubes);
 	while(!view->wasStopped())
@@ -134,15 +136,22 @@ int main(int argc, char **argv) {
 	if(directory.back() not_eq '/') directory += '/';
 	std::ifstream input(config);
 	std::string filename;
-	std::vector<cloud_with_transformation> clouds;
+	std::vector<nih::cloud_with_transformation> clouds;
 
 	std::cerr << "Loading clouds";
 	nih::transformation prev = nih::transformation::Identity();
+	double resolution; bool first = true;;
 	while(input >> filename) {
 		std::cerr << '.';
 
-		cloud_with_transformation c;
+		cloud_with_normal c;
 		c.points_ = nih::load_cloud_ply(directory + filename);
+		if(first){
+			resolution = nih::cloud_resolution<nih::point>(c.points_);
+			first = not first;
+		}
+		c = nih::preprocess(nih::moving_least_squares(c.points_, 6 * resolution));
+
 		char partial; input >> partial;
 		auto t = nih::get_transformation(input);
 		if(partial=='p')
@@ -150,13 +159,41 @@ int main(int argc, char **argv) {
 		else
 			c.transformation_ = t;
 		prev = c.transformation_;
-		clouds.push_back(c);
+		clouds.push_back(nih::join_cloud_and_normal(c));
+	}
+
+	for(auto &c: clouds)
+		pcl::transformPointCloudWithNormals(*c.cloud_, *c.cloud_, c.transformation_);
+
+	//icp second alignment
+	std::cerr << "resolution: " << resolution << '\n';
+	std::cerr << "Alineción con ICP\n";
+	for(int K=1; K<clouds.size(); ++K){
+		std::cerr << '.';
+		{
+			//auto transformada = nih::create<nih::cloudnormal>();
+			//pcl::transformPointCloudWithNormals(*clouds[K].cloud_, *transformada, clouds[K].transformation_);
+			auto [dist, porcentaje] = nih::fitness( clouds[K].cloud_, clouds[K-1].cloud_, 10*resolution);
+			std::cerr << "Fitness before: " << dist << ' ' << porcentaje << '\n';
+		}
+	//	auto t = nih::icp_correction(clouds[K], clouds[K-1], resolution);
+	//	//nih::write_transformation(t, std::cerr);
+	//	{
+	//		auto transformada = nih::create<nih::cloudnormal>();
+	//		pcl::transformPointCloudWithNormals(*clouds[K].cloud_, *transformada, clouds[K].transformation_);
+	//		auto [dist, porcentaje] = nih::fitness( transformada, clouds[K-1].cloud_, 10*resolution);
+	//		std::cerr << "Fitness después: " << dist << ' ' << porcentaje << '\n';
+	//	}
+		//nih::show_transformation(t, std::cerr);
+		nih::show_transformation(clouds[K].transformation_, std::cerr);
 	}
 
 	//loop correction
-	//loop_correction(clouds);
+	std::cerr << "Corrección de bucle\n";
+	//nih::loop_correction(clouds);
+
 	for(auto &c: clouds)
-		pcl::transformPointCloud(*c.points_, *c.points_, c.transformation_);
+		pcl::transformPointCloudWithNormals(*c.cloud_, *c.cloud_, c.transformation_);
 
 #if 0
 	//aplicar las transformaciones (mantener almacenado)
@@ -179,7 +216,7 @@ int main(int argc, char **argv) {
 
 	//save the clouds
 	for(int K=0; K<clouds.size(); ++K){
-		write_cloud_ply(*clouds[K].points_, "bun"+std::to_string(K)+".ply");
+		write_cloud_ply(*clouds[K].cloud_, "bun"+std::to_string(K)+".ply");
 	}
 
 	//visualise_wrapper(clouds);

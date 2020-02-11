@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 
+#include "util.hpp"
+
 namespace nih {
 	/** \defgroup general Funciones generales
 	 * @{*/
@@ -86,8 +88,15 @@ namespace nih {
 
 	/**Calcula la distancia |a - b| limitada al `threshold'.
 	 * Puntos fuera de ese límite son descartados.*/
+
+	template <class CloudPtr>
 	inline pcl::PointCloud<pcl::PointXYZI>::Ptr
-	cloud_diff_with_threshold(cloud::Ptr a, cloud::Ptr b, double threshold);
+	cloud_diff_with_threshold(CloudPtr a, CloudPtr b, double threshold);
+
+	/** Distancia promedio y Porcentaje de solapamiento, dentro del threshold*/
+	template <class CloudPtr>
+	inline std::tuple<double, double>
+	fitness(CloudPtr source, CloudPtr target, double threshold);
 	/**@}*/
 } // namespace nih
 
@@ -114,11 +123,12 @@ namespace nih {
 		return indices[0];
 	}
 
-	pcl::PointCloud<pcl::PointXYZI>::Ptr
-	cloud_diff_with_threshold(nih::cloud::Ptr a, nih::cloud::Ptr b, double threshold){
+	template <class CloudPtr>
+	inline pcl::PointCloud<pcl::PointXYZI>::Ptr
+	cloud_diff_with_threshold(CloudPtr a, CloudPtr b, double threshold){
 		//almacena distancia |a - b| clampeado a `clamp'
 		auto result = create<pcl::PointCloud<pcl::PointXYZI>>();
-		pcl::search::KdTree<nih::point> kdtree;
+		pcl::search::KdTree<typename CloudPtr::element_type::PointType> kdtree;
 		kdtree.setInputCloud(b);
 
 		//por cada punto en a
@@ -129,8 +139,8 @@ namespace nih {
 			pi.z = p.z;
 			//buscar el más cercano en b
 			int b_index = get_index(p, kdtree);
-			pi.intensity = distance(p, (*b)[b_index]);
-			if(pi.intensity < threshold)
+			pi.intensity = square(distance(p, (*b)[b_index]));
+			if(pi.intensity < square(threshold))
 				result->push_back(pi);
 		}
 
@@ -225,6 +235,17 @@ namespace nih {
 		Eigen::Quaternion<float> rotation(t.rotation());
 		out << t.translation().transpose() << ' ';
 		out << rotation.vec().transpose() << ' ' << rotation.w() << '\n';
+	}
+
+	template <class CloudPtr>
+	std::tuple<double, double>
+	fitness(CloudPtr source, CloudPtr target, double threshold){
+		auto diff = cloud_diff_with_threshold(source, target, threshold);
+		double total = 0;
+		for(auto p: diff->points)
+			total += p.intensity;
+
+		return std::make_tuple(total/diff->size(), double(diff->size())/source->size());
 	}
 
 } // namespace nih

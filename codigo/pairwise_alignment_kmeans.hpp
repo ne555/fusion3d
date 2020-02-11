@@ -64,11 +64,6 @@ namespace nih {
 	template <class Iter>
 	inline typename Iter::value_type mode(Iter begin, Iter end);
 
-	/** Muestra la rotación como ángulo/eje y su distancia al eje vertical */
-	inline void show_rotation(const Eigen::Matrix3f &rotation, std::ostream &out = std::cout);
-	/** Muestra la matriz de transformación como operaciones
-	 * de translación y rotación */
-	inline void show_transformation(const transformation &t, std::ostream &out = std::cout);
 
 	/** Alineación utilizando todos los puntos y filtrando correspondencias por
 	 * transformaciones inválidas y kmeans */
@@ -329,19 +324,6 @@ namespace nih {
 		                                    ->first;
 
 		return big;
-	}
-	void show_transformation(const transformation &t, std::ostream &out){
-		Eigen::Matrix3f rotation, scale;
-		t.computeRotationScaling(&rotation, &scale);
-		show_rotation(rotation, out);
-		out << t.translation().transpose() << '\n';
-	}
-	void show_rotation(const Eigen::Matrix3f &rotation, std::ostream &out){
-		Eigen::AngleAxisf aa;
-		aa.fromRotationMatrix(rotation);
-		out << "angle: " << aa.angle()*180/M_PI << '\t';
-		out << "axis: " << aa.axis().transpose() << '\t';
-		out << "dist_y: " << 1-abs(aa.axis().dot(Eigen::Vector3f::UnitY())) << '\n';
 	}
 	// class alignment
 	alignment::alignment()
