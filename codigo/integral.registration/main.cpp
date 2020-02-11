@@ -51,10 +51,10 @@ int main(int argc, char **argv) {
 	std::vector<std::string> cloudname;
 	double resolution;
 
-	std::ofstream profile("result/" + config+".times"),
-		initial_align("result/" + config+".initial"),
-		icp_align("result/" + config+".icp"),
-		loop_align("result/" + config+".result");
+	std::ofstream profile("result/" + config+"/times"),
+		initial_align("result/" + config+"/initial"),
+		icp_align("result/" + config+"/icp"),
+		loop_align("result/" + config+"/result");
 
 	profile << "Todos los tiempo son en segundos\n";
 	profile << "\n---\nPreproceso\n";
@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
 		const auto &c = registered[K];
 		pcl::transformPointCloudWithNormals(*c.cloud_, *c.cloud_, c.transformation_);
 	//TODO: guardar nubes alineadas
-		nih::write_cloud_ply(*c.cloud_, "result/reg_"+cloudname[K]);
+		nih::write_cloud_ply(*c.cloud_, "result/" + config + "/reg_" + cloudname[K]);
 	}
 
 
