@@ -372,9 +372,9 @@ namespace nih {
 			filter(angles, trans_label);
 		}
 
-		source.transformation = create_transformation(
+		source.transformation_ = create_transformation(
 		    angle_result, {0, 1, 0}, translation_result);
-		return source.transformation;
+		return source.transformation_;
 	}
 
 	void alignment::filter_y_threshold() {

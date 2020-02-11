@@ -84,7 +84,7 @@ namespace nih {
 	inline void show_rotation(const Eigen::Matrix3f &rotation, std::ostream &out = std::cout);
 	/** Muestra la matriz de transformación como operaciones
 	 * de translación y rotación */
-	inline void show_transformation(const transformation &t, std::ostream &out = std::cout);
+	inline void show_transformation(const transformation &t, std::ostream &out = std::cout, double resolution = 1);
 
 } // namespace nih
 
@@ -369,11 +369,11 @@ namespace nih {
 		return -1;
 	}
 
-	void show_transformation(const transformation &t, std::ostream &out){
+	void show_transformation(const transformation &t, std::ostream &out, double resolution){
 		Eigen::Matrix3f rotation, scale;
 		t.computeRotationScaling(&rotation, &scale);
 		show_rotation(rotation, out);
-		out << t.translation().transpose() << '\n';
+		out << t.translation().transpose()/resolution << '\n';
 	}
 	void show_rotation(const Eigen::Matrix3f &rotation, std::ostream &out){
 		Eigen::AngleAxisf aa;
