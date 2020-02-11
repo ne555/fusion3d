@@ -41,9 +41,10 @@ namespace nih {
 	template <class T>
 	inline boost::shared_ptr<T> create();
 
-	/**¿No hay versión con normales?*/
-	/** Entrada/salida (bueno, entrada nomás) */
+	/** Entrada/salida */
 	inline cloud::Ptr load_cloud_ply(std::string filename);
+	template <class Cloud>
+	inline void write_cloud_ply(const Cloud &cloud_, std::string filename);
 
 	/**@name Transformacione
 	 * @{
@@ -168,6 +169,11 @@ namespace nih {
 		pcl::removeNaNFromPointCloud(*nube, *nube, indices);
 
 		return nube;
+	}
+	template <class Cloud>
+	void write_cloud_ply(const Cloud &cloud_, std::string filename) {
+		pcl::PLYWriter writer;
+		writer.write(filename, cloud_);
 	}
 	double get_resolution(cloud::Ptr input) {
 		point bottom_left_back, upper_right_front;

@@ -59,28 +59,17 @@ namespace nih {
 
 	transformation
 	icp_correction(cloud_with_transformation &source, const cloud_with_transformation &target, double resolution){
-
-		auto source2 = create<cloudnormal>();
-		auto target2 = create<cloudnormal>();
-		pcl::transformPointCloudWithNormals(*source.cloud_, *source2, source.transformation_);
-		pcl::transformPointCloudWithNormals(*target.cloud_, *target2, source.transformation_);
-
-		pcl::
-		    IterativeClosestPointWithNormals<pointnormal, pointnormal>
-		        icp;
-		icp.setInputSource(source2);
-		icp.setInputTarget(target2);
+		pcl::IterativeClosestPointWithNormals<pointnormal, pointnormal> icp;
+		icp.setInputSource(source.cloud_);
+		icp.setInputTarget(target.cloud_);
 		icp.setUseReciprocalCorrespondences(true);
 		// icp.setRANSACOutlierRejectionThreshold(10*resolution);
-		icp.setMaxCorrespondenceDistance(1 * resolution);
+		icp.setMaxCorrespondenceDistance(5 * resolution);
 
 		auto result = create<cloudnormal>();
-		icp.align(*result);
-		std::cerr << "Fitness ICP: " << icp.getFitnessScore(5*resolution) << '\n';
-		transformation correction;
-		correction = icp.getFinalTransformation();
-		source.transformation_ = correction * source.transformation_;
-		return correction;
+		icp.align(*result, source.transformation_.matrix());
+		source.transformation_ = icp.getFinalTransformation();
+		return source.transformation_;
 	}
 
 

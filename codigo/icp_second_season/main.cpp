@@ -63,10 +63,14 @@ int main(int argc, char **argv){
 	nih::transformation prev = nih::transformation::Identity();
 	//lectura del .conf
 	double resolution;
+	bool first_time = true;
 	while(input >> filename) {
 		std::cerr << '.';
 		auto first = nih::load_cloud_ply(directory + filename);
-		resolution = nih::cloud_resolution<nih::point>(first);
+		if(first_time){
+			resolution = nih::cloud_resolution<nih::point>(first);
+			first_time = not first_time;
+		}
 
 		cloud_with_transformation c;
 		c.cloud_ = nih::preprocess(nih::moving_least_squares(first, 6 * resolution));
@@ -98,6 +102,8 @@ int main(int argc, char **argv){
 	icp.setMaxCorrespondenceDistance(5*resolution);
 
 	icp.align(*result);
+
+	nih::write_cloud_ply(*result, "icp.ply");
 	nih::transformation tr;
 	tr = icp.getFinalTransformation();
 	if(icp.hasConverged()){
@@ -108,7 +114,7 @@ int main(int argc, char **argv){
 		Eigen::Matrix3f rotation, scale;
 		tr.computeRotationScaling(&rotation, &scale);
 		//show_rotation(rotation, out);
-		std::cerr << tr.translation().transpose() << '\n';
+		std::cerr << (tr.translation()/resolution).transpose() << '\n';
 		Eigen::AngleAxisf aa;
 		aa.fromRotationMatrix(rotation);
 		std::cerr << "angle: " << nih::rad2deg(aa.angle()) << '\t';
@@ -117,6 +123,16 @@ int main(int argc, char **argv){
 	else
 		std::cerr << "Failed\n";
 	std::cerr << "Fin\n";
+
+	{
+		auto [dist, porcentaje] = nih::fitness( clouds[1].cloudnormal_, clouds[0].cloudnormal_, 10*resolution);
+		std::cerr << "nih::Fitness before: " << dist << ' ' << porcentaje << '\n';
+	}
+	{
+		auto [dist, porcentaje] = nih::fitness( result, clouds[0].cloudnormal_, 10*resolution);
+		std::cerr << "nih::Fitness after: " << dist << ' ' << porcentaje << '\n';
+	}
+
 #if 0
 	pcl::NormalDistributionsTransform<nih::pointnormal, nih::pointnormal> ndt;
 	ndt.setInputTarget(clouds[0].cloudnormal_);
@@ -136,8 +152,11 @@ int main(int argc, char **argv){
 #endif
 	
 	//visualizar
-	visualise(clouds);
-	clouds[1].cloudnormal_ = result;
+	//visualise(clouds);
+	//clouds[1].cloudnormal_ = result;
+	cloud_with_transformation asdf;
+	asdf.cloudnormal_ = result;
+	clouds.push_back(asdf);
 	visualise(clouds);
 
 

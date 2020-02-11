@@ -5,10 +5,8 @@ namespace nih {
 	// /** ¿global? */
 	// double desvio; ///no se usa, después agregar
 
-	/** Entrada/salida de datos */
-	inline cloud_with_normal load_cloud_normal(std::string filename);
-	template <class Cloud>
-	inline void write_cloud_ply(const Cloud &cloud_, std::string filename);
+	/** Lee los puntos y preprocesa */
+	inline cloud_with_normal load_cloud_with_normal(std::string filename);
 
 	/** Promedio ponderado de posición y normal según la confianza */
 	pointnormal
@@ -83,18 +81,6 @@ namespace nih {
 
 // implementación
 namespace nih {
-	cloud_with_normal load_cloud_normal(std::string filename) {
-		auto cloud_ = load_cloud_ply(filename);
-		double resolution = get_resolution(cloud_);
-		double radius = 6;
-
-		return preprocess(moving_least_squares(cloud_, radius * resolution));
-	}
-	template <class Cloud>
-	void write_cloud_ply(const Cloud &cloud_, std::string filename) {
-		pcl::PLYWriter writer;
-		writer.write(filename, cloud_);
-	}
 
 	pointnormal
 	weighted_average(double alpha, pointnormal a, double beta, pointnormal b) {
@@ -111,6 +97,14 @@ namespace nih {
 			result.data_n[K] = normal(K);
 
 		return result;
+	}
+
+	cloud_with_normal load_cloud_with_normal(std::string filename) {
+		auto cloud_ = load_cloud_ply(filename);
+		double resolution = get_resolution(cloud_);
+		double radius = 6;
+
+		return preprocess(moving_least_squares(cloud_, radius * resolution));
 	}
 
 	// captura

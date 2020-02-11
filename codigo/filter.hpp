@@ -47,6 +47,8 @@ namespace nih {
 		normal::Ptr normals_;
 		transformation transformation_;
 	};
+
+
 	/** Devuelve los índices de los puntos que se encuentran aislados */
 	inline std::vector<int> delete_big_edges(TMesh mesh, cloud::Ptr nube, double threshold);
 	/** Devuelve los índices de los puntos a eliminar */
@@ -86,6 +88,8 @@ namespace nih {
 
 		return index;
 	}
+
+
 	std::vector<int> delete_big_edges(nih::TMesh mesh, nih::cloud::Ptr nube, double threshold) {
 		// for e in edges
 		//    if e.length() > threshold

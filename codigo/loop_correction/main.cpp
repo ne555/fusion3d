@@ -20,7 +20,8 @@
 #include <fstream>
 
 using nih::cloud_with_normal;
-auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("clouds");
+boost::shared_ptr<pcl::visualization::PCLVisualizer> view;
+//auto view = boost::make_shared<pcl::visualization::PCLVisualizer>("clouds");
 
 	template <class Cloud>
 	void write_cloud_ply(const Cloud &cloud_, std::string filename) {
@@ -153,47 +154,44 @@ int main(int argc, char **argv) {
 		c = nih::preprocess(nih::moving_least_squares(c.points_, 6 * resolution));
 
 		char partial; input >> partial;
-		auto t = nih::get_transformation(input);
-		if(partial=='p')
-			c.transformation_ = prev * t;
-		else
-			c.transformation_ = t;
-		prev = c.transformation_;
-		clouds.push_back(nih::join_cloud_and_normal(c));
+		c.transformation_ = nih::get_transformation(input);
+		auto current = nih::join_cloud_and_normal(c);
+		if(partial=='p'){
+			//corrección por icp (ahora que están cerca)
+			if(not clouds.empty())
+				nih::icp_correction(current, clouds.back(), resolution);
+
+			current.transformation_ = prev * current.transformation_;
+		}
+		prev = current.transformation_;
+		clouds.push_back(current);
 	}
 
-	for(auto &c: clouds)
-		pcl::transformPointCloudWithNormals(*c.cloud_, *c.cloud_, c.transformation_);
+	std::cerr << '\n';
+	//mostrar fitness
+	for(int K=1; K<clouds.size(); ++K)
+	{
+		auto source = nih::create<nih::cloudnormal>();
+		auto target = nih::create<nih::cloudnormal>();
+		pcl::transformPointCloudWithNormals(*clouds[K].cloud_, *source, clouds[K].transformation_);
+		pcl::transformPointCloudWithNormals(*clouds[K-1].cloud_, *target, clouds[K-1].transformation_);
 
-	//icp second alignment
-	std::cerr << "resolution: " << resolution << '\n';
-	std::cerr << "Alineción con ICP\n";
-	for(int K=1; K<clouds.size(); ++K){
-		std::cerr << '.';
-		{
-			//auto transformada = nih::create<nih::cloudnormal>();
-			//pcl::transformPointCloudWithNormals(*clouds[K].cloud_, *transformada, clouds[K].transformation_);
-			auto [dist, porcentaje] = nih::fitness( clouds[K].cloud_, clouds[K-1].cloud_, 10*resolution);
-			std::cerr << "Fitness before: " << dist << ' ' << porcentaje << '\n';
-		}
-	//	auto t = nih::icp_correction(clouds[K], clouds[K-1], resolution);
-	//	//nih::write_transformation(t, std::cerr);
-	//	{
-	//		auto transformada = nih::create<nih::cloudnormal>();
-	//		pcl::transformPointCloudWithNormals(*clouds[K].cloud_, *transformada, clouds[K].transformation_);
-	//		auto [dist, porcentaje] = nih::fitness( transformada, clouds[K-1].cloud_, 10*resolution);
-	//		std::cerr << "Fitness después: " << dist << ' ' << porcentaje << '\n';
-	//	}
-		//nih::show_transformation(t, std::cerr);
-		nih::show_transformation(clouds[K].transformation_, std::cerr);
+		auto [dist, porcentaje] = nih::fitness(source, target, 10*resolution);
+		std::cerr << "Fitness antes: " << dist << ' ' << porcentaje << '\n';
 	}
 
 	//loop correction
 	std::cerr << "Corrección de bucle\n";
-	//nih::loop_correction(clouds);
+	nih::loop_correction(clouds);
 
 	for(auto &c: clouds)
 		pcl::transformPointCloudWithNormals(*c.cloud_, *c.cloud_, c.transformation_);
+
+	//mostrar fitness
+	for(int K=1; K<clouds.size(); ++K){
+		auto [dist, porcentaje] = nih::fitness(clouds[K].cloud_, clouds[K-1].cloud_, 10*resolution);
+		std::cerr << "Fitness después: " << dist << ' ' << porcentaje << '\n';
+	}
 
 #if 0
 	//aplicar las transformaciones (mantener almacenado)
