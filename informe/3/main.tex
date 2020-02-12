@@ -1,0 +1,166 @@
+\documentclass{pfc}
+\usepackage{algorithmicx}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+\makeatletter
+ \renewcommand{\ALG@name}{Algoritmo}
+\makeatother
+\renewcommand{\algorithmicfunction}{}
+
+\title{Integración y pruebas}
+
+\begin{document}
+	\maketitle
+	\section{Introducción}
+
+	En esta etapa se integraron los módulos de registración, fusión y relleno de huecos.
+
+	Se realizaron pruebas de rendimiento utilizando los modelos de la base de datos Stanford.
+
+	Se resolvieron todas las funcionalidades propuestas.
+
+	\section{Integración}
+	\subsection{Formato de nube utilizado en cada módulo}
+		Para la registración fue conveniente, en un primer momento, mantener
+		separadas las normales de las posiciones, por lo que al probar diversas
+		alternativas se siguió manteniendo esta forma.
+		Sin embargo, el ajuste por ICP, la fusión y el relleno de huecos
+		requerían que esta información estuviera junta para cada punto.
+
+		Para el momento en que se comenzó con la fusión, modificar la
+		registración era prohibitivamente costoso, ya que no se podía destinar nada de tiempo a la tarea.
+		Además, ya se contaban con los resultados de esa etapa (las transformaciones de las vistas).
+		Por eso se idearon funciones de conversión entre esos formatos en lugar de modificar la registración.
+
+		Se planea una posterior modificación de la registración de forma que el
+		formato utilizado transparente para el usuario.
+
+	
+	\subsection{Pasaje de registración de a pares a toda la lista}
+		El algoritmo de alineación inicial funciona mediante pares de capturas,
+		retornando entonces una transformación parcial entre las vistas.
+		El ajuste por ICP también trabaja de a pares, por lo que no requiere aplicar la transformación.
+
+		Si bien la corrección por bucle requiere de las transformaciones
+		totales, el algoritmo ignora las nubes de puntos, por lo que no es
+		necesario aplicar la transformación.
+
+		Por esto, no es necesario aplicar la transformación hasta que el módulo de fusión lo requiera.
+		Las capturas pueden mantenerse en su marco original, 
+		donde $z$ es la distancia a la cámara (considerando perspectiva),
+		si esto representa una ventaja para el usuario
+
+	\subsection{Relleno de huecos}
+		El resultado del módulo de fusión es una nube de puntos con su correspondiente triangulación.
+		Sin embargo, el rellenado de huecos mediante \emph{advancing front}
+		descarta todos aquellos puntos que no pertenezcan
+		a la mayor componente conectada en la triangulación.
+
+		Esto se realiza para simplificar la implementación del método al no
+		tener que considerar posibles islas.
+		Una versión futura podría evitar esta pérdida de información.
+
+		En el caso del método de Poisson, la triangulación es completamente ignorada.
+
+
+
+	\section{Funcionalidades}
+		Respondiendo a los requerimientos identificados previamente,
+		se implementaron las siguientes funcionalidades
+
+		\begin{itemize}
+
+			\item {Outliers}
+	%{Se debe disponer de funciones para la detección y eliminación de puntos considerados outliers.}
+		El ruido y los puntos extremos se consideran en varias etapas de la reconstrucción.
+		Durante el preproceso, una triangulación Delaunay identifica y elimina puntos extremos.
+		Durante la fusión, los puntos sin confirmación y poca confianza se consideran provenientes de ruido.
+		Luego, al utilizar únicamente la componente de mayor tamaño, se eliminan pequeños grupos de puntos.
+
+	{Registración Inicial}
+	{Se debe disponer de funciones que dadas dos mallas calculen una
+	transformación que las acerque lo suficiente como para poder
+	utilizar luego ICP.}
+		Se proveen dos métodos para la alineación inicial en el módulo de registración.
+
+	{Área solapada}
+	{Se debe disponer de funciones que establezcan los puntos en común (o una buena
+	aproximación) entre dos mallas ya alineadas burdamente.}
+		Los puntos en común se definieron como aquellos que están a menos de un umbral de distancia
+		al punto más cercano en la otra nube.
+
+	{Métricas}
+	{Se debe disponer de funciones para evaluar la calidad de una registración.}
+		Cómo métricas se utilizaron la distancia entre las nubes considerando sólo los puntos en común,
+		y la razón de tamaños entre la nube de entrada y los puntos en común.
+
+	{Corrección de bucle}
+	{Se debe disponer de funciones para corregir el error propagado durante la registración
+	una vez que se haya realizado una vuelta con las capturas.}
+		El error de alineación del bucle se define como la transformación total
+		calculada por el par primera-última al completar la vuelta. Debido a que `primera`
+		definió el marco de referencia, si no se tuviera error se obtendría la identidad.
+		Calculando la inversa de esta transformación se obtiene la corrección que será distribuida
+		a las otras registraciones.
+
+	{Combinación de nubes}
+	{Se debe disponer de funciones para ajustar los puntos y sus normales,
+	según la información provista por cada malla.}
+		El módulo de fusión se encarga de esto, utilizando una representación de surfel con visibilidad, confianza y vecindad.
+
+	{Triangulación}
+	{Se debe disponer de funciones para obtener una triangulación dada una nube de puntos tridimensional.}
+		La triangulación se realiza mediante el método de Greedy Projection Triangulation provisto por PCL.
+
+	{Relleno}
+	{Se debe disponer de funciones para lograr que una triangulación sea cerrada. Se
+	estimará una superficie en las zonas donde se carezca de
+	información.}
+		El módulo de relleno de huecos da respuesta mediante los algoritmos de advancing front y
+		la llamada a PCL::Poisson.
+		\end{itemize}
+
+
+
+
+
+
+
+	%casos de uso y requerimientos, cómo se los solucionó
+	\CasoUso{Preprocesar nube}
+		Función para reducir el ruido mediante mínimos cuadrados móviles.
+
+	\CasoUso{Alinear dos nubes de puntos}
+		Una registración inicial, seguida por una corrección mediante ICP.
+
+	\CasoUso{Extraer superficie}
+		La superficie es una malla triangulada. La triangulación se obtiene por Greedy Projection Triangulation, o luego de la reconstrucción de Poisson (que la provee).
+
+
+	\CasoUso{Identificar huecos}
+		La malla se almacena mediante una estructura de media arista. Los
+		huecos se identifican como aquellas aristas que inciden en sólo una
+		cara.
+		Se hizo uso de PCL::getBoundBoundary transformando su resultado para
+		obtener los puntos del contorno del hueco y ordenarlos según tamaño
+		(cantidad de puntos).
+
+
+
+	\Requerimiento{Tiempo de ejecución}
+	{No se espera una ejecución a tiempo real de los algoritmos implementados.}
+		El grueso del proceso se encuentra en la registración.
+		Los tiempos de ejecución varían según la cantidad de puntos de la nube.
+		%¿lineal? no creo,  ver si se puede estimar el orden
+
+	\Requerimiento{Sistemas operativos}
+	{El producto desarrollado estará destinado a utilizarse en los sistemas
+	operativos Windows y Linux.}
+		Esto se logró al utilizar bibliotecas multiplataforma como PCL,
+		o aquellas que se restringen a las bibliotecas estándar de C++ como Delaunator (triangulación Delaunay) y DKM (k-means).
+
+	\bibliographystyle{alpha}
+	\bibliography{biblio}
+\end{document}
+
