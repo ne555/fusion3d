@@ -15,7 +15,6 @@ echo "bunny" | tee --append result/times
 echo "armadillo" | tee --append result/times
 for K in {ArmadilloBack.conf,ArmadilloOnHeadMultiple.conf,ArmadilloOnHeadMultipleOffset.conf,ArmadilloStand.conf,ArmadilloStandFlip.conf}; do
 	{ time ./fusion ${scan_dir}/Armadillo_scans/ ${conf_dir}/${K}/result result/${K%.conf}; } 2>> result/times
-	time ./registrar database/Armadillo_scans/ "$K"
 done
 
 ##dragon
