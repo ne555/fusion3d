@@ -26,7 +26,7 @@ echo "dragon" | tee --append result/times
 
 ##drill
 echo "drill" | tee --append result/times
-{ time ./fusion ${scan_dir}/dill/data/ ${conf_dir}/drill_1.6mm_cyb.conf/result result/drill; } 2>> result/times
+{ time ./fusion ${scan_dir}/drill/data/ ${conf_dir}/drill_1.6mm_cyb.conf/result result/drill; } 2>> result/times
 
 ##happy
 #happyBackRight.conf, happySideRight.conf, happyStandRight.conf
