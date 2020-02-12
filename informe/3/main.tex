@@ -10,6 +10,7 @@
 
 
 \newcommand{\Alerta}[1]{{\Huge\bfseries\sffamily#1}}
+\newcommand{\NombreItem}[1]{{\bfseries#1}}
 
 \title{Integración y pruebas}
 \begin{document}
@@ -72,20 +73,20 @@
 		se implementaron las siguientes funcionalidades
 
 		\begin{itemize}
-			\item{Preproceso}
+			\item  \NombreItem{Preproceso}
 				Se realizó una reducción de ruido al ajustar los puntos mediante mínimos cuadrados móviles.
 
-			\item {Outliers}
+			\item  \NombreItem{Outliers}
 				El ruido y los puntos extremos se consideran en varias etapas de la reconstrucción.
 				Durante el preproceso, una triangulación Delaunay identifica y elimina puntos extremos.
 				Durante la fusión, los puntos sin confirmación y poca confianza se consideran provenientes de ruido.
 				Luego, al utilizar únicamente la componente de mayor tamaño, se eliminan pequeños grupos de puntos.
 
-			\item {Registración}
+			\item  \NombreItem{Registración}
 				Se proveen dos métodos para la alineación inicial en el módulo de registración.
 				Además, se cuenta con un refinamiento posterior mediante ICP.
 
-			\item {Área solapada}
+			\item  \NombreItem{Área solapada}
 				El área solapada, o puntos de común, entre dos nubes
 				se definió como aquellos puntos que estén a menos de un umbral de distancia
 				al punto más cercano en la otra nube.
@@ -93,29 +94,29 @@
 
 				\Alerta{TODO:} cloud\_diff\_with\_threshold() y seccinonar() crea otra nube, hacer una que devuelva los índices.
 
-			\item {Métricas}
+			\item  \NombreItem{Métricas}
 				Cómo métricas de calidad de la registración se utilizaron la distancia entre
 				las nubes considerando sólo los puntos en común, y la razón de tamaños entre la
 				nube de entrada y los puntos en común.
 
-			\item {Corrección de bucle}
+			\item  \NombreItem{Corrección de bucle}
 				El error de alineación del bucle se define como la transformación total
 				calculada por el par primera-última al completar la vuelta. Debido a que `primera`
 				definió el marco de referencia, si no se tuviera error se obtendría la identidad.
 				Calculando la inversa de esta transformación se obtiene la corrección que será distribuida
 				a las otras registraciones.
 
-			\item {Combinación de nubes}
+			\item  \NombreItem{Combinación de nubes}
 				El módulo de fusión provee esta funcionalidad, utilizando una
 				representación de surfel con visibilidad, confianza y vecindad.
 
-			\item {Triangulación tridimensional}
+			\item  \NombreItem{Triangulación tridimensional}
 				La triangulación se realiza mediante el método de \emph{Greedy
 				Projection Triangulation} provisto por PCL.
 				Se estableció un umbral en el tamaño de los triángulos considerando la resolución de la nube,
 				así como también límites para sus ángulos.
 
-			\item {Identificar huecos}
+			\item  \NombreItem{Identificar huecos}
 				La malla se almacena mediante una estructura de media arista. Los
 				huecos se identifican como aquellas aristas que inciden en sólo una
 				cara.
@@ -123,7 +124,7 @@
 				obtener los puntos del contorno del hueco y ordenarlos según tamaño
 				(cantidad de puntos).
 
-			\item {Relleno}
+			\item  \NombreItem{Relleno}
 				El módulo de relleno de huecos da respuesta mediante los algoritmos de advancing front y
 				la llamada a PCL::Poisson.
 		\end{itemize}
