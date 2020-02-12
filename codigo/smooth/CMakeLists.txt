@@ -19,7 +19,7 @@ link_directories( ${PCL_LIBRARY_DIRS} )
 
 set (CMAKE_CXX_FLAGS "")
 set (CMAKE_C_FLAGS "")
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -ggdb -isystem /home/walter/deps/include/")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I../../ -std=c++17 -ggdb -isystem /home/walter/deps/include/")
 
 add_executable  (smooth main.cpp)
 target_link_libraries( smooth Eigen3::Eigen )
