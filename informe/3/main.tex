@@ -8,8 +8,10 @@
 \makeatother
 \renewcommand{\algorithmicfunction}{}
 
-\title{Integración y pruebas}
 
+\newcommand{\Alerta}[1]{{\Huge\bfseries\sffamily#1}}
+
+\title{Integración y pruebas}
 \begin{document}
 	\maketitle
 	\section{Introducción}
@@ -70,95 +72,74 @@
 		se implementaron las siguientes funcionalidades
 
 		\begin{itemize}
+			\item{Preproceso}
+				Se realizó una reducción de ruido al ajustar los puntos mediante mínimos cuadrados móviles.
 
 			\item {Outliers}
-	%{Se debe disponer de funciones para la detección y eliminación de puntos considerados outliers.}
-		El ruido y los puntos extremos se consideran en varias etapas de la reconstrucción.
-		Durante el preproceso, una triangulación Delaunay identifica y elimina puntos extremos.
-		Durante la fusión, los puntos sin confirmación y poca confianza se consideran provenientes de ruido.
-		Luego, al utilizar únicamente la componente de mayor tamaño, se eliminan pequeños grupos de puntos.
+				El ruido y los puntos extremos se consideran en varias etapas de la reconstrucción.
+				Durante el preproceso, una triangulación Delaunay identifica y elimina puntos extremos.
+				Durante la fusión, los puntos sin confirmación y poca confianza se consideran provenientes de ruido.
+				Luego, al utilizar únicamente la componente de mayor tamaño, se eliminan pequeños grupos de puntos.
 
-	{Registración Inicial}
-	{Se debe disponer de funciones que dadas dos mallas calculen una
-	transformación que las acerque lo suficiente como para poder
-	utilizar luego ICP.}
-		Se proveen dos métodos para la alineación inicial en el módulo de registración.
+			\item {Registración}
+				Se proveen dos métodos para la alineación inicial en el módulo de registración.
+				Además, se cuenta con un refinamiento posterior mediante ICP.
 
-	{Área solapada}
-	{Se debe disponer de funciones que establezcan los puntos en común (o una buena
-	aproximación) entre dos mallas ya alineadas burdamente.}
-		Los puntos en común se definieron como aquellos que están a menos de un umbral de distancia
-		al punto más cercano en la otra nube.
+			\item {Área solapada}
+				El área solapada, o puntos de común, entre dos nubes
+				se definió como aquellos puntos que estén a menos de un umbral de distancia
+				al punto más cercano en la otra nube.
+				Para encontrar el más cercano se utilizó un k-d tree.
 
-	{Métricas}
-	{Se debe disponer de funciones para evaluar la calidad de una registración.}
-		Cómo métricas se utilizaron la distancia entre las nubes considerando sólo los puntos en común,
-		y la razón de tamaños entre la nube de entrada y los puntos en común.
+				\Alerta{TODO:} cloud\_diff\_with\_threshold() y seccinonar() crea otra nube, hacer una que devuelva los índices.
 
-	{Corrección de bucle}
-	{Se debe disponer de funciones para corregir el error propagado durante la registración
-	una vez que se haya realizado una vuelta con las capturas.}
-		El error de alineación del bucle se define como la transformación total
-		calculada por el par primera-última al completar la vuelta. Debido a que `primera`
-		definió el marco de referencia, si no se tuviera error se obtendría la identidad.
-		Calculando la inversa de esta transformación se obtiene la corrección que será distribuida
-		a las otras registraciones.
+			\item {Métricas}
+				Cómo métricas de calidad de la registración se utilizaron la distancia entre
+				las nubes considerando sólo los puntos en común, y la razón de tamaños entre la
+				nube de entrada y los puntos en común.
 
-	{Combinación de nubes}
-	{Se debe disponer de funciones para ajustar los puntos y sus normales,
-	según la información provista por cada malla.}
-		El módulo de fusión se encarga de esto, utilizando una representación de surfel con visibilidad, confianza y vecindad.
+			\item {Corrección de bucle}
+				El error de alineación del bucle se define como la transformación total
+				calculada por el par primera-última al completar la vuelta. Debido a que `primera`
+				definió el marco de referencia, si no se tuviera error se obtendría la identidad.
+				Calculando la inversa de esta transformación se obtiene la corrección que será distribuida
+				a las otras registraciones.
 
-	{Triangulación}
-	{Se debe disponer de funciones para obtener una triangulación dada una nube de puntos tridimensional.}
-		La triangulación se realiza mediante el método de Greedy Projection Triangulation provisto por PCL.
+			\item {Combinación de nubes}
+				El módulo de fusión provee esta funcionalidad, utilizando una
+				representación de surfel con visibilidad, confianza y vecindad.
 
-	{Relleno}
-	{Se debe disponer de funciones para lograr que una triangulación sea cerrada. Se
-	estimará una superficie en las zonas donde se carezca de
-	información.}
-		El módulo de relleno de huecos da respuesta mediante los algoritmos de advancing front y
-		la llamada a PCL::Poisson.
+			\item {Triangulación tridimensional}
+				La triangulación se realiza mediante el método de \emph{Greedy
+				Projection Triangulation} provisto por PCL.
+				Se estableció un umbral en el tamaño de los triángulos considerando la resolución de la nube,
+				así como también límites para sus ángulos.
+
+			\item {Identificar huecos}
+				La malla se almacena mediante una estructura de media arista. Los
+				huecos se identifican como aquellas aristas que inciden en sólo una
+				cara.
+				Se hizo uso de PCL::getBoundBoundary transformando su resultado para
+				obtener los puntos del contorno del hueco y ordenarlos según tamaño
+				(cantidad de puntos).
+
+			\item {Relleno}
+				El módulo de relleno de huecos da respuesta mediante los algoritmos de advancing front y
+				la llamada a PCL::Poisson.
 		\end{itemize}
 
 
+		En cuanto a  los tiempos de ejecución,
+		la mayor parte del proceso se realiza en
+		el módulo de registración, cuyos tiempos
+		pueden observarse en la tabla \Alerta{poner tabla} \Alerta{ver orden}.
 
+		Para lograr funcionamiento tanto en Linux como Windows,
+		se utilizaron bibliotecas multiplataforma:
+		PCL, para el procesamiento de las nubes de puntos;
+		Delaunator, para la triangulación Delaunay;
+		y DKM, para el algoritmo de k-means.
 
-
-
-
-	%casos de uso y requerimientos, cómo se los solucionó
-	\CasoUso{Preprocesar nube}
-		Función para reducir el ruido mediante mínimos cuadrados móviles.
-
-	\CasoUso{Alinear dos nubes de puntos}
-		Una registración inicial, seguida por una corrección mediante ICP.
-
-	\CasoUso{Extraer superficie}
-		La superficie es una malla triangulada. La triangulación se obtiene por Greedy Projection Triangulation, o luego de la reconstrucción de Poisson (que la provee).
-
-
-	\CasoUso{Identificar huecos}
-		La malla se almacena mediante una estructura de media arista. Los
-		huecos se identifican como aquellas aristas que inciden en sólo una
-		cara.
-		Se hizo uso de PCL::getBoundBoundary transformando su resultado para
-		obtener los puntos del contorno del hueco y ordenarlos según tamaño
-		(cantidad de puntos).
-
-
-
-	\Requerimiento{Tiempo de ejecución}
-	{No se espera una ejecución a tiempo real de los algoritmos implementados.}
-		El grueso del proceso se encuentra en la registración.
-		Los tiempos de ejecución varían según la cantidad de puntos de la nube.
-		%¿lineal? no creo,  ver si se puede estimar el orden
-
-	\Requerimiento{Sistemas operativos}
-	{El producto desarrollado estará destinado a utilizarse en los sistemas
-	operativos Windows y Linux.}
-		Esto se logró al utilizar bibliotecas multiplataforma como PCL,
-		o aquellas que se restringen a las bibliotecas estándar de C++ como Delaunator (triangulación Delaunay) y DKM (k-means).
 
 	\bibliographystyle{alpha}
 	\bibliography{biblio}
