@@ -3,8 +3,6 @@
 mkdir --parents result/ArmadilloBack.conf result/ArmadilloOnHeadMultiple.conf result/ArmadilloOnHeadMultipleOffset.conf result/ArmadilloStand.conf result/ArmadilloStandFlip.conf result/bun.conf result/dragonSideRight.conf result/dragonStandRight.conf result/dragonUpRight.conf result/drill_1.6mm_cyb.conf result/happyBackRight.conf result/happySideRight.conf result/happyStandRight.conf
 
 #ejecución
-
-
 ##bunny
 echo "bunny"
 time ./registrar database/bunny/data/ bun.conf
