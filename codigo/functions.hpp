@@ -29,8 +29,8 @@ namespace nih {
 	 * Conversiones entre los formatos de `PolygonMesh` y `geometry::Mesh`.
 	 * `geometry` usa grafo de medias aristas, pero no tiene funciones para
 	 * visualizado o entrada/salida */
-	template <class CloudPtr>
-	inline pcl::PolygonMesh tmesh_to_polygon(CloudPtr cloud_, TMesh mesh_);
+	template <class Cloud>
+	inline pcl::PolygonMesh tmesh_to_polygon(const Cloud &cloud_, TMesh mesh_);
 	template <class CloudPtr>
 	inline TMesh
 	create_mesh(CloudPtr cloud_, const std::vector<pcl::Vertices> &polygons);
@@ -86,6 +86,19 @@ namespace nih {
 	 * de translación y rotación */
 	inline void show_transformation(const transformation &t, std::ostream &out = std::cout, double resolution = 1);
 
+	/** Carga desde un archivo .ply que contiene un pcl::PolygonMesh */
+	inline std::tuple<cloudnormal::Ptr, TMesh>
+	load_mesh_from_ply(const char *filename);
+
+	/** Carga desde dos archivos:
+	 * - .ply que contiene la nube
+	 * - .polygon que contiene las conexiones entre los puntos */
+	std::tuple<cloudnormal::Ptr, TMesh>
+	load_mesh_from_polygon(const char *filename_cloud, const char *file_polygons);
+
+	/** Guarda las conexiones de los vértices */
+	template <class Cloud>
+	inline void write_polygons(const Cloud &cloud_, TMesh mesh_, std::string filename);
 } // namespace nih
 
 // implementation
@@ -134,11 +147,11 @@ namespace nih {
 		return resolution;
 	}
 
-	template <class CloudPtr>
-	pcl::PolygonMesh tmesh_to_polygon(CloudPtr cloud_, TMesh mesh_) {
+	template <class Cloud>
+	pcl::PolygonMesh tmesh_to_polygon(const Cloud &cloud_, TMesh mesh_) {
 		// copy the clouds
 		pcl::PolygonMesh result;
-		pcl::toPCLPointCloud2(*cloud_, result.cloud);
+		pcl::toPCLPointCloud2(cloud_, result.cloud);
 
 		// copy the faces
 		for(int K = 0; K < mesh_->sizeFaces(); ++K) {
@@ -381,6 +394,62 @@ namespace nih {
 		out << "angle: " << aa.angle()*180/M_PI << '\t';
 		out << "axis: " << aa.axis().transpose() << '\t';
 		out << "dist_y: " << 1-abs(aa.axis().dot(Eigen::Vector3f::UnitY())) << '\n';
+	}
+
+	std::tuple<cloudnormal::Ptr, TMesh>
+	load_mesh_from_ply(const char *filename) {
+		pcl::PolygonMesh polygon_mesh;
+		pcl::io::loadPolygonFilePLY(filename, polygon_mesh);
+
+		auto cloud_ = create<cloudnormal>();
+		pcl::fromPCLPointCloud2(polygon_mesh.cloud, *cloud_);
+		auto mesh_ = create_mesh(cloud_, polygon_mesh.polygons);
+		return std::make_tuple(cloud_, mesh_);
+	}
+
+	std::tuple<cloudnormal::Ptr, TMesh>
+	load_mesh_from_polygon(const char *filename_cloud, const char *file_polygons) {
+		pcl::PLYReader reader;
+		auto nube = create<cloudnormal>();
+		reader.read(filename_cloud, *nube);
+		//read polygons
+		auto mesh = create<Mesh>();
+		mesh->reserveVertices(nube->size());
+		for(int K = 0; K < nube->size(); ++K)
+			mesh->addVertex(vertex_data{K});
+
+		std::ifstream input(file_polygons);
+		int faces;
+		input >> faces;
+		mesh->reserveFaces(faces);
+		const int n=3;
+		int vertex[n];
+		int n_vertex; //3
+		while(input>>n_vertex){
+			pcl::Vertices triangle;
+			triangle.vertices.resize(3);
+			for(int K=0; K<n; ++K)
+				input >> vertex[K];
+			mesh->addFace(
+					pcl::geometry::VertexIndex(vertex[0]),
+					pcl::geometry::VertexIndex(vertex[1]),
+					pcl::geometry::VertexIndex(vertex[2]));
+		}
+
+		return std::make_tuple(nube, mesh);
+	}
+
+	template <class Cloud>
+	void write_polygons(const Cloud &cloud_, TMesh mesh_, std::string filename) {
+		auto polygon_mesh = nih::tmesh_to_polygon(cloud_, mesh_);
+		std::ofstream poly(filename);
+		poly << polygon_mesh.polygons.size() << '\n';
+		for(const auto &t: polygon_mesh.polygons){
+			poly << t.vertices.size();
+			for(auto v: t.vertices)
+				poly << ' ' << v;
+			poly << '\n';
+		}
 	}
 } // namespace nih
 
