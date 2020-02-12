@@ -89,14 +89,13 @@ namespace nih {
 
 	/**Calcula la distancia |a - b| limitada al `threshold'.
 	 * Puntos fuera de ese límite son descartados.*/
-
 	template <class CloudPtr>
 	inline pcl::PointCloud<pcl::PointXYZI>::Ptr
 	cloud_diff_with_threshold(CloudPtr a, CloudPtr b, double threshold);
 
-	/** Distancia promedio y Porcentaje de solapamiento, dentro del threshold*/
+	/** Promedio de la distancia, desvío y Porcentaje de solapamiento, dentro del threshold*/
 	template <class CloudPtr>
-	inline std::tuple<double, double>
+	inline std::tuple<double, double, double>
 	fitness(CloudPtr source, CloudPtr target, double threshold);
 	/**@}*/
 } // namespace nih
@@ -140,8 +139,8 @@ namespace nih {
 			pi.z = p.z;
 			//buscar el más cercano en b
 			int b_index = get_index(p, kdtree);
-			pi.intensity = square(distance(p, (*b)[b_index]));
-			if(pi.intensity < square(threshold))
+			pi.intensity = distance(p, (*b)[b_index]);
+			if(pi.intensity < threshold)
 				result->push_back(pi);
 		}
 
@@ -244,14 +243,20 @@ namespace nih {
 	}
 
 	template <class CloudPtr>
-	std::tuple<double, double>
+	std::tuple<double, double, double>
 	fitness(CloudPtr source, CloudPtr target, double threshold){
 		auto diff = cloud_diff_with_threshold(source, target, threshold);
-		double total = 0;
-		for(auto p: diff->points)
-			total += p.intensity;
+		double sum = 0, sum_squared = 0;
+		for(auto p: diff->points){
+			sum += p.intensity;
+			sum_squared += square(p.intensity);
+		}
+		int n = diff->size();
+		double mean = sum/n;
+		double stddev = sqrt((sum_squared - n*square(mean)) / n);
 
-		return std::make_tuple(total/diff->size(), double(diff->size())/source->size());
+
+		return std::make_tuple(mean, stddev, double(diff->size())/source->size());
 	}
 
 } // namespace nih
