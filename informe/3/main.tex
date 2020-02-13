@@ -2,11 +2,22 @@
 \usepackage{algorithmicx}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
+\usepackage{booktabs}
 
+
+\usepackage{environ}
 \makeatletter
- \renewcommand{\ALG@name}{Algoritmo}
+\newsavebox{\measure@tikzpicture}
+\NewEnviron{scaletikzpicturetowidth}[1]{%
+  \def\tikz@width{#1}%
+  \def\tikzscale{1}\begin{lrbox}{\measure@tikzpicture}%
+  \BODY
+  \end{lrbox}%
+  \pgfmathparse{#1/\wd\measure@tikzpicture}%
+  \edef\tikzscale{\pgfmathresult}%
+  \BODY
+}
 \makeatother
-\renewcommand{\algorithmicfunction}{}
 
 
 \newcommand{\Alerta}[1]{{\Huge\bfseries\sffamily#1}}
@@ -17,7 +28,7 @@
 	\maketitle
 	\section{Introducción}
 
-	En esta etapa se integraron los módulos de registración, fusión y relleno de huecos.
+	En esta etapa se integraron los módulos de registración, fusión y rellenado de huecos.
 
 	Se realizaron pruebas de rendimiento utilizando los modelos de la base de datos Stanford.
 
@@ -140,6 +151,53 @@
 		PCL, para el procesamiento de las nubes de puntos;
 		Delaunator, para la triangulación Delaunay;
 		y DKM, para el algoritmo de k-means.
+
+	\section{Pruebas}
+		Para realizar las pruebas se utilizaron los modelos
+			armadillo,
+			bunny,
+			dragon,
+			drill y
+			happy del repositorio de Stanford.
+
+		Para la registración se utilizó el método B \Alerta{nombre}, seguido de
+		un refinamiento mediante ICP y una corrección de bucle.
+		Los tiempos de ejecución se observan en la tabla \Alerta{Tabla}.
+		junto a los fitness estimados
+		\Alerta{Fitness}
+
+		%Comparación del fitness del método contra ground truth
+
+		Error de posición y orientación de la cámara al aplicar cada transformación.
+		La cámara se ubica inicialmente en el punto $\{0, -0.1, 0.7\}$, mirando hacia el origen.
+		\Alerta{Cámara}
+
+		Para el módulo de fusión se utilizó la distancia de los puntos de la
+		nube reconstruida respecto al ground truth.
+		Debe considerarse que el modelo gt fue obtenido con más vistas de las que nosotros trabajamos.
+
+
+		\input{reg_time}
+
+		\input{reg_error}
+
+
+		\begin{figure}
+			\center
+				%\scalebox{.75}{\input{fitness.tikz}}
+				\resizebox{\linewidth}{!}{\input{fitness.tikz}}
+			\caption{\label{fig:fitness}Métrica de alineación para el modelo \texttt{dragon stand}. El bajo
+			porcentaje de solapamiento en la captura 12 se corresponde
+			con un error de registración.}
+		\end{figure}
+
+		\Alerta{fusion}
+		\input{fusion_error}
+
+	\section{Resultados}
+
+	\section{Conclusiones}
+
 
 
 	\bibliographystyle{alpha}
