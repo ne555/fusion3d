@@ -1,6 +1,7 @@
 /* Diferencia contra el ground truth */
 #include "fusion_3d.hpp"
 #include "functions.hpp"
+#include <algorithm>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_cloud_color_handlers.h>
 
@@ -34,6 +35,10 @@ void visualise(pcl::PolygonMesh pmesh, pcl::PointCloud<pcl::PointXYZI>::Ptr diff
 	view.setPointCloudRenderingProperties(
 	    pcl::visualization::PCL_VISUALIZER_LUT,
 	    pcl::visualization::PCL_VISUALIZER_LUT_VIRIDIS,
+	    "diff");
+	view.setPointCloudRenderingProperties(
+	    pcl::visualization::PCL_VISUALIZER_LUT_RANGE,
+	    pcl::visualization::PCL_VISUALIZER_LUT_RANGE_AUTO,
 	    "diff");
 	view.addPolygonMesh(pmesh, "mesh");
 	view.setPointCloudRenderingProperties(
@@ -74,16 +79,20 @@ int main(int argc, char **argv){
 	pcl::copyPointCloud(*cloud_, *nube);
 	double resolution = nih::cloud_resolution<nih::point>(nube);
 
-	/*
 	auto diff = nih::cloud_diff_with_threshold(nube, ground_truth, 5*resolution);
-	for(auto &p: diff->points)
+	float min = 1000, max = 0;
+	for(auto &p: diff->points){
 		p.intensity /= resolution;
+		min = std::min(p.intensity, min);
+		max = std::max(p.intensity, max);
+	}
+
+	std::cout << "Distancias minmax: " << min << ' ' << max << '\n';
 
 	auto [dist, desv, solapamiento] = nih::fitness(nube, ground_truth, 5*resolution);
 	std::cout << "Fitness: " <<  dist/resolution << ' ' << desv/resolution << ' ' << solapamiento << '\n';
-	*/
 
-	//visualise(nih::tmesh_to_polygon(*cloud_, mesh_), diff);
-	visualise(nih::tmesh_to_polygon(*cloud_, mesh_), ground_truth);
+	visualise(nih::tmesh_to_polygon(*cloud_, mesh_), diff);
+	//visualise(nih::tmesh_to_polygon(*cloud_, mesh_), ground_truth);
 	return 0;
 }
