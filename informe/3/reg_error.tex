@@ -2,7 +2,7 @@
 	\center
 	\begin{tabular}{l*{3}{c}}
 		\toprule                                                                  
-		Modelo                   &    Eye          &    Target        &    Up\\
+		Modelo                   &    Eye          &    Target (grados)        &    Up (grados)\\
 		\midrule
 		armadillo back          &     0.0062159   &   0.221725     &    ---\\        
 		armadillo head          &     0.0036356  &    0.102321     &    0.211231\\   
@@ -20,8 +20,9 @@
 		\midrule
 		happy back              &     0.0088540  &    0.189885     &    0.207247\\   
 		happy side              &     0.0072675   &   0.175860     &    ---\\        
-		happy stand             &     0.0050124  &    0.101383     &    0.0978003\\  
+		happy stand             &     0.0050124  &    0.101383     &    0.097800\\  
 		\bottomrule                                                               
 	\end{tabular}
-	\caption{\label{tab:reg_error}Errores de registración}
+	\caption{\label{tab:reg_error}Errores de registración.
+	El error de \emph{eye} es la razón entre las distancias al \emph{ground truth} y a la posición inicial.}
 \end{table}

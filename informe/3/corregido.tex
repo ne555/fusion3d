@@ -1,0 +1,211 @@
+\documentclass{pfc}
+\usepackage{algorithmicx}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{booktabs}
+
+
+\usepackage{environ}
+\makeatletter
+\newsavebox{\measure@tikzpicture}
+\NewEnviron{scaletikzpicturetowidth}[1]{%
+  \def\tikz@width{#1}%
+  \def\tikzscale{1}\begin{lrbox}{\measure@tikzpicture}%
+  \BODY
+  \end{lrbox}%
+  \pgfmathparse{#1/\wd\measure@tikzpicture}%
+  \edef\tikzscale{\pgfmathresult}%
+  \BODY
+}
+\makeatother
+
+
+\newcommand{\Alerta}[1]{{\Huge\bfseries\sffamily#1}}
+\newcommand{\NombreItem}[1]{{\bfseries#1:}}
+
+\title{Integración y pruebas}
+\begin{document}
+	\maketitle
+	\section{Introducción}
+	En esta etapa se integraron los módulos de registración, fusión y rellenado de huecos,
+	para resolver todas las funcionalidades propuestas por el proyecto.
+	Con el fin de analizar el rendimiento del sistema,
+	se utilizaron los modelos provistos por la base de datos Stanford. %% TODO: seguis diciendo "la base de Stanford" sin dar detalles de cual es, ya sea aca o en la parte 4 describi un poco mas de donde salieron las mallas de prueba (repositorio, agrega un link, nombre posta, etc.) "http://graphics.stanford.edu/data/3Dscanrep/" -> seccion "Please acknowledge"
+
+	\section{Integración}
+		El principal problema para la integración fue lograr la comunicación entre los módulos.
+		Según la metodología %%TODO: no decis cual es la metodologia, sabiendo que es la de cascada podes describir la parte de abajo mejor, sin decir "se retraso porque... y el orto se retraso porque", redundante. "Dada la metodolog'ia elegida para el presente proyecto, modelo de desarrollo de tipo cascada, el impacto de tiempo perdido durante la etapa de registracion repercutio en el cronograma provocando que las etapas siguientes iniciaran tarde." o algo asi... mas lindo :)
+		 elegida para el proyecto, se retrasó el diseño del
+		módulo de fusión hasta que el la registración estuviera implementada, y
+		de la misma manera se retrasó el diseño del módulo de rellenado de
+		huecos hasta obtener la implementación del de fusión.
+        %%TODO: lo de arriba me referia hasta aca, el renglon de abajo esta bien
+		Por esta razón, resultaba prohibitivamente costoso modificar el diseño de un módulo anterior.
+
+		Este problema se hizo evidente al establecer el formato de nube utilizado en cada módulo.
+		
+        Para la registración fue conveniente, en un primer momento,
+		que la información de posición y normal de cada punto de la nube se encontrase por separado,
+		por lo que al implementar las diversas alternativas se siguió manteniendo esta forma.
+		Sin embargo, los algoritmos de fusión y rellenado de huecos requerían
+		que esta información estuviera junta.
+
+		Debido a que ya se contaba con los resultados de la registración, es
+		decir, con las transformaciones de las vistas, se idearon funciones de
+		conversión entre esos dos formatos. %% TODO: que formatos? no queda claro a primera vista que te referis a lo de arriba
+		Sin embargo, se planea una posterior modificación de la registración de forma que el
+		formato utilizado sea transparente para el usuario de la biblioteca.
+
+
+%% TODO: los dos parrafos de abajo reescribilos, en el segundo mencionas los algoritmos, y ahi queda claro la pardida de informacion, este parravo al principio ni inroduce ni aclara. 
+		En cuanto %% TODO: "Con respecto..." 
+        al módulo de rellenado de huecos, debido a los algoritmos
+		utilizados, ocurre una pérdida de información de los resultados de la
+		fusión.
+
+		%% TODO: advancing front mesh los descarta? no es un filtrado tuyo para solventar las islas?
+		El método de \emph{advancing front} descarta todos aquellos
+		puntos que no pertenezcan a la mayor componente conexa de la
+		triangulación. Esto se realiza para evitar la presencia de islas y así
+		simplificar la implementación del método.
+		Una versión futura podría evitar esta pérdida de información.
+
+
+
+		En el caso del método de \emph{Poisson}, las conectividades entre los
+		puntos es completamente ignorada, lo cual ocasiona uniones erróneas en algunos casos.
+
+
+	\section{Funcionalidades}
+		
+        %% TODO: reescribir en impersonal, "podemos"?
+        Una vez integrado el sistema, podemos demostrar cómo se dio respuesta a
+		los requerimientos identificados previamente. %% TODO: medio pobre la inro de esta seccion, la podes adornar? 
+
+		\begin{itemize}
+			\item  \NombreItem{Preproceso}
+				Se realizó una reducción de ruido al ajustar los puntos
+				mediante el algoritmo de mínimos cuadrados móviles.
+				Se brindan fucionalidades para la entrada/salida de los resultados parciales.
+
+			\item  \NombreItem{Outliers}
+				El ruido y los puntos extremos se consideran en varias etapas de la reconstrucción. %% TODO: ya estamos hablando de reconstruccion aca? falto introducir,
+				Durante el preproceso, una triangulación Delaunay identifica y elimina puntos extremos.
+				Durante la fusión, los puntos sin confirmación y %% TODO: "y de"
+                poca confianza
+				se consideran provenientes de %%TODO: del
+                ruido.
+				Antes de realizar el rellenado de huecos, pueden eliminarse
+				componentes que contengan pocos puntos.
+
+			\item  \NombreItem{Registración}
+				Se proveen dos métodos para la alineación inicial en el módulo de registración. %% TODO: mencionar las dos? o es mucho?
+				Además, se cuenta con un refinamiento posterior mediante ICP.
+
+			\item  \NombreItem{Área solapada}
+				El área solapada  entre dos nubes
+				se definió como aquellos puntos que estén a menos de un umbral de distancia
+				al punto más cercano en la otra nube.
+				Para realizar la búsqueda eficientemente se utilizó un k-d tree.
+
+			\item  \NombreItem{Métricas}
+				Cómo métricas de calidad de la registración se utilizaron
+				la distancia entre las nubes considerando sólo el área solapada,
+				y la razón entre la cantidad de puntos de la nube de entrada con esta área solapada.
+
+			\item  \NombreItem{Corrección de bucle}
+				El error de alineación del bucle se define como la
+				transformación total calculada por el par \emph{primera-última} %% TODO: primera y ultima que?
+				al completar la vuelta. 
+Debido a que \emph{primera} definió el %% TODO: mencionas "primera" pero no introducis a que es.
+				marco de referencia, en una registración perfecta esta
+				transformación sería la identidad.
+				Calculando su inversa se obtiene una corrección que será distribuida
+				a las otras registraciones.
+
+			\item  \NombreItem{Combinación de nubes}
+				El módulo de fusión provee esta funcionalidad, utilizando una
+				representación de surfel con visibilidad, confianza y vecindad.
+
+			\item  \NombreItem{Triangulación tridimensional}
+				La triangulación se realiza mediante el método de \emph{Greedy
+				Projection Triangulation} provisto por PCL. %% Provissto por PCL, pero no mencionas que es PCL hasta despues
+				Se estableció un umbral en el tamaño de los triángulos considerando la resolución de la nube,
+				así como también límites para sus ángulos.
+
+			\item  \NombreItem{Identificación de huecos}
+				Las conectividades de la malla se almacenan en un grafo de medias aristas.
+				Los huecos se identifican como aquellas aristas que inciden en sólo una cara.
+				Se hizo uso de \texttt{PCL::getBoundBoundary} transformando su resultado para
+				obtener los puntos del contorno del hueco y ordenarlos según su tamaño
+				(cantidad de puntos).
+
+			\item  \NombreItem{Rellenado de huecos}
+				Se da respuesta a esta funcionalidad mediante los algoritmos de \emph{advancing front} y reconstrucción de Poisson.
+		\end{itemize}
+
+
+		Además, el sistema hace uso únicamente de bibliotecas multiplataforma, lo que garantiza su funcionamiento tanto en Linux como Windows.
+		Como dependencias externas se tiene: %% TODO: capas mover para arriba?
+		PCL, para el procesamiento de las nubes de puntos;
+		Delaunator, para la triangulación Delaunay;
+		y DKM, para el algoritmo de k-means.
+		%TODO: poner referencias
+
+	\section{Pruebas}
+		Para realizar las pruebas se utilizaron los modelos
+			armadillo,
+			bunny,
+			dragon,
+			drill y
+			happy del repositorio de Stanford. %% TODO: citar, en algun lado del mundo un investigador yace en el olvido por gente como vos qeu no hace citas D: ( yo tampoco :) ) 
+
+		Para la registración se utilizó el método B \Alerta{nombre}, seguido de
+		un refinamiento mediante ICP y una corrección de bucle.
+		Los tiempos de ejecución se observan en la tabla \Alerta{Tabla}.
+		junto a los fitness estimados
+		\Alerta{Fitness}
+
+		En cuanto a  los tiempos de ejecución,
+		la mayor parte del proceso se realiza en
+		el módulo de registración, cuyos tiempos
+		pueden observarse en la tabla \Alerta{poner tabla} \Alerta{ver orden}.
+
+		%Comparación del fitness del método contra ground truth
+
+		Error de posición y orientación de la cámara al aplicar cada transformación.
+		La cámara se ubica inicialmente en el punto $\{0, -0.1, 0.7\}$, mirando hacia el origen.
+		\Alerta{Cámara}
+
+		Para el módulo de fusión se utilizó la distancia de los puntos de la
+		nube reconstruida respecto al ground truth.
+		Debe considerarse que el modelo gt fue obtenido con más vistas de las que nosotros trabajamos.
+
+
+		\input{reg_time}
+
+		\input{reg_error}
+
+
+		\begin{figure}
+			\center
+				%\scalebox{.75}{\input{fitness.tikz}}
+				\resizebox{\linewidth}{!}{\input{fitness.tikz}}
+			\caption{\label{fig:fitness}Métrica de alineación para el modelo \texttt{dragon stand}. El bajo
+			porcentaje de solapamiento en la captura 12 se corresponde
+			con un error de registración.}
+		\end{figure}
+
+		\Alerta{fusion}
+		\input{fusion_error}
+
+	\section{Resultados}
+
+	\section{Conclusiones}
+
+
+
+	\bibliographystyle{alpha}
+	\bibliography{biblio}
+\end{document}
+

@@ -21,100 +21,97 @@
 
 
 \newcommand{\Alerta}[1]{{\Huge\bfseries\sffamily#1}}
-\newcommand{\NombreItem}[1]{{\bfseries#1}}
+\newcommand{\NombreItem}[1]{{\bfseries#1:}}
 
 \title{Integración y pruebas}
 \begin{document}
 	\maketitle
 	\section{Introducción}
-
-	En esta etapa se integraron los módulos de registración, fusión y rellenado de huecos.
-
-	Se realizaron pruebas de rendimiento utilizando los modelos de la base de datos Stanford.
-
-	Se resolvieron todas las funcionalidades propuestas.
+	En esta etapa se integraron los módulos de registración, fusión y rellenado de huecos,
+	para resolver todas las funcionalidades propuestas por el proyecto.
+	Con el fin de analizar el rendimiento del sistema,
+	se utilizaron los modelos provistos por la base de datos Stanford.
 
 	\section{Integración}
-	\subsection{Formato de nube utilizado en cada módulo}
-		Para la registración fue conveniente, en un primer momento, mantener
-		separadas las normales de las posiciones, por lo que al probar diversas
-		alternativas se siguió manteniendo esta forma.
-		Sin embargo, el ajuste por ICP, la fusión y el relleno de huecos
-		requerían que esta información estuviera junta para cada punto.
+		El principal problema para la integración fue lograr la comunicación
+		entre los módulos.  Según la metodología incremental elegida para la
+		etapa de desarrollo, el diseño del módulo de fusión se inició luego de
+		que el módulo de registración estuviera implementado, y de la misma
+		manera, el diseño del módulo de rellenado de huecos se inició luego de
+		obtener la implementación del de fusión. 
+		Por esta razón, podría resultar prohibitivamente costoso modificar el diseño de un módulo anterior.
 
-		Para el momento en que se comenzó con la fusión, modificar la
-		registración era prohibitivamente costoso, ya que no se podía destinar nada de tiempo a la tarea.
-		Además, ya se contaban con los resultados de esa etapa (las transformaciones de las vistas).
-		Por eso se idearon funciones de conversión entre esos formatos en lugar de modificar la registración.
+		Este problema se hizo evidente al establecer el formato de nube utilizado en cada módulo.
+		Para la registración fue conveniente, en un primer momento,
+		que la información de posición y normal de cada punto de la nube se encontrase por separado,
+		por lo que al implementar las diversas alternativas se siguió manteniendo este formato.
+		Sin embargo, los algoritmos de fusión y rellenado de huecos requerían
+		que esta información estuviera junta.
 
-		Se planea una posterior modificación de la registración de forma que el
-		formato utilizado transparente para el usuario.
+		Debido a que ya se contaba con los resultados de la registración, es
+		decir, con las transformaciones de las vistas, se idearon funciones de
+		conversión entre esos dos formatos de nubes.
+		Sin embargo, se planea una posterior modificación del módulo de registración de
+		forma que las conversiones sean transparentes para el usuario de la
+		biblioteca.
 
-	
-	\subsection{Pasaje de registración de a pares a toda la lista}
-		El algoritmo de alineación inicial funciona mediante pares de capturas,
-		retornando entonces una transformación parcial entre las vistas.
-		El ajuste por ICP también trabaja de a pares, por lo que no requiere aplicar la transformación.
+		Con respecto al módulo de rellenado de huecos, debido a los algoritmos
+		utilizados, ocurre una pérdida de información de los resultados de la
+		fusión:
+		\begin{itemize}
+			\item El método de \emph{advancing front} descarta todos aquellos
+				puntos que no pertenezcan a la mayor componente conexa de la
+				triangulación. Esto se realiza para evitar la presencia de islas y así
+				simplificar la implementación del método.
+				Una versión futura podría evitar esta pérdida de información.
 
-		Si bien la corrección por bucle requiere de las transformaciones
-		totales, el algoritmo ignora las nubes de puntos, por lo que no es
-		necesario aplicar la transformación.
-
-		Por esto, no es necesario aplicar la transformación hasta que el módulo de fusión lo requiera.
-		Las capturas pueden mantenerse en su marco original, 
-		donde $z$ es la distancia a la cámara (considerando perspectiva),
-		si esto representa una ventaja para el usuario
-
-	\subsection{Relleno de huecos}
-		El resultado del módulo de fusión es una nube de puntos con su correspondiente triangulación.
-		Sin embargo, el rellenado de huecos mediante \emph{advancing front}
-		descarta todos aquellos puntos que no pertenezcan
-		a la mayor componente conectada en la triangulación.
-
-		Esto se realiza para simplificar la implementación del método al no
-		tener que considerar posibles islas.
-		Una versión futura podría evitar esta pérdida de información.
-
-		En el caso del método de Poisson, la triangulación es completamente ignorada.
-
+			\item En el caso del método de \emph{Poisson}, las conectividades entre los
+				puntos es completamente ignorada, lo cual ocasiona uniones erróneas en algunos casos.
+		\end{itemize}
 
 
 	\section{Funcionalidades}
-		Respondiendo a los requerimientos identificados previamente,
-		se implementaron las siguientes funcionalidades
+		A continuación se describirán las funcionalidades que provee el sistema
+		para dar respuesta a los requerimientos identificados en etapas
+		previas.
 
 		\begin{itemize}
 			\item  \NombreItem{Preproceso}
-				Se realizó una reducción de ruido al ajustar los puntos mediante mínimos cuadrados móviles.
+				Se realizó una reducción de ruido al ajustar los puntos
+				mediante el algoritmo de mínimos cuadrados móviles.
 
 			\item  \NombreItem{Outliers}
 				El ruido y los puntos extremos se consideran en varias etapas de la reconstrucción.
 				Durante el preproceso, una triangulación Delaunay identifica y elimina puntos extremos.
-				Durante la fusión, los puntos sin confirmación y poca confianza se consideran provenientes de ruido.
-				Luego, al utilizar únicamente la componente de mayor tamaño, se eliminan pequeños grupos de puntos.
+				Durante la fusión, los puntos sin confirmación o de poca confianza
+				se consideran provenientes del ruido.
+				Antes de realizar el rellenado de huecos, pueden eliminarse
+				componentes que contengan pocos puntos.
 
 			\item  \NombreItem{Registración}
-				Se proveen dos métodos para la alineación inicial en el módulo de registración.
+				Se proveen dos métodos para la alineación inicial en el módulo de registración:
+				uno basado en \emph{sample consensus} de puntos salientes, y el otro basado en
+				búsqueda de clústers según el marco de referencia ISS.
 				Además, se cuenta con un refinamiento posterior mediante ICP.
 
 			\item  \NombreItem{Área solapada}
-				El área solapada, o puntos de común, entre dos nubes
+				El área solapada  entre dos nubes
 				se definió como aquellos puntos que estén a menos de un umbral de distancia
 				al punto más cercano en la otra nube.
-				Para encontrar el más cercano se utilizó un k-d tree.
-
-				\Alerta{TODO:} cloud\_diff\_with\_threshold() y seccinonar() crea otra nube, hacer una que devuelva los índices.
+				Para realizar la búsqueda eficientemente se utilizó un k-d tree.
 
 			\item  \NombreItem{Métricas}
-				Cómo métricas de calidad de la registración se utilizaron la distancia entre
-				las nubes considerando sólo los puntos en común, y la razón de tamaños entre la
-				nube de entrada y los puntos en común.
+				Cómo métricas de calidad de la registración se utilizaron
+				la distancia entre las nubes considerando sólo el área solapada,
+				y la razón entre la cantidad de puntos de la nube de entrada con esta área solapada.
 
 			\item  \NombreItem{Corrección de bucle}
-				El error de alineación del bucle se define como la transformación total
-				calculada por el par primera-última al completar la vuelta. Debido a que `primera`
-				definió el marco de referencia, si no se tuviera error se obtendría la identidad.
-				Calculando la inversa de esta transformación se obtiene la corrección que será distribuida
+				El error de alineación del bucle se define como la
+				transformación total calculada para ajustar la primer captura a la última
+				una vez completada una vuelta. Debido a que la primer captura definió el
+				marco de referencia, en una registración perfecta esta
+				transformación sería la identidad.
+				Calculando su inversa se obtiene una corrección que será distribuida
 				a las otras registraciones.
 
 			\item  \NombreItem{Combinación de nubes}
@@ -127,30 +124,27 @@
 				Se estableció un umbral en el tamaño de los triángulos considerando la resolución de la nube,
 				así como también límites para sus ángulos.
 
-			\item  \NombreItem{Identificar huecos}
-				La malla se almacena mediante una estructura de media arista. Los
-				huecos se identifican como aquellas aristas que inciden en sólo una
-				cara.
-				Se hizo uso de PCL::getBoundBoundary transformando su resultado para
-				obtener los puntos del contorno del hueco y ordenarlos según tamaño
+			\item  \NombreItem{Identificación de huecos}
+				Las conectividades de la malla se almacenan en un grafo de medias aristas.
+				Los huecos se identifican como aquellas aristas que inciden en sólo una cara.
+				Se hizo uso de \texttt{PCL::getBoundBoundary} transformando su resultado para
+				obtener los puntos del contorno del hueco y ordenarlos según su tamaño
 				(cantidad de puntos).
 
-			\item  \NombreItem{Relleno}
-				El módulo de relleno de huecos da respuesta mediante los algoritmos de advancing front y
-				la llamada a PCL::Poisson.
+			\item  \NombreItem{Rellenado de huecos}
+				Se da respuesta a esta funcionalidad mediante los algoritmos de \emph{advancing front} y reconstrucción de Poisson.
 		\end{itemize}
 
 
-		En cuanto a  los tiempos de ejecución,
-		la mayor parte del proceso se realiza en
-		el módulo de registración, cuyos tiempos
-		pueden observarse en la tabla \Alerta{poner tabla} \Alerta{ver orden}.
-
-		Para lograr funcionamiento tanto en Linux como Windows,
-		se utilizaron bibliotecas multiplataforma:
-		PCL, para el procesamiento de las nubes de puntos;
-		Delaunator, para la triangulación Delaunay;
-		y DKM, para el algoritmo de k-means.
+		Como dependencias externas se tienen:
+		\begin{itemize}
+			\item PCL\footnote{\url{http://www.pointclouds.org/}},
+				para el procesamiento de las nubes de puntos;
+			\item delaunator-cpp\footnote{\url{https://github.com/delfrrr/delaunator-cpp}}, para la triangulación Delaunay;
+			\item DKM\footnote{\url{https://github.com/genbattle/dkm}}, para el algoritmo de k-means.
+		\end{itemize}
+		Debido a que el sistema hace uso únicamente de bibliotecas multiplataforma,
+		se garantiza su funcionamiento tanto en Linux como Windows.
 
 	\section{Pruebas}
 		Para realizar las pruebas se utilizaron los modelos
@@ -158,29 +152,49 @@
 			bunny,
 			dragon,
 			drill y
-			happy del repositorio de Stanford.
+			happy del repositorio de Stanford\footnote{\url{http://graphics.stanford.edu/data/3Dscanrep/}}.
+		Para cada modelo se tienen capturas realizadas sobre una base giratoria
+		a diversos ángulos, en algunos casos en varias posiciones, y
+		algunas capturas de ciertos detalles.
+		Para cada captura se tiene, ademas, la transformación de alineación que
+		la lleva a un sistema de referencia global.
+		El repositorio cuenta también con los objetos reconstruidos utilizando
+		todas las capturas disponibles.
 
-		Para la registración se utilizó el método B \Alerta{nombre}, seguido de
+		Para la registración se utilizó el método B, seguido de
 		un refinamiento mediante ICP y una corrección de bucle.
-		Los tiempos de ejecución se observan en la tabla \Alerta{Tabla}.
-		junto a los fitness estimados
-		\Alerta{Fitness}
-
-		%Comparación del fitness del método contra ground truth
-
-		Error de posición y orientación de la cámara al aplicar cada transformación.
-		La cámara se ubica inicialmente en el punto $\{0, -0.1, 0.7\}$, mirando hacia el origen.
-		\Alerta{Cámara}
-
-		Para el módulo de fusión se utilizó la distancia de los puntos de la
-		nube reconstruida respecto al ground truth.
-		Debe considerarse que el modelo gt fue obtenido con más vistas de las que nosotros trabajamos.
+		En la fusión se utilizó una distancia de proximidad de $1.5$ veces la resolución de las nubes,
+		y un mínimo de confianza de $0.2$.
+		El rellenado de huecos se realizó mediante el método de Poisson.
 
 
+		En el proceso de reconstrucción, es la registración donde se observa el
+		mayor costo computacional, como se observa en el cuadro~\ref{tab:reconstr_time}.
+		En el cuadro~\ref{tab:reg_time} se observan
+		los tiempos de ejecución promedio, discriminados en la alineación
+		inicial y el refinamiento posterior.
+		%Si bien los tiempos no son considerables, pueden reducirse al mejorar
+		%la selección inicial de puntos y realizar la búsqueda de las
+		%correspondencias de forma más eficiente.
 		\input{reg_time}
 
-		\input{reg_error}
+		Para comparar las alineaciones contra el \emph{ground truth}, se
+		observó el efecto de las mismas sobre un punto orientado (simulando la
+		cámara). El punto \emph{eye} se ubicó inicialmente en las coordenadas
+		$\{0, -0.1, 0.7\}$ (valores obtenidos de la base de datos), y se
+		orientó el vector \emph{target} hacia $-z$ y el \emph{up} hacia $y$.
+		El error de la posicionamiento es la razón entre la distancia al punto
+		de inicio y la distancia al punto obtenido por \emph{ground truth}.
+		En el caso de \emph{target} y \emph{up}, se midió el ángulo contra los
+		vectores obtenidos por \emph{ground truth}.
 
+		Los errores de la registración se observan en el
+		cuadro~\ref{tab:reg_error}.  Los errores no superan $1^{\circ}$ en
+		orientación ni $1\%$ en posicionamiento.  Se da una excepción en el
+		caso de \texttt{dragon stand}, debido a una mala alineación en la
+		captura 12 (figura~\ref{fig:fitness}).
+
+		\input{reg_error}
 
 		\begin{figure}
 			\center
@@ -191,16 +205,43 @@
 			con un error de registración.}
 		\end{figure}
 
-		\Alerta{fusion}
+
+
+		Como medida de error de la fusión se utilizó la distancia entre los puntos de la nube reconstruida
+		respecto al punto más cercano en el \emph{ground truth} (cuadro~\ref{fus_error}).
+		La reconstrucción del modelo \texttt{armadillo} se encontraba a otra
+		escala, por lo que no fue utilizada.
+		Nuevamente se destaca el error de \texttt{dragon stand} producto de una mala alineación.
+
 		\input{fusion_error}
 
-	\section{Resultados}
+		%gráficos drill y front/back
+		%En el caso de \texttt{drill}, 
+
+		%solo front/back
+		Se observa, además, una inflación/deflación de los objetos
+		reconstruidos debida a la propagación del error de alineación.  Así, la
+		primera captura coincide casi exactamente, pero el error se incrementa
+		a medida que nos alejamos de ella (figura~\ref{fig:fus_happy}).
+
+		\begin{figure}
+			\center
+			\Imagen{happy_diff}
+			\caption{\label{fig:fus_happy}Diferencia contra el \emph{ground truth} del modelo \texttt{happy}.}
+		\end{figure}
+
+
+
+
+
+
+
 
 	\section{Conclusiones}
 
 
 
-	\bibliographystyle{alpha}
-	\bibliography{biblio}
+	%\bibliographystyle{alpha}
+	%\bibliography{biblio}
 \end{document}
 
