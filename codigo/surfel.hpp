@@ -246,7 +246,7 @@ namespace nih {
 	void fusion::clean() {
 		captura cleaned;
 		for(int K = 0; K < counter.size(); ++K)
-			if(counter[K] > 1) {
+			if(counter[K] > 1 or cloud_.confidence[K]>0.2) { //ángulo de la normal de menos de 80 grados
 				cleaned.cloud_->push_back((*cloud_.cloud_)[K]);
 				cleaned.confidence.push_back(cloud_.confidence[K]);
 			}

@@ -93,12 +93,14 @@ int main(int argc, char **argv) {
 	clouds.pop_back(); //la última es igual a la primera
 
 	auto result = nih::fusionar(clouds, 1.5*resolution);
-	auto tmesh = nih::triangulate_3d(result.cloud_, 2*resolution);
+	//filtro pasa bajo
+	//result.cloud_ = nih::moving_least_squares(result.cloud_, 3*resolution);
+	auto tmesh = nih::triangulate_3d(result.cloud_, 5*resolution);
 	//visualise(result, tmesh);
 
 	nih::write_cloud_ply(*result.cloud_, output + ".ply");
 	nih::write_polygons(*result.cloud_, tmesh, output + ".polygon");
-	//auto polygon_mesh = nih::tmesh_to_polygon(cloud_.cloud_, mesh_);
-	//pcl::io::savePolygonFilePLY("result_polymesh.ply", polygon_mesh, false);
+	auto polygon_mesh = nih::tmesh_to_polygon(*result.cloud_, tmesh);
+	pcl::io::savePolygonFilePLY(output + "_pmesh.ply", polygon_mesh, false);
 	return 0;
 }

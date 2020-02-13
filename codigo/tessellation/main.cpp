@@ -77,7 +77,7 @@ void visualise(nih::cloudnormal::Ptr cloud_, nih::TMesh mesh_, const pcl::Vertic
 
 	pcl::visualization::PCLVisualizer view("tessellation");
 
-	auto polygon_mesh = nih::tmesh_to_polygon(cloud_, mesh_);
+	auto polygon_mesh = nih::tmesh_to_polygon(*cloud_, mesh_);
 
 	view.setBackgroundColor(1, 1, 1);
 	view.addPolygonMesh(polygon_mesh, "mesh");
