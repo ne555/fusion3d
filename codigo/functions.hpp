@@ -18,6 +18,7 @@
 namespace nih {
 	/** Suavizado de la nube mediante el médoto de mínimos cuadrados móviles */
 	inline cloud::Ptr moving_least_squares(cloud::Ptr nube, double radius);
+	inline cloudnormal::Ptr moving_least_squares(cloudnormal::Ptr nube, double radius);
 
 	/** Promedio de las distancias entre pares más cercanos de la nube */
 	template <class PointT>
@@ -112,6 +113,21 @@ namespace nih {
 		mls.setSqrGaussParam(square(radius));
 		mls.setUpsamplingMethod(pcl::MovingLeastSquares<point, point>::NONE);
 		auto smooth = create<cloud>();
+
+		mls.setInputCloud(nube);
+		mls.process(*smooth);
+
+		return smooth;
+	}
+	cloudnormal::Ptr moving_least_squares(cloudnormal::Ptr nube, double radius) {
+		int orden = 3;
+		pcl::MovingLeastSquares<pointnormal, pointnormal> mls;
+		mls.setComputeNormals(true); //por esto no es una template la función
+		mls.setPolynomialOrder(orden);
+		mls.setSearchRadius(radius);
+		mls.setSqrGaussParam(square(radius));
+		mls.setUpsamplingMethod(pcl::MovingLeastSquares<pointnormal, pointnormal>::NONE);
+		auto smooth = create<cloudnormal>();
 
 		mls.setInputCloud(nube);
 		mls.process(*smooth);
