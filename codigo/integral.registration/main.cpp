@@ -57,11 +57,6 @@ int main(int argc, char **argv) {
 		loop_align("result/" + config+"/result"),
 		fitness("result/" + config+"/fitness");
 
-	profile.close();
-	initial_align.close();
-	icp_align.close();
-	loop_align.close();
-
 	profile << "Todos los tiempo son en segundos\n";
 	profile << "\n---\nPreproceso\n";
 	std::cerr << "\n---\nPreproceso\n";
@@ -155,7 +150,7 @@ int main(int argc, char **argv) {
 			auto [media, desvio, solap] = nih::fitness(registered[K].cloud_, registered[K-1].cloud_, 5*resolution);
 			fitness << cloudname[K] << ' ' << solap << '\n';
 		}
-		nih::write_cloud_ply(*c.cloud_, "result/" + config + "/delete_this_" + cloudname[K]);
+		nih::write_cloud_ply(*c.cloud_, "result/" + config + "/reg_this_" + cloudname[K]);
 	}
 
 
