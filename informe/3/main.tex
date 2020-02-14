@@ -160,33 +160,39 @@
 		la lleva a un sistema de referencia global.
 		El repositorio cuenta también con los objetos reconstruidos utilizando
 		todas las capturas disponibles.
+		Se estableció entonces el \emph{ground truth} como el conjunto de estas
+		transformaciones de alineación y el objeto reconstruido.
 
-		Para la registración se utilizó el método B, seguido de
+		Para la registración se utilizó el método basado en el marco de referencia ISS, seguido de
 		un refinamiento mediante ICP y una corrección de bucle.
 		En la fusión se utilizó una distancia de proximidad de $1.5$ veces la resolución de las nubes,
 		y un mínimo de confianza de $0.2$.
 		El rellenado de huecos se realizó mediante el método de Poisson.
 
 
-		En el proceso de reconstrucción, es la registración donde se observa el
-		mayor costo computacional, como se observa en el cuadro~\ref{tab:reconstr_time}.
-		En el cuadro~\ref{tab:reg_time} se observan
+		Durante el proceso de reconstrucción, se observa que la etapa de reconstrucción
+		es responsable de la mayor parte del costo computacional, sobre todo al aumentar
+		la cantidad de puntos en las capturas (cuadro~\ref{tab:reconstr_time}).
+		En el cuadro~\ref{tab:reg_time} se muestran
 		los tiempos de ejecución promedio, discriminados en la alineación
 		inicial y el refinamiento posterior.
 		%Si bien los tiempos no son considerables, pueden reducirse al mejorar
 		%la selección inicial de puntos y realizar la búsqueda de las
 		%correspondencias de forma más eficiente.
+		\input{reconst_time}
+
 		\input{reg_time}
 
+		%TODO: imagen del proceso
 		Para comparar las alineaciones contra el \emph{ground truth}, se
 		observó el efecto de las mismas sobre un punto orientado (simulando la
 		cámara). El punto \emph{eye} se ubicó inicialmente en las coordenadas
 		$\{0, -0.1, 0.7\}$ (valores obtenidos de la base de datos), y se
 		orientó el vector \emph{target} hacia $-z$ y el \emph{up} hacia $y$.
 		El error de la posicionamiento es la razón entre la distancia al punto
-		de inicio y la distancia al punto obtenido por \emph{ground truth}.
+		de inicio y la distancia al punto obtenido por el \emph{ground truth}.
 		En el caso de \emph{target} y \emph{up}, se midió el ángulo contra los
-		vectores obtenidos por \emph{ground truth}.
+		vectores obtenidos por el \emph{ground truth}.
 
 		Los errores de la registración se observan en el
 		cuadro~\ref{tab:reg_error}.  Los errores no superan $1^{\circ}$ en
@@ -208,7 +214,7 @@
 
 
 		Como medida de error de la fusión se utilizó la distancia entre los puntos de la nube reconstruida
-		respecto al punto más cercano en el \emph{ground truth} (cuadro~\ref{fus_error}).
+		respecto al punto más cercano en el \emph{ground truth} (cuadro~\ref{tab:fus_error}).
 		La reconstrucción del modelo \texttt{armadillo} se encontraba a otra
 		escala, por lo que no fue utilizada.
 		Nuevamente se destaca el error de \texttt{dragon stand} producto de una mala alineación.
@@ -225,20 +231,75 @@
 		a medida que nos alejamos de ella (figura~\ref{fig:fus_happy}).
 
 		\begin{figure}
-			\center
 			\Imagen{happy_diff}
 			\caption{\label{fig:fus_happy}Diferencia contra el \emph{ground truth} del modelo \texttt{happy}.}
 		\end{figure}
 
 
+		%rellenado de huecos poisson
+		Luego de aplicar el método de Poisson para rellenar los huecos, se
+		obtuvieron las reconstrucciones que se observan en la
+		figura~\ref{fig:poiss_all}.
+		Los desperfectos observados en bunny (figura~\ref{fig:bun_ear}) se deben a una mala registración
+		de la captura \texttt{bun180}, que se encontraba aproximadamente a
+		$90^{\circ}$ respecto a sus vecinos.
+		En cuanto a drill (figura~\ref{fig:drill_drops}), se tienen componentes
+		inconexas debido a una mala fusión en una zona de alta curvatura.
+		En todos los casos, la base de apoyo del objeto presenta una
+		deformación hacia abajo (figura~\ref{fig:base}) con un hueco al final.
+		Esto podría solucionarse mediante un preproceso rellenando la base con,
+		por ejemplo, el método de \emph{advancing front}.
 
+		\begin{figure}
+			\Imagen{img/models_b}
+			\caption{\label{fig:poiss_all}Resultado de las reconstrucciones luego del rellenado de huecos mediante el método de Poisson.
+			Fila superior:
+			De izquierda a derecha, y de arriba a abajo, los modelos son: armadillo, bunny, dragon, drill y happy.}
+		\end{figure}
 
+		\begin{figure}
+			\centering
+			\includegraphics[max width=.5\linewidth, max height=.25\textheight, keepaspectratio]
+				{img/bunny_ear}
+			%\Imagen{img/bunny_ear}
+			\caption{\label{fig:bun_ear}Acercamiento a la oreja derecha de bunny.}
+		\end{figure}
 
+		\begin{figure}
+			%\Imagen{img/drill_drops}
+			\centering
+			\includegraphics[max width=.5\linewidth, max height=.25\textheight, keepaspectratio]
+				{img/drill_drops}
+			\caption{\label{fig:drill_drops}Acercamiento a la mecha de drill. Se observan componentes inconexas con la malla principal.}
+		\end{figure}
+
+		\begin{figure}
+			\centering
+			\includegraphics[max width=.5\linewidth, max height=.25\textheight, keepaspectratio]
+				{img/arma_foot}
+			%\Imagen{img/arma_foot}
+			\caption{\label{fig:base}Acercamiento a la base de apoyo de armadillo. Se observa un estiramiento hacia abajo.}
+		\end{figure}
 
 
 
 	\section{Conclusiones}
+		Como resultado de esta etapa se obtuvo una biblioteca de software que
+		permite reconstruir un objeto tridimensional a partir de nubes
+		de puntos de vistas parciales sujetas a ciertas restricciones.
+		Debido al uso del método de Poisson en el rellenado, esta
+		reconstrucción no presentará huecos, a excepción de la base de apoyo.
 
+		Durante la registración, se obtuvieron resultados aceptables en casi todas las pruebas, 
+		siendo uno de los fallos debido a un ángulo excesivo entre las tomas.
+		Estos fallos pueden detectarse al utilizar la métrica de solapamiento y entonces proceder
+		a ajustar los parámetros del algoritmo de alineación.
+
+		A futuro se pretende desarrollar algoritmos que nos permitan relajar la
+		restricción del eje de giro.
+		De esta forma, se podrán combinar reconstrucciones del mismo objeto
+		sobre la base de giro, con lo que se logrará recuperar la información
+		perdida debido a oclusiones.
 
 
 	%\bibliographystyle{alpha}
