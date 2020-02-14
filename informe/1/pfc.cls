@@ -34,7 +34,7 @@ Ingeniería en Informática\\
 \emph{Universidad Nacional del Litoral}}
 \Logo{unl}
 
-\subtitle{Reconstrucción de volúmenes para impresión 3D mediante fusión y rellenado de mallas de superficies parciales}
+\title{Reconstrucción de volúmenes para impresión 3D mediante fusión y rellenado de mallas de superficies parciales}
 \author{Walter Bedrij}
 \Director{Francisco Mainero}
 \Codirector{Pablo Novara}
