@@ -1,0 +1,57 @@
+\chapter*{Conclusiones y trabajos futuros}
+la registración funca
+	correspondencias
+		necesito eliminar falsos positivos
+		tener suficientes para poder realizar estimaciones
+	se puede mejorar
+		Buscar el clúster de otra forma 
+			o no buscar clúster, usar los puntos que sobrevivieron
+		¿y si filtro las correspondencias de fpfh multiescala?
+		¿y si tomo keypoints como entrada?
+		o tomar keypoints y una vecindad (para tener más puntos para clúster)
+		ver ISS paper para una búsqueda eficiente
+
+	icp with normals es mágico (¿qué tanto es icp?)
+		icp común me alejaba en algunos casos... ¿por qué?
+
+	corrección de bucle
+		distribuir según el salto, que no todo es constante
+
+Fusión
+	la malla no es bonita ¿cómo mido calidad de malla?
+	¿cómo suavizo la malla?
+	proyección del punto en el plano de la vista
+		-> eliminar puntos "demasiado" arriba/abajo
+			ver paper loop correction (inhand algo)
+		¿pero cómo sé cuál es el del error? ¿elijo cualquiera? ¿el primero?
+		en post proceso,
+			¿por qué mls me genera esas líneas?
+			¿o es el alg de triangulación? (considerar que poisson falla ahí)
+			en lugar de mls, proyecto en los planos que ven a ese punto.
+
+	mejorar la confianza:
+		muchos no están seguros, pero dicen lo mismo
+
+unir fusión y registración de a pares
+
+usar biblioteca geométrica
+	preproceso de suavizado
+
+Advancing front con soporte
+	ej, poisson, mls (plano o mejor)
+		delaunay es interesante, pero no sé si da
+	ir actualizando el soporte, siempre que cierre
+		eso haría que refleje más las localidades (¿bueno o malo?)
+	cambio en el tamaño de los triángulos 
+	pensar el algoritmo para huecos pequeños
+	solucionar lo de línea de vista
+		releer backdrop
+
+Poisson
+	necesito tener algún control
+	ver el que usa advancing front
+
+
+Cuestiones de rendimiento
+	paralelización
+

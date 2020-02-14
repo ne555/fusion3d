@@ -1,0 +1,33 @@
+del TODO de código
+	# colorear error en la malla
+	generar un histograma del error
+
+	preproceso
+		suavizado de la superfice
+			# moving least squares
+			filtro bilineal
+			geométrico
+		eliminación de outliers
+			erosión de parches (apertura o cierre)
+				esto trabaja con geometría
+			equivalente de erosión niveles de gris
+
+	submuestreo de la entrada
+		subdivisión de la malla
+			si sé que gira a la derecha, tomo la porción derecha
+				tipo scanline
+
+	alineación
+		erosionar una de las áreas para garantizar Source incluido en Target
+			¿se puede?
+		mejorar con icp
+			ver los parámetros para que no mueva tanto
+		**revisar clustering, ángulos negativos y ambigüedad de ref_frame
+			¿en qué quedó eso?
+			elegir clúster cuyo centro sea el más cercano a la media
+
+	fusión:
+		zona solapada promedio
+			promedio entre correspondencias (a cercano a b, b cercano a a)
+				¿qué hacer con los que quedan fuera? (quedan como 1)
+				¿cuándo matar los puntos?
