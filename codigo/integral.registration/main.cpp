@@ -54,7 +54,13 @@ int main(int argc, char **argv) {
 	std::ofstream profile("result/" + config+"/times"),
 		initial_align("result/" + config+"/initial"),
 		icp_align("result/" + config+"/icp"),
-		loop_align("result/" + config+"/result");
+		loop_align("result/" + config+"/result"),
+		fitness("result/" + config+"/fitness");
+
+	profile.close();
+	initial_align.close();
+	icp_align.close();
+	loop_align.close();
 
 	profile << "Todos los tiempo son en segundos\n";
 	profile << "\n---\nPreproceso\n";
@@ -144,8 +150,12 @@ int main(int argc, char **argv) {
 	for(int K=0; K<registered.size(); ++K){
 		const auto &c = registered[K];
 		pcl::transformPointCloudWithNormals(*c.cloud_, *c.cloud_, c.transformation_);
-	//TODO: guardar nubes alineadas
-		nih::write_cloud_ply(*c.cloud_, "result/" + config + "/reg_" + cloudname[K]);
+		//fitness
+		if(K>0){
+			auto [media, desvio, solap] = nih::fitness(registered[K].cloud_, registered[K-1].cloud_, 5*resolution);
+			fitness << cloudname[K] << ' ' << solap << '\n';
+		}
+		nih::write_cloud_ply(*c.cloud_, "result/" + config + "/delete_this_" + cloudname[K]);
 	}
 
 
