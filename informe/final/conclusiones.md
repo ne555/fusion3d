@@ -1,62 +1,7 @@
-\chapter*{Conclusiones y trabajos futuros}
-%la registración funca
-%	correspondencias
-%		necesito eliminar falsos positivos
-%		tener suficientes para poder realizar estimaciones
-%	se puede mejorar
-%		Buscar el clúster de otra forma 
-%			o no buscar clúster, usar los puntos que sobrevivieron
-%		¿y si filtro las correspondencias de fpfh multiescala?
-%		¿y si tomo keypoints como entrada?
-%		o tomar keypoints y una vecindad (para tener más puntos para clúster)
-%		ver ISS paper para una búsqueda eficiente
-%
-%	icp with normals es mágico (¿qué tanto es icp?)
-%		icp común me alejaba en algunos casos... ¿por qué?
-%
-%	corrección de bucle
-%		distribuir según el salto, que no todo es constante
-%
-%Fusión
-%	la malla no es bonita ¿cómo mido calidad de malla?
-%	¿cómo suavizo la malla?
-%	proyección del punto en el plano de la vista
-%		-> eliminar puntos "demasiado" arriba/abajo
-%			ver paper loop correction (inhand algo)
-%		¿pero cómo sé cuál es el del error? ¿elijo cualquiera? ¿el primero?
-%		en post proceso,
-%			¿por qué mls me genera esas líneas?
-%			¿o es el alg de triangulación? (considerar que poisson falla ahí)
-%			en lugar de mls, proyecto en los planos que ven a ese punto.
-%
-%	mejorar la confianza:
-%		muchos no están seguros, pero dicen lo mismo
-%
-%unir fusión y registración de a pares
-%
-%usar biblioteca geométrica
-%	preproceso de suavizado
-%
-%Advancing front con soporte
-%	ej, poisson, mls (plano o mejor)
-%		delaunay es interesante, pero no sé si da
-%	ir actualizando el soporte, siempre que cierre
-%		eso haría que refleje más las localidades (¿bueno o malo?)
-%	cambio en el tamaño de los triángulos 
-%	pensar el algoritmo para huecos pequeños
-%	solucionar lo de línea de vista
-%		releer backdrop
-%
-%Poisson
-%	necesito tener algún control
-%	ver el que usa advancing front
-%
-%
-%Cuestiones de rendimiento
-%	paralelización
-%
+Conclusiones
+===
 
-\section{Del producto}
+#Del producto
 	En este proyecto se realizó el desarrollo de una biblioteca de software para
 	realizar la reconstrucción tridimensional de un objeto a partir de capturas de
 	vistas parciales.
@@ -76,7 +21,7 @@
 	superficie estimada en las zonas sin información se une suavemente al resto de
 	la malla.
 
-\section{Del proyecto}
+#Del proyecto
 La elección de la metodología en cascada modificada fue incorrecta.
 La investigación bibliográfica se alargó demasiado y se desperdiciaron recursos
 al abordar temas que tuvieron que ser descartados luego (como el uso de la
@@ -88,27 +33,27 @@ proceso y agregar un primer módulo de preproceso que contenga
 la reducción de ruido y la operatoria básica con las nubes de puntos.
 
 
-\subsection{Base de datos (mejor en la sección de materiales y métodos)}
+@@
+##Base de datos (mejor en la sección de materiales y métodos)
 Una vez que se determinó que no se contaría con una base de datos propia,
 se realizó la búsqueda de un repositorio adecuado.
-\begin{itemize}
-	\item redwood, freibug:
+_redwood_
+_freibug_
 	rgb y profundidad, pero el movimiento es pequeño y libre
 	(tendría que eliminar intermedios)
-\item middlebury
+_middlebury_
 	base giratoria, pero sólo RGB
 	(tendría que generar el mapa de profundidad)
-\item stanford
+_stanford_
 	base giratoria, nube de puntos, sin textura.
 	Se optó por esta.
 	Se decidió no generar artificialmente los puntos de textura para tener un
 	caso más real.
-\end{itemize}
 
 @@Impresión 3D: ¿con watertight es suficiente?
 
 @@¿también en materiales y métodos?
-\subsection{Tecnología: PCL}
+##Tecnología: PCL
 @@instalación
 @@¿pongo un apartado de riesgos efectivizados?
 Primeramente, se contaba con un sistema operativo Arch Linux, donde la
@@ -130,7 +75,7 @@ Debido al uso intensivo de código templatizado en PCL, la compilación del
 código cliente requería de un tiempo considerable (aproximadamente un minuto).
 
 
-\subsection{Riesgos efectivizados}
+##Riesgos efectivizados
 Ausencia de repositorio de mallas tridimensionales
 (copiar base de datos)
 
@@ -140,7 +85,8 @@ Meshlab: no se logró instalarlo en el nuevo equipo, se cambió a CloudCompare
 
 
 
-\section{Trabajos futuros}
+Trabajos futuros
+===
 Combinar reconstrucciones del objeto en varias posiciones sobre la base
 giratoria con el fin de eliminar huecos y ajustar el error de inflación de la
 registración.
