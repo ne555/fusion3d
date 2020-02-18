@@ -5,10 +5,10 @@ Uno de los supuestos de este proyecto era contar con un repositorio propio de
 mallas tridimensionales.
 Para la creación de este repositorio,
 se utilizarían los algoritmos de reconstrucción desarrollados en \TODO{cite{Pancho}},
-ubicando al objeto de interés de una base giratoria y realizando capturas 
+ubicando al objeto de interés de una base giratoria y realizando capturas
 en ángulos espaciados hasta completar una vuelta.
 De esta forma, las posiciones de las vistas describirían un círculo centrado en el objeto y
-cada captura contendría información de posición ($xyz$) y de textura ($rgb$), 
+cada captura contendría información de posición ($xyz$) y de textura ($rgb$),
 
 Por cuestiones externas, este repositorio nunca se materializó, por lo que fue necesario
 la búsqueda de otro con características similares.
@@ -44,13 +44,15 @@ de ICP modificado. \TODO{cite{zipper}} \TODO{explicar ICP}.
 Esta transformación final se provee en un archivo de configuración.
 
 De esta base de datos se utilizaron los modelos
-	\textt{armadillo},
-	\textt{bunny},
-	\textt{dragon},
-	\textt{drill} y
-	\textt{happy},
+	\texttt{armadillo},
+	\texttt{bunny},
+	\texttt{dragon},
+	\texttt{drill} y
+	\texttt{happy},
 los cuales presentan distintos niveles de detalles, cantidad de escaneos y niveles de ruido.
 
+
+%TODO: imágenes de los modelos (usar meshlab, fondo blanco)
 
 
 Desgraciadamente, no se cuenta con información de textura de los modelos.
@@ -59,5 +61,66 @@ artificialmente valores de color para los puntos.
 
 
 \section{Tecnologías}
-\subsection{\emph{The Point Cloud Library} (PCL)}
-Para realizar operaciones sobre las nubes de puntos.
+	%Intro
+	A continuación se mencionan las principales herramientas de software
+	utilizadas en el desarrollo de programas de reconstrucción tridimensional.
+
+	\subsection{KinectFusion}
+	Es el algoritmo desarrollado por Microsoft para lograr reconstrucciones
+	tridimensionales utilizando el dispositivo Kinect.
+
+	%kinectfusion_real-time_3d_reconstruction_and_interaction_using_a_moving_depth_camera
+	Debido a que uno de sus objetivos era lograr una implementación en tiempo
+	real, el algoritmo de registración requiere de poca variación
+	de la posición relativa cámara-objeto entre capturas, por lo que no fue utilizado.
+
+	Para realizar la fusión utiliza una variación del método de
+	\emph{volumetric merging} sobre GPU.\cite{Izadi:2011:KRR:2047196.2047270}
+
+	\subsection{Open Source Computer Vision Library (OpenCV)}
+	Es una biblioteca de código abierto de visión computacional y aprendizaje
+	maquinal.  Cuenta con módulos de procesamiento de imágenes de profundidad y
+	registración.
+
+	En un principio se consideró utilizar la información de textura de las
+	capturas para poder lograr la registración, pero debido a que la base de
+	datos utilizada sólo contenía información geométrica  no se utilizarán las
+	funcionalidades de esta biblioteca.
+
+	\subsection{\emph{The Point Cloud Library} (PCL)}
+	Es un framework de código abierto multiplataforma para el procesado de
+	imágenes 2D/3D y nubes de puntos.
+	Provee numerosos algoritmos modernos para reducción de ruido, extracción de
+	puntos salientes, cálculo de descriptores, registración, reconstrucción de
+	superficies, entre otros.
+
+	La documentación incluye tutoriales para cada módulo de la biblioteca y
+	además se cuenta con listas de correos y canales de IRC para brindar
+	soporte.
+
+	PCL se encuentra disponible para ser usada en C++.
+	Debido al uso intensivo de código templatizado, la compilación del
+	código cliente requiere de un tiempo considerable (aproximadamente un minuto).
+	Existen proyectos para portarla a Python y Java, pero no se encuentran
+	suficientemente avanzados.
+
+	%TODO: mover a conclusiones o a un apartado de riesgos
+	En cuanto a la instalación de esta biblioteca, en los sistemas operativos
+	utilizados (Arch Linux y Clear Linux) fue necesario compilar los fuentes,
+	lo cual requirió de enormes cantidades de tiempo y memoria.
+	En particular, en el sistema Clear Linux, el uso excesivo de memoria provocaba
+	que el proceso fuera detenido por el sistema operativo.
+	Finalmente, se requirió de varias etapas de configuración y prueba lograr
+	la instalación exitosa de la biblioteca.
+
+
+
+
+	\subsection{CloudCompare, Meshlab}
+	Son programas de procesamiento y edición de mallas de puntos 3D.  Presentan
+	herramientas de registración semiautomática (a partir de puntos
+	seleccionados por el usuario), y cuentan con una implementación del
+	algoritmo \emph{Poisson Surface Reconstruction} para reconstrucción de
+	superficies.
+
+	Se utilizarán especialmente para visualización y comparación de resultados.
