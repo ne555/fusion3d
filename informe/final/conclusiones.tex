@@ -1,61 +1,4 @@
-\chapter*{Conclusiones y trabajos futuros}
-%la registración funca
-%	correspondencias
-%		necesito eliminar falsos positivos
-%		tener suficientes para poder realizar estimaciones
-%	se puede mejorar
-%		Buscar el clúster de otra forma 
-%			o no buscar clúster, usar los puntos que sobrevivieron
-%		¿y si filtro las correspondencias de fpfh multiescala?
-%		¿y si tomo keypoints como entrada?
-%		o tomar keypoints y una vecindad (para tener más puntos para clúster)
-%		ver ISS paper para una búsqueda eficiente
-%
-%	icp with normals es mágico (¿qué tanto es icp?)
-%		icp común me alejaba en algunos casos... ¿por qué?
-%
-%	corrección de bucle
-%		distribuir según el salto, que no todo es constante
-%
-%Fusión
-%	la malla no es bonita ¿cómo mido calidad de malla?
-%	¿cómo suavizo la malla?
-%	proyección del punto en el plano de la vista
-%		-> eliminar puntos "demasiado" arriba/abajo
-%			ver paper loop correction (inhand algo)
-%		¿pero cómo sé cuál es el del error? ¿elijo cualquiera? ¿el primero?
-%		en post proceso,
-%			¿por qué mls me genera esas líneas?
-%			¿o es el alg de triangulación? (considerar que poisson falla ahí)
-%			en lugar de mls, proyecto en los planos que ven a ese punto.
-%
-%	mejorar la confianza:
-%		muchos no están seguros, pero dicen lo mismo
-%
-%unir fusión y registración de a pares
-%
-%usar biblioteca geométrica
-%	preproceso de suavizado
-%
-%Advancing front con soporte
-%	ej, poisson, mls (plano o mejor)
-%		delaunay es interesante, pero no sé si da
-%	ir actualizando el soporte, siempre que cierre
-%		eso haría que refleje más las localidades (¿bueno o malo?)
-%	cambio en el tamaño de los triángulos 
-%	pensar el algoritmo para huecos pequeños
-%	solucionar lo de línea de vista
-%		releer backdrop
-%
-%Poisson
-%	necesito tener algún control
-%	ver el que usa advancing front
-%
-%
-%Cuestiones de rendimiento
-%	paralelización
-%
-
+\chapter{Conclusiones y trabajos futuros}
 \section{Del producto}
 	En este proyecto se realizó el desarrollo de una biblioteca de software para
 	realizar la reconstrucción tridimensional de un objeto a partir de capturas de
@@ -66,88 +9,82 @@
 	Al trabajar directamente con las nubes de puntos no se restringió el
 	dispositivo de captura a un hardware en particular. Sin embargo, las
 	restricciones impuestas de base giratoria y limitar la cantidad de capturas
-	requeridas fueron planteadas en base al trabajo realizado por %\cite{Pancho}.
+	requeridas fueron planteadas considerando una integración futura con
+	el trabajo realizado por \TODO{cite{Pancho}}.
 
 	Las registraciones se obtuvieron en tiempos razonables, sin requerir hardware especial.
-	Se logró contener la propagación de los errores de registración.
+	Si bien se observa un efecto de «inflado» debido a la propagación de los errores de registración,
+	este se encuentra suficientemente acotado respecto al tamaño del objeto.
 
-	El hecho de usar una base giratoria genera demasiadas oclusiones, los huecos
-	son de tamaño considerable. Aún así, el resultado es una malla cerrada, y la
+	Al realizar las capturas solamente sobre una base giratoria,
+	Debido a que las capturas se realizaron solamente sobre una base giratoria,
+	no se lograron resolver todas las oclusiones, lo que genera la aparición de huecos de
+	tamaño considerable.
+	Aún así, el resultado es una malla cerrada, y la
 	superficie estimada en las zonas sin información se une suavemente al resto de
 	la malla.
 
-\section{Del proyecto}
+\section{Del proceso}
 La elección de la metodología en cascada modificada fue incorrecta.
 La investigación bibliográfica se alargó demasiado y se desperdiciaron recursos
 al abordar temas que tuvieron que ser descartados luego (como el uso de la
 información de textura).
-Además, se produjo un desfasaje entre la adquisición de los conocimientos y la puesta a prueba de los mismos.
+Además, se produjo un desfasaje entre la adquisición de los conocimientos y la
+implementación de los mismos.
 
 Hubiese sido mejor utilizar directamente una metodología incremental en todo el
-proceso y agregar un primer módulo de preproceso que contenga
-la reducción de ruido y la operatoria básica con las nubes de puntos.
+proceso, con más incrementos de menor tamaño, como ser agregar un primer módulo
+de preproceso que contenga la reducción de ruido y la operatoria básica con las
+nubes de puntos.
+
+En cuanto al desarrollo, uno de los principales problemas fue la definición de
+métricas para evaluar los algoritmos y establecer qué niveles de error eran
+aceptables y cuáles requerían una corrección.
+Esto se dificulta, además, al considerar que los resultados producidos en una etapa
+serán la entrada de otra, de la cual se desconoce su sensibilidad.
+Muchas evaluaciones fueron primeramente visuales, resultando en un proceso lento
+que en ocasiones fallaba en detectar errores considerables.
 
 
-\subsection{Base de datos (mejor en la sección de materiales y métodos)}
-Una vez que se determinó que no se contaría con una base de datos propia,
-se realizó la búsqueda de un repositorio adecuado.
-\begin{itemize}
-	\item redwood, freibug:
-	rgb y profundidad, pero el movimiento es pequeño y libre
-	(tendría que eliminar intermedios)
-\item middlebury
-	base giratoria, pero sólo RGB
-	(tendría que generar el mapa de profundidad)
-\item stanford
-	base giratoria, nube de puntos, sin textura.
-	Se optó por esta.
-	Se decidió no generar artificialmente los puntos de textura para tener un
-	caso más real.
-\end{itemize}
 
-@@Impresión 3D: ¿con watertight es suficiente?
-
-@@¿también en materiales y métodos?
-\subsection{Tecnología: PCL}
-@@instalación
-@@¿pongo un apartado de riesgos efectivizados?
-Primeramente, se contaba con un sistema operativo Arch Linux, donde la
-instalación de esta biblioteca se realiza mediante un script PKGBUILD que
-resuelve las dependencias y configura los módulos.
-Fue necesario compilar los fuentes, pero fuera del tiempo requerido, no se
-tuvieron mayores inconvenientes.
-
-Cuando, por razones externas al proyecto, fue necesario reemplazar el equipo,
-se contaba esta vez con un sistema Clear Linux.
-Ahora la instalación resultó más problemática.
-Se requerían demasiados recursos de memoria, por lo que el sistema operativo
-detenía el proceso.
-Fue necesario un largo proceso de configuración y prueba para lograr la instalación exitosa de la biblioteca.
-
-
-@@uso (materiales y métodos)
-Debido al uso intensivo de código templatizado en PCL, la compilación del
-código cliente requería de un tiempo considerable (aproximadamente un minuto).
-
-
-\subsection{Riesgos efectivizados}
-Ausencia de repositorio de mallas tridimensionales
-(copiar base de datos)
-
-Falla en los equipos de trabajo
-(copiar parte de pcl)
-Meshlab: no se logró instalarlo en el nuevo equipo, se cambió a CloudCompare
+%\subsection{Riesgos efectivizados}
+%Ausencia de repositorio de mallas tridimensionales
+%(copiar base de datos)
+%
+%Falla en los equipos de trabajo
+%(copiar parte de pcl)
+%Meshlab: no se logró instalarlo en el nuevo equipo, se cambió a CloudCompare
 
 
 
 \section{Trabajos futuros}
-Combinar reconstrucciones del objeto en varias posiciones sobre la base
-giratoria con el fin de eliminar huecos y ajustar el error de inflación de la
-registración.
+En esta sección se describirán actividades que excedieron el alcance de este proyecto
+y podrían ser abordadas en una etapa posterior.
 
-Ajustar los métodos para trabajar con el volumen de puntos generados por %\cite{Pancho}.
-Paralelizar.
-
-Mejorar la detección de outliers en el módulo de fusión.
-
-Modificar el método de advancing front para que utilice una superficie de soporte para generar los nuevos puntos.
+\begin{itemize}
+	\item Combinar escaneos cilíndricos del objeto en varias posiciones sobre la base giratoria,
+		buscando de esta forma eliminar huecos y reducir la propagación del error de alineación.
+		Esto requerirá eliminar la restricción del eje de giro en la
+		registración, por lo que deberán evaluarse otros métodos para detectar
+		correspondencias erróneas.
+	\item Ajustar los métodos para trabajar con el volumen de puntos generados
+		por \TODO{cite{Pancho}}.  Las capturas de los modelos con los cuales se
+		realizaron las pruebas contenían a lo sumo ochenta mil puntos. Las
+		reconstrucciones obtenidas en \TODO{cite{Pancho}} pueden llegar a los
+		dos millones, es decir, 25 veces más.
+		Es necesario entonces, analizar la escalabilidad de los métodos
+		propuestos y optimizarlos o reemplazarlos según resulte conveniente.
+		En particular, puede plantearse la ejecución sobre GPU.
+	\item Implementar métricas de calidad del mallado que consideren las
+		características de la impresión 3D.
+		En este proyecto solamente se consideraron las condiciones de que la malla
+		resultase cerrada y no presente intersecciones consigo misma.
+	%\item Mejorar la detección de \emph{outliers} en el módulo de fusión.
+	%\item Implementar métodos de suavizado de mallas.
+	\item Modificar el método de \emph{advancing front} para que utilice una
+		superficie de soporte para establecer la posición de los nuevos puntos,
+		asegurando de esta forma la convergencia del método y la suavidad del
+		parche generado.
+	\item Modificar el método de \emph{advancing front} para que considere las islas.
+		Esto requerirá detectar dentro de qué hueco se encuentra cada isla.
+\end{itemize}
