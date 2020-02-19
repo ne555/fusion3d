@@ -2,7 +2,7 @@
 Uno de los supuestos de este proyecto era contar con un repositorio propio de
 mallas tridimensionales.
 Para la creación de este repositorio,
-se utilizarían los algoritmos de reconstrucción desarrollados en \TODO{cite{Pancho}},
+se utilizarían los algoritmos de reconstrucción desarrollados en \cite{Pancho},
 ubicando al objeto de interés de una base giratoria y realizando capturas
 en ángulos espaciados hasta completar una vuelta.
 De esta forma, las posiciones de las vistas describirían un círculo centrado en el objeto y
@@ -32,13 +32,14 @@ usados en investigación.
 Las capturas fueron obtenidas mediante un escáner láser de barrido Cyberware
 3030~MS.  Se realizaron escaneos del objeto en diversas posiciones sobre una
 base giratoria y luego estas capturas fueron combinadas para producir una única
-malla triangular utilizando el método de \emph{zippering} o bien
-\emph{volumetric merging}, ambos métodos desarrollados en
-Stanford.\TODO{cite{StanfordScanRep}}
+malla triangular utilizando el método de \emph{zippering} o el de
+\emph{volumetric merging}, ambos desarrollados en
+Stanford.\cite{StanfordScanRep}
 
 Para resolver la registración se utilizó un método semi-automático,
 donde el usuario establece una alineación inicial que luego se ajustará mediante un algoritmo
-de ICP modificado. \TODO{cite{zipper}} \TODO{explicar ICP}.
+de ICP modificado. \cite{Turk:1994:ZPM:192161.192241} \TODO{explicar ICP}.
+%TODO explicar el escaneo cilíndrico
 Esta transformación final se provee en un archivo de configuración.
 
 De esta base de datos se utilizaron los modelos
@@ -101,18 +102,6 @@ artificialmente valores de color para los puntos.
 	código cliente requiere de un tiempo considerable (aproximadamente un minuto).
 	Existen proyectos para portarla a Python y Java, pero no se encuentran
 	suficientemente avanzados.
-
-	%TODO: mover a conclusiones o a un apartado de riesgos
-	%En cuanto a la instalación de esta biblioteca, en los sistemas operativos
-	%utilizados (Arch Linux y Clear Linux) fue necesario compilar los fuentes,
-	%lo cual requirió de enormes cantidades de tiempo y memoria.
-	%En particular, en el sistema Clear Linux, el uso excesivo de memoria provocaba
-	%que el proceso fuera detenido por el sistema operativo.
-	%Finalmente, se requirió de varias etapas de configuración y prueba lograr
-	%la instalación exitosa de la biblioteca.
-
-
-
 
 	\subsection{CloudCompare, Meshlab}
 	Son programas de procesamiento y edición de mallas de puntos 3D.  Presentan
