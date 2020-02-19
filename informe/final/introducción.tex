@@ -1,0 +1,130 @@
+\chapter{Introducción}
+	\section{Justificación}
+	La impresión 3D es un método de fabricación en el cual se deposita el material (como por ejemplo, plástico o metal) en capas para producir un objeto tridimensional.
+	Avances en los materiales utilizados han permitido la creación de objetos de calidad comparable a la de métodos tradicionales, con el potencial de personalizar cada producto.
+	La impresión 3D ya ha demostrado ser viable para muchas aplicaciones médicas, incluyendo la creación de prótesis e implantes dentales\cite{Schubert159}. %\cite{innovations in 3d printing}
+	Sin embargo, para poder realizar estas copias o modificaciones,
+	se requiere del modelo geométrico del objecto, el cual puede no estar disponible.
+	Para poder obtener estos modelos geométricos,
+	se pueden aplicar procesos de ingeniería inversa a objetos ya existentes.
+	%Describir los pasos de la ingeniería inversa: adquisición alineación, encuentro de superficie, descripción, segmentación, modelo CAD
+
+	Un proceso crucial en estas técnicas es la adquisición de datos.
+	Los distintos métodos de adquisición se diferencian según el fenómeno físico de interacción con la superficie del objeto de interés.
+	De esta manera, se pueden clasificar como:
+	\begin{itemize}
+		\item Métodos táctiles o de contacto, donde sensores en las articulaciones de un brazo robótico determinan las coordenadas relativas de la superficie. Estos son de los más robustos, introduciendo poco ruido, pero también de los más lentos y suelen tener problemas con superficies cóncavas.
+		\item Métodos de no-contacto, donde se utiliza luz (métodos ópticos), sonido u ondas electromagnéticas.
+	\end{itemize}
+	En particular, los métodos ópticos son los más populares con una rápida velocidad de adquisición\cite{Várady97reverseengineering}. %\cite{reverse engineering}.
+	Dentro de los métodos ópticos podemos distinguir:
+	\begin{itemize}
+		\item Métodos activos o de luz estructurada,
+			que proyectan patrones de luces conocidos sobre la escena de modo de analizar sus deformaciones;
+		\item Métodos pasivos o de visión estereoscópica,
+			que utilizan dos o mas cámaras y buscan correspondencias
+			entre los puntos de la escena entre los puntos capturados,
+			lo cual presenta gran dificultad y por eso son menos usados\cite{Várady97reverseengineering}.%\cite{reverse engineering}
+	\end{itemize}
+
+	Un avance reciente en la adquisición de datos mediante luz estructurada consiste en utilizar el sensor Kinect.
+	Este dispositivo captura una imagen RGB de 32 bits y resolución de $640 \times 480$ píxeles
+	junto con una imagen de profundidad de 16 bits y resolución de $320 \times 240$ píxeles\cite{MatheEstudioKinect}, %\cite{especificaciones kinect}
+	procesando ambas se obtiene una nube de puntos 3D a color. %, también llamada imagen RGB-D.
+	Una alternativa a Kinect para la adquisición de los mapas de profundidad se presenta en~\cite{Pancho}
+	donde se trabajó con un proyector para la emisión de luz estructurada en el espectro visible y cámaras de resolución de $2592 \times 1944$ y $3264 \times 2448$ píxeles,
+	obteniéndose resultados con más de dos millones de puntos.
+
+	Sin embargo, los puntos capturados sólo reflejan una porción de la superficie del objeto,
+	la parte visible desde la cámara.
+	Además, la propia geometría del objeto podría generar obstrucciones, reflejos o sombras
+	que imposibilitan la adquisición de datos en esas zonas («huecos»).
+	Para solventar este problema, es necesario combinar múltiples capturas
+	del objeto en diferentes orientaciones respecto a la cámara, de modo que
+	cada parte de la superficie del objeto esté representada en al menos una captura.
+
+	El principal problema para combinar múltiples vistas es
+	encontrar las transformaciones de rotación y translación que permitan
+	relacionar cada vista parcial, para luego fusionarlas y así reconstruir el objeto.
+
+	%Entre otras investigaciones realizadas en este campo se destacan los siguientes aportes:
+	Podemos nombrar algunas investigaciones realizadas en este campo:
+	\begin{itemize}
+		\item En~\cite{Hassanpour} %\cite{3d reconstruction faces uncontrolled}
+	se hace uso de características conocidas de los objetos de estudio (caras y cabezas humanas).
+		\item En~\cite{Riegler2017THREEDV} %\cite{learning depth fusion}
+	se presenta un método novedoso utilizando redes convolucionales.
+		\item En~\cite{Zach08fastand} %\cite{fast and high quaality fusion}ll
+	se plantea un método robusto frente a ruido no gaussiano, común en la adquisición.
+		\item En~\cite{automatic-3d-model-construction-for-turn-table-sequences} %\cite{model construction turn table}
+	se limita las posibles transformaciones a rotaciones sobre un eje fijo.
+	\end{itemize}
+
+	Sin embargo, cabe destacar el aporte desarrollado por Microsoft mediante
+	KinectFusion, un algoritmo que utiliza el sensor Kinect para reconstruir escenas tridimensionales en tiempo real.
+	El usuario mueve el dispositivo por la escena mientras que el algoritmo realiza un seguimiento de la posición y orientación de la cámara. Esa información se combina con el mapa de profundidad para obtener un modelo 3D.
+	En~\cite{real-time-3d-reconstruction-using-a-kinect-sensor} %\cite{kinect ed reconstruction}
+	se discuten algunas de sus limitaciones:
+	\begin{itemize}
+		\item utiliza un alto costo computacional, requiriendo de una poderosa GPU;
+		\item los movimientos de cámara deben ser lentos y pequeños;
+		\item está limitado al dispositivo Kinect;
+		\item algunos objetos podrían no aparecer en el mapa de profundidad debido a que absorben o reflejan demasiada luz infrarroja;
+		\item no utiliza información de color.
+	\end{itemize}
+
+	Una implementación libre del algoritmo de KinectFusion se observa en el módulo KinFu,
+	parte de la Point Cloud Library (PCL),
+	donde se elimina la dependencia con el dispositivo Kinect,
+	presenta algoritmos para trabajar a una mayor escala
+	%exigiendo solamente compatibilidad con OpenNI,
+	y además se permite la integración de la información de textura a la superficie final reconstruida.
+
+	El uso de otros dispositivos además del Kinect nos permitirá lograr una reconstrucción de mayor precisión o a distinta escala pero podría traer aparejado un aumento en el costo y tiempo de cada adquisición.
+	Por esto, es necesario disponer de control sobre los algoritmos de reconstrucción para adecuarlos a los dispositivos de captura y a las características del modelo 3D resultante deseado.
+
+	En este proyecto se analizarán técnicas de fusión de mallas,
+	planteando además la posibilidad de utilizar información de textura,
+	para lograr un modelo tridimensional de un objeto que permita su posterior replicación
+	mediante una impresora 3D.
+	Se contará entonces con una herramienta que permitirá el desarrollo de aplicaciones para:
+	\begin{itemize}
+		\item Reproducción de biomodelos para que estudiantes de medicina y veterinaria realicen prácticas sobre los mismos.
+			A este respecto, la Facultad de Ciencias Médicas de la Universidad Nacional del Litoral expresó un interés particular.
+			%mirai 3d, empresa argentina, adquiere los biomodelos mediante tomografía axial computarizada (TAC)
+		\item Digitalización de esculturas, lo que permitirá salvaguardarlas y facilitará el acceso, aunque indirecto, a las mismas.
+			Puede mencionarse el \emph{Digital Michelangelo Project} de la Universidad de Stanford, que tiene como objetivo crear un repositorio de modelos 3D de alta calidad de las esculturas y la arquitectura de Miguel Ángel.
+			%catedral de Notre-Dame, escultura de Néstor
+		\item Digitalización de ambientes y objetos para utilizarlos en aplicaciones de realidad virtual o de diseño.
+	\end{itemize}
+
+	\section{Objetivos}
+		\subsection{General}
+			Diseñar y desarrollar una biblioteca de funciones que permita
+			la reconstrucción de una malla 3D cerrada a partir de mallas de superficies parciales.
+		\subsection{Específicos}
+		\begin{itemize}
+			%Falta un objetivo específico relacionado con el análisis de técnica de fusión de mallas.
+			\item Desarrollar algoritmos que determinen las posiciones relativas de cada malla parcial.
+			\item Desarrollar algoritmos de fusión de las mallas.
+			\item Desarrollar algoritmos para rellenado de huecos producto de obstrucciones.
+			\item Evaluar el desempeño de cada bloque desarrollado y realizar ajustes.
+		\end{itemize}
+
+	\section{Alcance}
+		\subsection{Alcances Funcionales}
+		\begin{itemize}
+			\item La herramienta deberá generar una malla 3D cerrada (\emph{watertight}).
+		\end{itemize}
+		\subsection{Alcances No Funcionales}
+		\begin{itemize}
+			\item La herramienta deberá ser robusta frente al ruido producido por los sensores.
+			\item La herramienta no impondrá topologías específicas para los objetos a reconstruirse.
+			\item No se pretenderá el funcionamiento de los algoritmos en tiempo real.
+			\item La herramienta será de código libre.
+			\item La herramienta será multiplataforma.
+		\end{itemize}
+		\subsection{Supuestos}
+		\begin{itemize}
+			\item Se contará con un repositorio de mallas tridimensionales con información de textura.
+		\end{itemize}

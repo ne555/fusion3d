@@ -1,0 +1,132 @@
+\chapter{Módulo de rellenado de huecos}
+	Al finalizar el algoritmo de fusión se obtuvo una malla triangular a partir
+	de la información proveniente de cada vista.
+	Sin embargo, esta malla no es cerrada ya que existen zonas que ninguna
+	vista pudo capturar y por lo tanto carecen de puntos, produciendo huecos en la misma.
+	Además, es posible observar la presencia de islas, es decir, puntos dentro de los huecos que no lograron conectarse con el resto de la malla.
+
+	El módulo de rellenado de huecos se encargará de estimar, de forma automática, la superficie del
+	objeto en estas zonas para así obtener finalmente una malla cerrada.
+
+	\section{Diagrama de clases}
+		En la figura~\ref{fig:filling_class} se presentan las clases principales y sus interacciones.
+		A continuación se presenta una breve descripción de las mismas.
+		\begin{figure}
+			\Imagen{uml/hole_filling.pdf}
+			\caption{\label{fig:filling_class}Diagrama de clases del módulo de registración}
+		\end{figure}
+
+		\begin{itemize}
+			\item {\bfseries Relleno de huecos:} La clase se encarga de estimar
+				nuevos puntos en zonas donde se carece de información (huecos)
+				y triangularlos para que la \emph{Malla} sea cerrada.
+			\item {\bfseries Borde:} Es una colección de puntos ordenados
+				que representa un borde de un hueco en la \emph{Malla}.
+		\end{itemize}
+
+	\section{Método A}
+		Con el fin de simplificar la identificación de los huecos primeramente se eliminan
+		todas las islas al quedarse únicamente con la componente conectada que
+		contiene la mayor cantidad de puntos.
+		De esta forma, una arista que defina sólo un triángulo formará parte de un hueco,
+		y podrá obtenerse el contorno del mismo recorriendo el grafo de conectividades. 
+
+		Para realizar el rellenado se implementó una variante del método de \emph{advancing front}, \cite{advance_front}
+		descripta en el algoritmo~\ref{alg:adv_front}. Los nuevos puntos
+		insertados son elegidos de forma que los triángulos resultantes sean
+		aproximadamente equiláteros, como se detalla en el algoritmo~\ref{alg:new_point}.
+		Si el nuevo punto cae cerca de alguno ya existente, se utiliza aquel,
+		actualizando de forma apropiada el advancing front.
+
+		\begin{algorithm}
+			\begin{algorithmic}[1]
+				\Function{Advancing front}{Malla, Contorno}
+					\State AF $\gets$ Contorno
+					\Repeat
+					\State $\alpha = \widehat{PCN} =$ ángulo mínimo(Contorno)
+					\If{$\alpha < 75^{\circ}$}
+						\State Malla.agregar triángulo(P, C, N)
+						\State AF.eliminar punto(C)
+					\ElsIf{$\alpha < 135^{\circ}$}
+						\State nuevo $\gets$ crear punto(P, C, N, $\alpha/2$)
+						\State Malla.agregar punto(nuevo)
+						\State Malla.agregar triángulo(nuevo, C, N)
+						\State AF.insertar punto(nuevo)
+					\ElsIf{$\alpha < 180^{\circ}$}
+						\State nuevo $\gets$ crear punto(P, C, N, $\alpha/3$)
+						\State Malla.agregar punto(nuevo)
+						\State Malla.agregar triángulo(nuevo, C, N)
+						\State AF.insertar punto(nuevo)
+					\EndIf
+					\Until $\mbox{AF} \neq \emptyset$
+				\EndFunction
+			\end{algorithmic}
+			\caption{\label{alg:adv_front}Relleno de huecos mediante el método de \emph{advancing front}}
+		\end{algorithm}
+
+		\begin{algorithm}
+			\begin{algorithmic}[1]
+				\Function{crear punto}{P, C, N, $\theta$}
+					\State planoA $\gets$ plano(P, C, N)
+					\State planoB $\gets \left\{
+						\begin{tabular}{l}
+							.punto $\gets$ promedio(P, C, N) \\
+							.normal $\gets$ promedio(P.normal, C.normal, N.normal)
+						\end{tabular}
+						\right.$
+					\State Q $\gets$ rotar(
+						punto = N,
+						origen = C,
+						\Statex normal = planoA.normal,
+						ángulo = $\theta$
+						)
+					\State \Return proyección(Q, planoB)
+				\EndFunction
+			\end{algorithmic}
+			\caption{\label{alg:new_point}Creación del nuevo punto}
+		\end{algorithm}
+
+		Con este método se pueden rellenar agujeros pequeños, obteniéndose una malla bastante regular (figura~\ref{fig:fill_good}).
+		Sin embargo, debido a la localidad con la que se generan los nuevos
+		puntos, el frente puede diverger o pretender unirse a puntos que no
+		forman parte del contorno del hueco, resultando una malla mal formada,
+		con aristas que corresponden a más de dos caras (figura~\ref{fig:fill_bad}).
+		Para evitar la divergencia es necesario definir una superficie de
+		soporte que asegure que los nuevos puntos no excedan los límites del
+		hueco.
+
+	\begin{figure}
+		\Imagen{img/fill_good}
+		\caption{\label{fig:fill_good}Relleno de un hueco pequeño mediante \emph{advancing front}.}
+	\end{figure}
+
+	\begin{figure}
+		\Imagen{img/fill_bad}
+		\caption{\label{fig:fill_bad}Fallo en el algoritmo de \emph{advancing front}. Se intentó completar un triángulo con un punto que no pertenecía al borde.}
+	\end{figure}
+
+	\section{Método B}
+	%Poisson
+	La clase pcl::Poisson provee algoritmos de reconstrucción basados en \cite{Kazhdan:2006:PSR:1281957.1281965}, %cite Poisson surface reconstruction
+	siendo el principal parámetro la profundidad del octree utilizado,
+	impactando directamente en la resolución de la malla resultante.
+
+
+	Entonces, se convierte el problema en la resolución de una ecuación de Poisson de la forma:
+	\[\Delta\chi \equiv \nabla \cdot\nabla\chi = \nabla \vec{n}\]
+
+	Se realiza una discretización del dominio mediante un octree, ya que sólo
+	interesa la solución de la función en la proximidad de la superficie a
+	reconstruir.
+	Luego se definen funciones de soporte local que aproximen una gaussiana.
+
+	Una vez resuelto el problema en el dominio, se extrae la isosuperficie mediante una variante del método de marching cubes.
+
+	La malla resultante presenta un hueco en la base (figura~\ref{fig:fill_poisson}).
+	Ya que los puntos del contorno del hueco pertenecen a un mismo plano, es posible rellenarlo mediante el método de \emph{advancing front}.
+
+	\begin{figure}
+		\Imagen{img/fill_poisson}
+		\caption{\label{fig:fill_poisson}Reconstrucción de la superficie mediante el método de \emph{Poisson}. Todos los huecos fueron rellenados a excepción de la base.}
+	\end{figure}
+

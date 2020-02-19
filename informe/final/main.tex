@@ -4,10 +4,52 @@
 
 \newcommand{\TODO}[1]{{\color{red}\bfseries#1}}
 
-\includeonly{conclusiones}
+\newcommand{\CasoUso}[1]{\bigskip%
+{\bfseries Caso de uso: #1}\par}
+\newcommand{\IncCU}[1]{{\bfseries Include (#1)}}
+\newcommand{\UseCU}[1]{{\bfseries Use (#1)}}
+\newcommand{\CUField}[2]{{\bfseries#1:} #2\par}
+\newcommand{\CUNormal}{\smallskip{\bfseries Curso Normal:}\par}
+
+
+\newcommand{\Requerimiento}[2]{%
+	\bigskip%
+	{\bfseries #1}\\%
+	#2%
+}
+
+\usepackage{algorithmicx}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{booktabs}
+
+\makeatletter
+ \renewcommand{\ALG@name}{Algoritmo}
+\makeatother
+\renewcommand{\algorithmicfunction}{}
+
+%\newcommand{\Alerta}[1]{{\Huge\bfseries\sffamily#1}}
+\newcommand{\NombreItem}[1]{{\bfseries#1:}}
+
+%\includeonly{conclusiones}
 \begin{document}
+\frontmatter
 	\maketitle
-	\include{materiales_y_metodos}
+	\chapter{Resumen}
+		Gracias a los avances en los sensores de profundidad,
+		es posible obtener una nube de puntos que represente la estructura tridimensional de una escena en el mundo real.
+		Sin embargo, para poder reconstruir completamente un objeto, es necesario combinar varias de estas vistas.
+		Por esto, en este trabajo se propone el desarrollo de una herramienta
+		que permita realizar la fusión de estas vistas,
+		obteniendo un modelo tridimensional de un objeto
+		y posibilitando su posterior construcción mediante una impresora 3D.
+
+		\noindent{\bfseries Palabras clave:} fusión de mallas, imágenes de profundidad, impresión 3D, reconstrucción 3D.
+	\tableofcontents
+\mainmatter
+	\include{introducción}
+	\include{materiales_y_métodos}
+	\include{desarrollo}
 	\include{conclusiones}
 	%Resumen
 	%Introducción

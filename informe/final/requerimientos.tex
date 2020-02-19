@@ -1,0 +1,95 @@
+\chapter{Especificación de requerimientos}
+
+	\section{Introducción}
+	El presente documento tiene como propósito definir las especificaciones
+	funcionales y no funcionales para el desarrollo de una biblioteca de
+	software que proveerá implementaciones de técnicas de registración, fusión
+	y relleno de huecos de mallas tridimensionales.
+
+	\section{Descripción}
+		Se dispone de un sistema cámara-superficie giratoria, cuyas posiciones
+		se encuentran fijas en el espacio y el eje de giro de la superficie se
+		encuentra alineado con el eje vertical del dispositivo de captura.
+		El objeto de interés se ubicará sobre la superficie giratoria, y se
+		realizarán capturas a intervalos de giro regulares
+		hasta totalizar una vuelta completa (360\textdegree).
+
+		A partir de estas suposiciones, se desarrollarán algoritmos de
+		registración de las capturas parciales,
+		fusión de las mallas resultantes
+		y relleno de huecos para conseguir una superficie cerrada.
+
+		Las entradas serán nubes de puntos con valores de posición (x,y,z).
+		No se dispondrá de información de textura, normales o conectividades.
+
+		Como salida se tendrá una superficie cerrada triangulada.
+
+		\subsection{Interfaces con software}
+			Se utilizará la \emph{Point Cloud Library} (PCL)
+			para realizar las operaciones sobre las mallas y nubes de puntos.
+			Debido a esto, se utilizará el lenguaje de programación C++.
+
+
+		\subsection{Suposiciones}
+		%Se tiene un ambiente controlado, es la forma de trabajo diseñada
+			El ángulo máximo entre dos mallas no podrá exceder los 60\textdegree.
+
+			La cámara no se encontrará demasiado elevada respecto a la
+			superficie giratoria. En ningún caso deberá superar el punto más alto del objeto. %[PANCHO]
+			\clearpage
+
+	\section{Requerimientos funcionales}
+		El sistema deberá proveer las siguientes funcionalidades:
+
+		\Requerimiento
+			{Outliers}
+			{Se debe disponer de funciones para la detección y eliminación de
+			puntos considerados outliers.}
+
+		\Requerimiento
+			{Registración Inicial}
+			{Se debe disponer de funciones que dadas dos mallas calculen una
+			transformación que las acerque lo suficiente como para poder
+			utilizar luego ICP.}
+
+		\Requerimiento
+			{Área solapada}
+			{Se debe disponer de funciones que establezcan los puntos en común (o una buena
+			aproximación) entre dos mallas ya alineadas burdamente.}
+
+		\Requerimiento
+			{Métricas}
+			{Se debe disponer de funciones para evaluar la calidad de una registración.}
+
+		\Requerimiento
+			{Corrección de bucle}
+			{Se debe disponer de funciones para corregir el error propagado durante la registración
+			una vez que se haya realizado una vuelta con las capturas.}
+
+		\Requerimiento
+			{Combinación de nubes}
+			{Se debe disponer de funciones para ajustar los puntos y sus normales,
+			según la información provista por cada malla.}
+
+		\Requerimiento
+			{Triangulación}
+			{Se debe disponer de funciones para obtener una triangulación dada una nube de puntos tridimensional.}
+
+		\Requerimiento
+			{Relleno}
+			{Se debe disponer de funciones para lograr que una triangulación sea cerrada. Se
+			estimará una superficie en las zonas donde se carezca de
+			información.}
+
+	\section{Requerimientos no funcionales}
+		Se identificaron los siguientes requerimientos no funcionales:
+	
+		\Requerimiento{Tiempo de ejecución}
+		{No se espera una ejecución a tiempo real de los algoritmos implementados.}
+
+		\Requerimiento{Lenguaje de programación}
+		{El producto se desarrollará en el lenguaje C++.}
+
+		\Requerimiento{Sistemas operativos}
+		{El producto desarrollado estará destinado a utilizarse en los sistemas
+		operativos Windows y Linux.}

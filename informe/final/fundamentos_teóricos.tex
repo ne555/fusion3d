@@ -1,0 +1,192 @@
+	Con el fin de identificar requerimientos y obtener el marco teórico
+	necesario para el desarrollo del proyecto se analizaron herramientas de
+	software utilizadas para la reconstrucción tridimensional y textos
+	científicos acordes a la temática.
+
+	El proceso de reconstrucción generalmente se divide en tres etapas:
+	\begin{enumerate}
+		\item Registración: donde se determinan las transformaciones necesarias
+			para llevar cada vista a su correcta posición en un marco de
+			referencia global.
+		\item Fusión: donde se unifica el aporte de cada vista para obtener una
+			superficie que las englobe.
+		\item Relleno de huecos: donde se asegura que la superficie global sea
+			cerrada, es decir, que encierre un volumen.
+	\end{enumerate}
+
+
+%FIXME: alineación / registración
+%\section{Informe bibliográfico}
+	%\section{Introducción}
+
+	%	Iterative closest point:
+	%		Busca la transformación que minimice el error de alineación
+	%		entre los puntos de las mallas
+	%		%efficient_variants_of_the_icp_algorithm.txt
+	%		%generalized_icp.txt
+	%		implementado en PCL
+
+	\section{Registración}
+		La registración entre dos nubes de puntos se suele resolver mediante
+		alguna de las variantes del algoritmo \emph{Iterative Closest Point (ICP)}.
+		Sin embargo, para evitar caer en mínimos locales,
+		se debe contar con una buena aproximación inicial.
+		Por esto, es necesario desarrollar algoritmos para conseguir esta
+		aproximación inicial.\cite{7271006}
+		%Registration with the Point Cloud Library A Modular Framework for Aligning in 3-D
+
+
+
+		% efficient_variants_of_the_icp_algorithm
+		Los algoritmos de registración se pueden dividir en los siguientes pasos:
+		\begin{enumerate}
+			\item Selección de puntos de la entrada (\emph{keypoints}).
+			\item Utilizar descriptores para establecer correspondencias entre los puntos de las nubes.
+			\item Rechazar correspondencias para reducir los \emph{outliers}.
+			\item Alineación.\cite{conf/3dim/RusinkiewiczL01}
+		\end{enumerate}
+
+		En cuanto a la selección de puntos se tienen como opciones:
+		\begin{itemize}
+			\item Utilizar todos los puntos o realizar un submuestreo uniforme o aleatorio.
+			\item Algoritmos basados en procesamiento de imágenes: como harris\cite{Harris88acombined} y brisk\cite{Leutenegger:2011:BBR:2355573.2356277}.
+			\item Algoritmos específicos para puntos 3D: como ISS\cite{ISS}.
+			\item Búsqueda de puntos cuyos descriptores sean persistentes a varias escalas: se requiere de formas eficientes de calcular los descriptores, como FPFH\cite{Rusu:2009:FPF:1703435.1703733}.
+		\end{itemize}
+
+		%Descriptores:
+			Por cada \emph{keypoint} se calculará un descriptor que nos
+			permitirá determinar las correspondencias entre las dos nubes de
+			puntos.
+			Un descriptor es una representación compacta
+			de la vecindad de un punto,
+			siendo importante además establecer el límite de esta vecindad.
+
+			Para puntos en el espacio, los descriptores utilizan las
+			posiciones relativas de los vecinos o los ángulos entre sus
+			normales, ponderándolos según la distancia al punto de interés.
+			Por ejemplo: el descriptor 3DSC define un histograma tridimensional
+			cuantizando la distancia, azimut y elevación entre los puntos;
+			el descriptor FPFH realiza algo similar con las normales.
+
+			Ciertos descriptores, como ISS y SHOT, establecen un marco de
+			referencia que permite obtener una estimación de la transformación
+			entre las nubes a partir de solamente dos puntos.
+
+		\subsection{Corrección de bucle}
+			Debido a que la registración se hace de a pares sucesivos, el error
+			se acumula con cada nueva malla.  Si se tiene una lista de capturas
+			que completan una vuelta sobre el objeto, el error de registración
+			acumulado para la última malla de la lista podrá ser apreciado
+			especialmente en los bordes de esta respecto a la primera malla.
+
+			Es posible corregir este error al perturbar la última registración
+			y luego propagar esta perturbación en las alineaciones anteriores.
+			Estas perturbaciones provocan una deformación de la malla, por lo
+			cual
+			%in-hand_scanning_with_online_loop_closure
+			%FIXME: describir el algoritmo
+			en \cite{5457479}
+			se plantea un algoritmo para el cálculo y la propagación de las
+			mismas, de forma que la deformación sea ``lo más rígida posible''.
+
+	\section{Fusión}
+		Una vez alineadas las superficies, éstas deben combinarse en una única malla resultante.
+
+		\subsection{Volumetric merge}
+		Se divide el espacio en un arreglo de vóxeles, que contienen la
+		distancia con signo desde el centro del vóxel a la superficie (la
+		distancia será positiva si el vóxel se encuentra en la parte exterior, y
+		negativa si se encuentra en el interior).
+		De esta forma,
+		se tiene definida de forma implícita a la
+		superficie donde la distancia es 0, y puede extraerse con, por ejemplo, \emph{marching cubes}.
+
+		En cada nueva registración se actualizan las distancias de los
+		vóxeles mediante raycasting,
+		desde la posición estimada de la cámara hacia la superficie,
+		realizando un promedio ponderado con los valores anteriormente calculados.\cite{Curless:1996:VMB:237170.237269} %a_volumetric_method_for_building_complex_models_from_range_images.txt
+		Debido a que sólo nos interesan las zonas donde la distancia es cercana a 0 es posible utilizar una representación rala para los vóxeles.\cite{Steinbrucker:2013:LMS:2586117.2586926} % large-scale_multi-resolution_surface_reconstruction_from_rgb-d_sequences
+
+		%PCL provee la clase TSDFVolume para las operaciones sobre el arreglo de vóxeles.
+
+		\subsection{Zippered}
+		%zippered_polygon_meshes_from_range_images.txt
+		Obtiene como resultado una malla poligonal.
+
+		El algoritmo trabaja en dos pasos:
+		\begin{enumerate}
+			\item Aproximación de la topología: se reduce el área solapada
+				entre las mallas seleccionando una de las representaciones para
+				cada punto en común.
+			\item Refinado: se ajusta la posición de cada punto moviéndolo
+				según su normal mediante un promedio ponderado dependiente del
+				nivel de \emph{confianza} que posee el punto en cada vista.\cite{Turk:1994:ZPM:192161.192241}
+		\end{enumerate}
+
+		\subsection{Representación de surfel}
+		%in-hand_scanning_with_online_loop_closure.txt
+		En lugar de realizar una triangulación, en cada punto se establece un disco de radio variable orientado según la normal.
+		Esto facilita la actualización, el agregado y la eliminación de puntos en cada nueva registración y además permite detectar ciertos \emph{outliers}.\cite{5457479}
+
+		Sin embargo, se requiere un post-procesamiento para determinar las conectividades de los puntos.
+
+		\subsection{Poisson Surface Reconstruction}
+		%poisson_surface_reconstruction
+		La reconstrucción se realiza considerando los puntos y normales de
+		todas las nubes a la vez, es decir, no realiza un promedio ponderado como los métodos anteriores.
+
+		Se define una función indicadora $\chi$ que recibe el valor 1 para puntos
+		dentro del modelo y 0 para puntos en el exterior.
+		La superficie del objeto queda determinada por la frontera entre estos
+		valores, y el gradiente de la función indicadora se corresponde con las
+		normales de los puntos del objeto $\vec{n}$.
+
+		El problema consiste en encontrar la función $\chi$ cuyo gradiente
+		aproxime el campo vectorial definido por las normales. Aplicando el
+		operador de divergencia, se obtiene un problema de Poisson: calcular la
+		función escalar $\chi$ cuyo laplaciano equivale a la divergencia del
+		campo vectorial $\vec{n}$.
+
+		\[\Delta\chi \equiv \nabla \cdot\nabla\chi = \nabla \vec{n}\]
+
+		Utilizando funciones de soporte local para aproximar la solución, se obtiene un sistema lineal ralo bien condicionado.
+
+		El algoritmo rellena huecos automáticamente, pero puede resultar demasiado agresivo, uniendo porciones que deberían permanecer separadas.\cite{Kazhdan:2006:PSR:1281957.1281965}
+
+
+	\section{Relleno de huecos}
+		Los huecos son regiones que ninguna de las vistas logró capturar.
+		La existencia de huecos elimina la propiedad de \emph{watertight} de la
+		malla, la cual es necesaria para su impresión 3D.
+
+		El método de fusión \emph{volumetric merge} rellena huecos
+		automáticamente al definirlos como la frontera entre vóxeles externos y
+		aquellos nunca alcanzados por el raycasting.
+
+		En el caso de una malla poligonal,
+		pueden identificarse fácilmente los vértices que limitan el hueco
+		como aquellos que definen una arista que corresponde a sólo un elemento.
+		Entonces puede operarse solamente en la vecindad del hueco.
+
+		Una opción es convertir la superficie en una
+		representación volumétrica y luego realizar la difusión de la función
+		de distancia en la zona del hueco.
+		Este proceso se itera hasta que no se detectan cambios significativos en la superficie.\cite{fillingholes}
+		%filling_holes_in_comple_surfaces_using_volumetric_diffusion
+
+		Otra opción es transformar el problema al de una interpolación.
+		\begin{itemize}
+			\item Por cada hueco se ajusta un plano a los puntos del borde y
+				sus vecinos.
+			\item Se proyectan los puntos a este plano, obteniéndose un mapa de
+				altura del contorno del hueco.
+			\item Utilizando el algoritmo de \emph{Moving Least Squares} se
+				ajusta una superficie a este mapa de altura.
+			\item Se realiza un muestreo sobre esta superficie para obtener
+				puntos que rellenen el hueco.
+		\end{itemize}
+		De esta forma el parche de reconstrucción se unirá suavemente a la malla original.\cite{Filling_holes_on_locally_smooth_surfaces}
+			%Filling holes on locally smooth surfaces reconstructed from point clouds
+
+

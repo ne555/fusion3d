@@ -45,7 +45,22 @@ serán la entrada de otra, de la cual se desconoce su sensibilidad.
 Muchas evaluaciones fueron primeramente visuales, resultando en un proceso lento
 que en ocasiones fallaba en detectar errores considerables.
 
+Otro gran inconveniente se produjo al efectivizarse uno de los riesgos
+identifi\-cados para el proyecto: la falla en los equipos de trabajo
+requiriendo su reemplazo.
+La recuperación del trabajo realizado hasta ese momento no fue problemática
+gracias a las copias de respaldo periódicas, sin embargo, la instalación de las bibliotecas
+utilizadas presentó serias dificultades.
 
+Primeramente, se contaba con un sistema operativo Arch Linux, donde la
+instalación de la biblioteca PCL se realiza mediante un script
+\texttt{PKGBUILD} que resuelve las dependencias y configura los módulos.  Fue
+necesario compilar los fuentes, pero fuera del tiempo requerido, no se tuvieron
+mayores inconvenientes.  En el nuevo equipo, se contaba esta vez con un sistema
+Clear Linux.  Ahora la instalación resultó más problemática.  Se requerían
+demasiados recursos de memoria, por lo que el sistema operativo detenía el
+proceso.  Fue necesario un largo proceso de configuración y prueba para lograr
+la instalación exitosa de la biblioteca.
 
 %\subsection{Riesgos efectivizados}
 %Ausencia de repositorio de mallas tridimensionales
@@ -62,7 +77,7 @@ En esta sección se describirán actividades que excedieron el alcance de este p
 y podrían ser abordadas en una etapa posterior.
 
 \begin{itemize}
-	\item Combinar escaneos cilíndricos del objeto en varias posiciones sobre la base giratoria,
+	\item Combinar escaneos del objeto en varias posiciones sobre la base giratoria,
 		buscando de esta forma eliminar huecos y reducir la propagación del error de alineación.
 		Esto requerirá eliminar la restricción del eje de giro en la
 		registración, por lo que deberán evaluarse otros métodos para detectar

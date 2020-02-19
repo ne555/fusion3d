@@ -1,0 +1,252 @@
+\chapter{Módulo de registración}
+	%¿Qué es la registración?
+	Dado un conjunto de nubes de puntos correspondientes a distintas vistas de
+	un objeto, la registración consiste en calcular las transformaciones de
+	rotación y translación que lleven a cada vista a un sistema global de forma
+	que las zonas comunes encajen perfectamente.
+
+	Se tomará la primera captura como marco de referencia, cada nueva vista se
+	alineará con la anterior hasta completar una vuelta sobre el objeto.
+	El problema, entonces, se resuelven encontrando para cada punto de la nube
+	A su posición, si es que es visible, en la nube B, para luego estimar la
+	transformación que alinee todos estos puntos.
+
+	Las coordenadas espaciales de un punto no nos suministran suficiente
+	información para poder identificarlo en otra vista, es necesario utilizar
+	sus relaciones con otros puntos en una vecindad.
+	Así, podrá describirse al punto mediante las posiciones relativas, la
+	densidad o la orientación, para luego corresponderlo con el más parecido en
+	la otra vista.
+	Sin embargo, los puntos en zonas homogéneas de la nube serán descriptos de
+	forma muy similar, con lo que se corre el riesgo de realizar
+	correspondencias equívocas que producirán una alineación errónea.
+
+	Para solventar este último problema, se puede tomar un subconjunto de los
+	puntos de entrada, aquellos puntos que por sus características de vecindad
+	sea más probable que tengan un descriptor único (\emph{keypoints}).
+
+	Entonces, los métodos de registración seguirán los siguientes pasos:
+	\begin{enumerate}
+		\item Selección de puntos de la entrada (\emph{keypoints}).
+		\item Cálculo de descriptores y determinación de correspondencias.
+		\item Filtrado de correspondencias.
+		\item Alineación.
+	\end{enumerate}
+	Variaciones en estos pasos permiten la implementación de diversos métodos.
+
+	\section{Diagrama de clases}
+		En la figura~\ref{fig:align_class} se presentan las clases principales y sus interacciones.
+		A continuación se presenta una breve descripción de las mismas.
+		\begin{figure}
+			\Imagen{uml/align.pdf}
+			\caption{\label{fig:align_class}Diagrama de clases del módulo de registración}
+		\end{figure}
+
+		\begin{itemize}
+			\item {\bfseries Registración:} se encarga de obtener la \emph{Transformación} que
+				permita alinear dos \emph{Nubes} entre sí.  Para esto establece
+				correspondencias entre los \emph{Anclaje}.
+			\item {\bfseries Anclaje:} a partir de puntos salientes de \emph{Nube} calcula
+				\emph{descriptores}  que permitan asociarlos y un
+				\emph{marco\_de\_referencia} para obtener una estimación de la
+				\emph{Transformación}.
+			\item {\bfseries Nube:} representa una vista del objeto que se desea alinear.
+				Es una colección de \emph{Puntos} sin organización. Clase
+				provista por PCL.
+			\item {\bfseries Punto:} contiene las coordenadas $xyz$ obtenidas por el
+				dispositivo de captura. El algoritmo estimará las normales.
+			\item {\bfseries Transformación:} representa una transformación rígida
+				(rotación y translación) que será aplicada a una \emph{Nube}
+				para alinearla.
+		\end{itemize}
+
+	\section{Preproceso}
+		Como medida de reducción de ruido y para evitar considerar puntos outliers
+		durante la alineación, se realizó un preproceso de las nubes de entrada.
+		Primeramente se ajustaron los puntos a una superficie estimada mediante el
+		método de mínimos cuadrados móviles y luego se descartaron puntos de poca
+		confianza, como ser aquellos correspondientes a los bordes o aquellos cuyas
+		normales resultaran ortogonales a la cámara.
+
+		Para identificar los puntos de borde se realizó una triangulación
+		Delaunay en la proyección de la nube en el plano $z=0$, trasladando
+		luego esas mismas conexiones al espacio.
+		Se procedió entonces a eliminar las aristas cuya longitud superaba un umbral.
+
+		Las normales se estimaron analizando la matriz de covarianza en la vecindad de cada punto.
+
+	\section{Método A}
+		\subsection{Selección de keypoints}
+			Basándonos en los resultados obtenidos por \cite{ISS},
+			se consideró utilizar el algoritmo de detección de keypoints basado en \emph{Intrinsic Shape Signatures} (algoritmo~\ref{alg:iss}),
+			el cual se haya implementado en PCL en la clase \texttt{ISSKeypoint3D}, permitiendo
+			definir el radio de la esfera y el nivel de disimilitud.
+
+			%ver bien el problema
+			Sin embargo, no pudieron encontrarse los parámetros adecuados.
+			Al observar las zonas comunes, eran pocos los keypoints que
+			realmente se encontraban lo suficientemente cerca como para generar
+			una correspondencia válida (figura~\ref{fig:iss_key}).
+
+
+			\begin{figure}
+				\Imagen{img/iss_happy}
+				\caption{\label{fig:iss_key}Keypoints ISS calculados en las vistas \texttt{happy\_0} (verde) y \texttt{happy\_24} (rojo).
+				A la derecha se seleccionaron aquellos cuyo par más cercano se encontraban a menos de 4 veces la resolución de la nube.
+				}
+			\end{figure}
+
+			\begin{algorithm}
+				\begin{algorithmic}[1]
+					\Function{ISS Keypoints}{nube}
+						\State keypoints $\gets\emptyset$
+						\ForAll{$p \in \mbox{nube.puntos}$}
+							\State vecinos $\gets$ obtener puntos cercanos(nube, p, $r_1$)
+							\State m $\gets$ matriz de covarianza(vecinos)
+							\State $\lambda$ = eigenvalores(m)
+							\If{$\lambda_1/\lambda_2 > \mbox{umbral}_1$ and $\lambda_2/\lambda_3 > \mbox{umbral}_2$}
+								\State keypoints.insert(p)
+							\EndIf
+						\EndFor
+						\State\Return Non-Max Suppression(keypoints, $r_2$)
+					\EndFunction
+				\end{algorithmic}
+				\caption{\label{alg:iss}Determinación de los keypoints mediante ISS}
+			\end{algorithm}
+
+
+			%A partir de acá ref Rusu FPFH
+			Se procedió entonces a cambiar el método de selección de keypoints, eligiendo ahora un análisis de persistencia multiescala\cite{Rusu:2009:FPF:1703435.1703733}.
+			\begin{enumerate}
+				\item Por cada punto de la nube se calcula su descriptor para distintos tamaños de vecindad (escala).
+				\item A partir de todos los descriptores en todas las escalas se estima una distribución gaussiana que los aproxime.
+				\item Los keypoints quedan definidos como aquellos puntos cuyos descriptores se encuentran alejados de la media.
+			\end{enumerate}
+			El algoritmo se encuentra implementado en PCL en la clase
+			\texttt{Multiscale\-Feature\-Persistence} permitiendo ajustar las
+			escalas a utilizar, el umbral para ser considerado saliente y la
+			función descriptora a utilizar.
+
+			Debido a que es necesario calcular un descriptor para cada punto, y
+			además en diferentes escalas, se eligió utilizar el método
+			\emph{Fast Point Feature Histograms} (FPFH) para su construcción,
+			el cual es lineal en la cantidad de puntos de la vecindad.
+			Este método calcula un histograma de los ángulos entre las normales del punto y sus vecinos\cite{Rusu:2009:FPF:1703435.1703733}.
+
+			Los keypoints se encontraban ahora agrupados, formando líneas en zonas de cambio brusco de curvatura (figura~\ref{fig:multiscale_key}).
+
+			\begin{figure}
+				\Imagen{img/multiscale_happy}
+				\caption{\label{fig:multiscale_key}Keypoints FPFH de persistencia multiescala calculados en las vistas \texttt{happy\_0} (verde) y \texttt{happy\_24} (rojo).}
+			\end{figure}
+
+
+
+
+		\subsection{Alineación}
+			Se utilizó el algoritmo de \emph{sample consensus initial alignment (SAC-IA)} para la alineación, el cual consiste en:
+			\begin{enumerate}
+				\item Seleccionar al azar \emph{m} puntos de la nube A
+				\item Por cada punto, buscar aquellos con descriptores similares en B y seleccionar uno al azar.
+				\item Calcular la transformación definida por estos puntos y
+					sus correspondencias. Calcular, además, una medida del
+					error de transformación.
+				\item Repetir varias veces y devolver aquella transformación que produjo el menor error.
+			\end{enumerate}
+
+			\subsection{Resultados}
+			Mediante este método, se obtuvieron buenos resultados en la mayoría de las
+			capturas de \texttt{happy}
+			donde los ángulos eran cercanos a $25^{\circ}$.
+			Sin embargo, algunas alineaciones presentaban problemas de deslizamiento.
+
+			En el caso de \texttt{bunny}, cuyos ángulos eran cercanos a $45^{\circ}$,
+			se obtuvo una buena alineación en el caso de las capturas 315--000 y 000--045,
+			sin embargo, para los otros casos las correspondencias fueron completamente erróneas (figura~\ref{fig:align_sac}).
+
+			%gráficos
+			\begin{figure}
+				%\Imagen{img/sac_45_90}
+				\Imagen{img/bun_sac_270_315}
+				\caption{\label{fig:align_sac}Ejemplo de fallo del algoritmo de \emph{sample consensus} producto de malas correspondencias
+				en la alineación de las vistas
+				\texttt{bun270} (verde) y \texttt{bun315} (rojo).}
+				%\texttt{bun045} (verde) y \texttt{bun090} (rojo).}
+			\end{figure}
+
+
+	%El que tengo ahora
+	\section{Método B}
+		En este caso no se seleccionaron keypoints, simplemente se realizó un submuestreo de
+		los puntos de la nube para reducir el costo computacional.
+		Además del descriptor, en cada punto se estableció un marco de referencia utilizando los
+		eigenvectores de la matriz de covarianza de la vecindad del punto. Este
+		marco de referencia nos permite establecer
+		la transformación de alineación considerando solamente dos puntos\cite{ISS}.
+
+		Para establecer las correspondencias se utilizó el descriptor FPFH
+		comparando los histogramas mediante la distancia $\chi^2$.  Luego se
+		procedió a eliminar correspondencias erróneas utilizando los marcos de
+		referencia y las suposiciones de ubicación de la cámara en la obtención
+		de las capturas.  Por esto, se descartan aquellas correspondencias que
+		requieren un movimiento en $y$ excesivo o una rotación sobre un eje no
+		vertical. 
+
+		Cada correspondencia entonces define un ángulo de giro $\theta$ sobre
+		el eje $y$ y una translación en el plano $xz$.  Se observará entonces
+		una agrupación de los parámetros de estas transformaciones y, mediante el
+		algoritmo de k-means, se buscará el centroide del clúster más grande (figura~\ref{fig:cluster}).
+		%gráfico
+		\begin{figure}
+			\Imagen{img/cluster_trans}
+			\caption{\label{fig:cluster}Translaciones estimadas entre cada par
+			de puntos de las correspondencias.}
+		\end{figure}
+
+		\subsection{Resultados}
+			Se realizaron pruebas sobre los objetos \texttt{happy} y \texttt{bunny}.
+
+			En el caso de \texttt{bunny} se ignoró la captura
+			\texttt{bun180.ply} ya que presentaba un salto de aproximadamente
+			$90^{\circ}$ respecto a su anterior y siguiente.  Las otras
+			capturas presentaban un desvío no mayor a $2^{\circ}$ respecto al
+			\emph{ground truth} (figura~\ref{fig:clust_bunny}).
+
+			Para \texttt{happy} se tuvo un desvío medio de poco más de
+			$2^{\circ}$, con un máximo de $6^{\circ}$ respecto al \emph{ground truth} (figura~\ref{fig:clust_happy}).
+
+			De esta forma, se logró acercar las capturas lo suficiente como
+			para intentar alinearlas por ICP.
+
+		\begin{figure}
+			\Imagen{img/cluster_bunny}
+			\caption{\label{fig:clust_bunny}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{bunny}.}
+		\end{figure}
+
+		\begin{figure}
+			\Imagen{img/cluster_happy}
+			\caption{\label{fig:clust_happy}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{happy}.}
+		\end{figure}
+
+		\begin{figure}
+			\Imagen{img/bun_clust_270_315}
+			\caption{\label{fig:clust_bun_good}Alineación exitosa entre las capturas \texttt{bun270} (verde) y \texttt{bun316} (rojo) mediante el uso de marcos de referencia en cada punto.}
+		\end{figure}
+
+
+	\section{Refinamiento}
+	Una vez obtenida la alineación inicial, se procedió a realizar una segunda
+	alineación mediante ICP.
+	Se consideraron sólo las áreas solapadas y se restringió el
+	espacio de búsqueda de las correspondencias.
+
+	Luego, para reducir el error propagado por cada alineación, se propuso una
+	corrección de bucle.
+	Se ajustó la última captura para que correspondiese con la primera, y
+	esta transformación se agregó a las otras alineaciones con un peso
+	proporcional a su posición en el bucle.
+
+
+	%informes de prueba
+
+	%casos de uso/funcionalidades resueltas

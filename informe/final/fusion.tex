@@ -1,0 +1,74 @@
+\chapter{Módulo de fusión}
+	%¿citas?
+	%en el de loop correction (surfel)
+	Cada nueva vista agrega información del objeto en zonas que no eran antes visibles
+	y además confirma o refuta la información ya presente en las zonas comunes a las otras vistas.
+
+	El módulo de fusión se encarga de combinar esta información para obtener
+	finalmente una malla que represente la porción observada del objeto.
+
+	%diagramas de clase
+	\section{Diagrama de clases}
+		En la figura~\ref{fig:fusion_class} se presentan las clases principales y sus interacciones.
+		A continuación se presenta una breve descripción de las más importantes.
+		\begin{figure}
+			\Imagen{uml/fusion.pdf}
+			\caption{\label{fig:fusion_class}Diagrama de clases del módulo de fusión}
+		\end{figure}
+
+		\begin{itemize}
+			\item {\bfseries Fusión:} une las \emph{Nubes} ya alineadas para
+				obtener una superficie global que represente al objeto.
+				Esto supone corregir la posición de los puntos, descartar
+				aquellos considerados como ruido y triangular la superficie.
+			\item {\bfseries Malla:} triangulación de la \emph{Nube} representada por un grafo de conectividades (\emph{DCEL}).
+		\end{itemize}
+
+	%informes de prueba
+
+	%casos de uso/funcionalidades resueltas
+	\section{Método}
+	Se utiliza una representación de \emph{surfel} para cada punto similar a la propuesta en \cite{5457479} %ref in-hand scanning
+	debido a la facilidad de implementación de las funciones de actualización de los puntos.
+
+	Cada surfel tiene asociado un valor de confianza y las vistas en las que
+	fue observado.  El valor de confianza nos indica la probabilidad de que sus
+	valores de posición y normal no sean producto de un error de muestreo.
+	Este valor se inicializa según el ángulo de su normal respecto a la línea
+	de la cámara y a su distancia al centro de la captura.
+
+
+	El algoritmo~\ref{alg:surfel} describe el agregado de una nueva vista.
+	Por cada punto de la vista se busca qué surfel lo contiene y se actualiza
+	su posición y normal ponderando según el nivel de confianza.
+	En caso de que haya caído fuera del dominio de la reconstrucción actual, se
+	considera que es un nuevo punto y se lo agrega.
+
+	\begin{algorithm}
+		\begin{algorithmic}[1]
+			\Function{Agregar vista}{vista, reconstrucción}
+				\ForAll{$p \in \mbox{vista.puntos}$}
+					\State surfel $\gets$ reconstrucción.buscar(p)
+					\If surfel = $\emptyset$
+						\State reconstrucción.agregar(p)
+					\Else
+						\State surfel.actualizar(p)
+					\EndIf
+				\EndFor
+			\EndFunction
+		\end{algorithmic}
+		\caption{\label{alg:surfel}Actualización de la reconstrucción al agregar una nueva vista.}
+	\end{algorithm}
+
+	Al terminar de procesar todas las vistas, habrá surfels que hayan sido
+	observados desde sólo una posición y tengan un nivel de confianza bajo.
+	Estos son considerados como ruido y eliminados de la
+	reconstrucción.
+
+	Finalmente, se procede a la obtención de una triangulación de los surfels.
+	Para esto se utiliza el algoritmo de \emph{Greedy Projection Triangulation} que provee PCL.
+
+	\begin{figure}
+		\Imagen{img/bun_reconst}
+		\caption{\label{fig:surface}Superficie reconstruída.}
+	\end{figure}
