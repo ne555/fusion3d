@@ -1,13 +1,13 @@
-\section{Preproceso}
+\section{Módulo de preproceso}
 %Escáners de luz estructurada
 %Se proyecta en patrón de luz específico hacia el objeto.
 %Este patrón es observado por el sensor.
 %Se determinan las posiciones de los puntos mediante la intersección entre la
 %dirección de la luz y la del sensor.
-
-Para poder plantear un método de reducción de ruido, es necesario considerar
-qué características posee y cómo se produce.
-%zippered
+Este módulo se encargará de realizar una reducción de ruido a las nubes de entrada
+antes de ser procesadas por las siguientes etapas.
+Para esto es necesario considerar
+qué características posee el ruido y cómo se produce.
 En los escáneres de luz estructurada dos fuentes de error son particularmente relevantes:
 \begin{itemize}
 	\item Grazing angle %traducir
@@ -18,13 +18,14 @@ En los escáneres de luz estructurada dos fuentes de error son particularmente r
 		Cuando, dada una línea del patrón, solamente una porción de esta incide en el objeto.
 		Se obtiene una posición incorrecta, ya que el método de triangulación
 		supone que todo el ancho de la línea impactó en el objeto.
-		Esto resulta en bordes distorsionados y en posiciones más alejadas que las reales.
-%fin zippered
+		Esto resulta en bordes distorsionados y en posiciones más alejadas que las reales.\cite{Turk:1994:ZPM:192161.192241}
 \end{itemize}
 Además, se cuentan con pequeñas variaciones en los puntos debidas a la sensibilidad del sensor.
 
 Teniendo en cuenta estas consideraciones, se desarrolló el siguiente algoritmo
 para el preproceso de las nubes de entrada.
+%diagrama de flujo
+\TODO{diagrama de flujo}
 
 Primeramente, para independizarse de la escala de las capturas,
 todos los parámetros que impliquen una distancia o vecindad
@@ -38,11 +39,14 @@ por lo que se optó por una medida global.
 Para reducir las pequeñas perturbaciones en las posiciones de los puntos,
 se los proyectó a una superficie estimada mediante el método de mínimos cuadrados móviles.
 Para construir esta superficie se utilizó la clase
-\texttt{pcl::MovingLeastSquares}, definiendo una vecindad de seis veces la
+\texttt{pcl::Moving\-Least\-Squares}, definiendo una vecindad de seis veces la
 resolución de la nube con el fin de obtener aproximadamente 100 puntos para
 realizar la estimación.
-Los resultados de este proceso se evaluaron visualmente.
-%TODO: gráfico curvatura antes y después mls (triangulada con delaunay)
+Los resultados de este proceso se evaluaron visualmente, pudiendo observarse la pérdida de detalles
+al aumentar en exceso la vecindad (figura~\ref{fig:mls}).
+\begin{figure}
+	\caption{\label{fig:mls}\TODO{gráfico de curvatura antes y después de mls, distintas vecindades}}
+\end{figure}
 
 En cuanto a los errores debidos al método de adquisición, se decidió descartar estos puntos.
 Debido a que a partir de una triangulación es trivial obtener los puntos que pertenecen al borde

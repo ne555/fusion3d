@@ -1,17 +1,34 @@
-\chapter{Módulo de registración}
+\section{Módulo de registración}
 	%¿Qué es la registración?
-	Dado un conjunto de nubes de puntos correspondientes a distintas vistas de
-	un objeto, la registración consiste en calcular las transformaciones de
-	rotación y translación que lleven a cada vista a un sistema global de forma
+	%mover al marco teórico
+	Este módulo se encargará de obtener las transformaciones de rotación y translación
+	que lleven a cada vista a un sistema global de forma
 	que las zonas comunes encajen perfectamente.
 
-	Se tomará la primera captura como marco de referencia, cada nueva vista se
-	alineará con la anterior hasta completar una vuelta sobre el objeto.
-	El problema, entonces, se resuelven encontrando para cada punto de la nube
-	A su posición, si es que es visible, en la nube B, para luego estimar la
-	transformación que alinee todos estos puntos.
 
-	Las coordenadas espaciales de un punto no nos suministran suficiente
+
+	%real-time 3d model adquisition
+	El algoritmo de \emph{Iterative Closest Point} (ICP) se ha convertido en el
+	método dominante para realizar la registración de modelos tridimensionales
+	utilizando únicamente la información de geometría de los mismos.
+	%generalized icp
+	La idea central de este algoritmo se puede resumir en realizar
+	iterativamente los siguientes pasos hasta lograr la convergencia.
+	\begin{enumerate}
+		\item Definir correspondencias entre dos capturas.
+		\item Calcular una transformación que minimice la distancia entre estas correspondencias.
+	\end{enumerate}
+	%a method for registration
+	Sin embargo, a pesar de que está garantizado que el algoritmo convergirá a un mínimo local,
+	este puede no ser el mínimo global buscado. Entonces, es necesario proveer una alineación inicial
+	lo suficientemente cercana para obtener una correcta registración.
+
+	Por esta razón, y considerando que la distancia entre capturas sucesivas es
+	considerables, se plantearán algoritmos para obtener una alineación inicial
+	con cada par de capturas para luego refinar la registración mediante ICP.
+
+
+	Debido a que las coordenadas espaciales de un punto no nos suministran suficiente
 	información para poder identificarlo en otra vista, es necesario utilizar
 	sus relaciones con otros puntos en una vecindad.
 	Así, podrá describirse al punto mediante las posiciones relativas, la
@@ -25,14 +42,34 @@
 	puntos de entrada, aquellos puntos que por sus características de vecindad
 	sea más probable que tengan un descriptor único (\emph{keypoints}).
 
-	Entonces, los métodos de registración seguirán los siguientes pasos:
+	Entonces, los métodos utilizados en la alineación inicial seguirán los siguientes pasos:
 	\begin{enumerate}
 		\item Selección de puntos de la entrada (\emph{keypoints}).
 		\item Cálculo de descriptores y determinación de correspondencias.
 		\item Filtrado de correspondencias.
 		\item Alineación.
 	\end{enumerate}
-	Variaciones en estos pasos permiten la implementación de diversos métodos.
+	Variaciones en la ejecución de estos pasos nos permitirán implementar diversos métodos.
+
+
+	Utilizando la primera captura para definir el sistema de coordenadas
+	global, cada nueva vista se alineará con la anterior hasta completar una
+	vuelta sobre el objeto.  Sin embargo, debido a que la registración se
+	realiza de a pares sucesivos, los errores producidos se propagarán con cada
+	captura incorporada, siendo especialmente apreciable al completar una
+	vuelta alrededor del objeto (figura~\ref{fig:error_bucle}).
+	Por esta razón, se incorporará un algoritmo de corrección de bucle al proceso de registración
+	(figura~\ref{fig:flow_registracion}).
+
+	\begin{figure}
+		\Imagen{example-image-a}
+		\caption{\label{fig:error_bucle}\TODO{imagen error bucle, ISS}}
+	\end{figure}
+
+	\begin{figure}
+		\Imagen{example-image-a}
+		\caption{\label{fig:flow_registracion}\TODO{Diagrama de flujo de la registración.}}
+	\end{figure}
 
 	\section{Diagrama de clases}
 		En la figura~\ref{fig:align_class} se presentan las clases principales y sus interacciones.
@@ -60,20 +97,6 @@
 				para alinearla.
 		\end{itemize}
 
-	\section{Preproceso}
-		Como medida de reducción de ruido y para evitar considerar puntos outliers
-		durante la alineación, se realizó un preproceso de las nubes de entrada.
-		Primeramente se ajustaron los puntos a una superficie estimada mediante el
-		método de mínimos cuadrados móviles y luego se descartaron puntos de poca
-		confianza, como ser aquellos correspondientes a los bordes o aquellos cuyas
-		normales resultaran ortogonales a la cámara.
-
-		Para identificar los puntos de borde se realizó una triangulación
-		Delaunay en la proyección de la nube en el plano $z=0$, trasladando
-		luego esas mismas conexiones al espacio.
-		Se procedió entonces a eliminar las aristas cuya longitud superaba un umbral.
-
-		Las normales se estimaron analizando la matriz de covarianza en la vecindad de cada punto.
 
 	\section{Método A}
 		\subsection{Selección de keypoints}

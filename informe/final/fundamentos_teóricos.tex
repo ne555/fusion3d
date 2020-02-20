@@ -1,3 +1,80 @@
+%Proceso de reconstrucción general
+%Reverse engineering of geometric models
+El objetivo final de los sistemas de ingeniería inversa
+es lograr realizar un escáner 3D inteligente.
+%Diagrama de flujo
+1- Obtención de datos
+2- Preproceso
+3- Segmentación y surface ¿fitting? (la mejor superficie que representa los puntos
+4- Obtención modelo CAD
+La 1 está resuelta por Pancho
+	pero está limitada debido a consideraciones físicas
+	se necesita combinar múltiples vistas.
+
+La parte crítica es la 3
+
+	Problemas con la adquisición
+		calibración, precisión, oclusión, ruido, datos faltantes, vistas múltiples
+
+		oclusión -> huecos
+			Se producen debido a obstrucciones, sombras o reflejos.
+			Se pierden los puntos de esas zonas.
+
+		ruido, ¿cuándo eliminarlo?
+			se pierden los detalles del objeto
+
+		rellenado de huecos.
+			Debido a la naturaleza del proceso de captura,
+			la información obtenida cerca de los bordes es poco confiable (¿por qué?)
+				(por las reflecciones, en particular malo para los de láser, había un dibujo)
+			En algunas situaciones, los huecos no puden solucionarse con otra vista (¿cuándo?) 
+
+		distribución estadística: la captura es una muestra de la población
+			¿cómo ajustar la confianza?
+
+		El acabado de la superficie:
+			suavidad y recubrimiento (reflexiones, cabello (demasiadas irregulares))
+
+
+	Organización de la nube de puntos:
+		Nubes organizadas: vecindades	
+
+	CAD/CAM conectividad y continuidad de la estructura.
+		(no se tienen métricas de calidad para la impresión)
+		poisson es suave, ¿pero qué tanto?
+
+	Combinación de vistas:
+		diferente resolución, todo el objeto o un detalle
+		observar toda la superficie del objeto, no es trivial y puede requerir \emph{feedback}
+		de la reconstrucción
+
+	El mayor problema es obtener una registración precisa, es decir,
+	encontrar las transformaciones de rotación y translación que relaciona la
+	información que proporciona una captura con otra.
+
+	Lo más simple es una base giratoria. (acá parece que tiene información de ángulos)
+	Sin embargo, la base del objeto nunca
+	será visible, por lo que para obtener un modelo completo del objeto, es
+	necesario cambiar su punto de apoyo.
+
+	Se debe asegurar un solapamiento suficiente para poder determinar la alineación.
+
+%zippered
+%There are two main issues in creating a single model from multiple
+%range images: registration and integration.  Registration refers to
+%computing a rigid transformation that brings the points of one range
+%image into alignment with the portions of a surface that is shares with
+%another range image.  Integration is the process of creating a single
+%surface representation from the sample points from two or more
+%range images.
+	%agregar hole-filling
+
+
+
+
+
+
+
 	Con el fin de identificar requerimientos y obtener el marco teórico
 	necesario para el desarrollo del proyecto se analizaron herramientas de
 	software utilizadas para la reconstrucción tridimensional y textos
@@ -26,7 +103,22 @@
 	%		%generalized_icp.txt
 	%		implementado en PCL
 
+	%zippered
+%All the steps needed to digitize an object  that requires up to 10 range scans
+%can be performed using our system with five minutes of user interaction and a
+%few hours of compute time.
+
+%A range scanner is any device that senses 3D positions on an
+%object’s surface and returns an array of distance values.  A range
+%image is an m×n grid of distances (range points) that describe a
+%surface either in Cartesian coordinates (a height field) or cylindrical
+%coordinates, with two of the coordinates being implicitly defined by
+%the indices of the grid.
+
+
 	\section{Registración}
+
+
 		La registración entre dos nubes de puntos se suele resolver mediante
 		alguna de las variantes del algoritmo \emph{Iterative Closest Point (ICP)}.
 		Sin embargo, para evitar caer en mínimos locales,
@@ -34,6 +126,44 @@
 		Por esto, es necesario desarrollar algoritmos para conseguir esta
 		aproximación inicial.\cite{7271006}
 		%Registration with the Point Cloud Library A Modular Framework for Aligning in 3-D
+
+	ICP
+	%Rusinkiewicz Levoy
+	%efficient variants
+	%realtime 3d model adquisition
+
+	El algoritmo de ICP se ha convertido en el método dominante para realizar la alineación
+	de modelos tridimensionales utilizando únicamente la información de geometría de los mismos.
+	El algoritmo 
+
+
+	Considera simplemente la información de posición (y normales)
+	- Selección de puntos mediante submuestreo uniforme o aleatorio
+	- Establecer correspondencias entre las nubes de puntos. Par más cercano entre puntos,
+		o considerando la «superficie» (point to point, point to plane)
+	- Ponderar las correspondencias (ej, uniforme)
+	- Rechazar correspondencias para eliminar puntos *anómalos* (umbral de distancia)
+	- Minimizar una métrica de error.  (iterar)
+	Según cómo se realice cada uno de estos pasos se obtendrá una variante del algoritmo con
+	diferente estabilidad, robustez y eficienci.
+
+%A. ICP
+%The key concept of the standard ICP algorithm can be
+%summarized in two steps:
+%1) compute correspondences between the two scans.
+%2) compute a transformation which minimizes distance
+%between corresponding points.
+%Iteratively repeating these two steps typically results in conver-
+%gence to the desired transformation. Because we are violating
+%the assumption of full overlap, we are forced to add a maximum
+%matching threshold d m a x . This threshold accounts for
+%the fact that some points will not have any correspondence in
+%the second scan (e.g. points which are outside the boundary of
+%scan A). In most implementations of ICP, the choice of d m a x
+%represents a trade off between convergence and accuracy. A
+%low value results in bad convergence (the algorithm becomes
+%“short sighted”); a large value causes incorrect correspon-
+%dences to pull the final alignment away from the correct value.
 
 
 

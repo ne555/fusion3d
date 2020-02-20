@@ -23,6 +23,7 @@
 \usepackage[noend]{algpseudocode}
 \usepackage{booktabs}
 
+
 \makeatletter
  \renewcommand{\ALG@name}{Algoritmo}
 \makeatother
@@ -31,11 +32,13 @@
 %\newcommand{\Alerta}[1]{{\Huge\bfseries\sffamily#1}}
 \newcommand{\NombreItem}[1]{{\bfseries#1:}}
 
+
 %\includeonly{conclusiones}
 \begin{document}
 \frontmatter
 	\maketitle
 	\chapter{Resumen}
+	%FIXME Rehacer
 		Gracias a los avances en los sensores de profundidad,
 		es posible obtener una nube de puntos que represente la estructura tridimensional de una escena en el mundo real.
 		Sin embargo, para poder reconstruir completamente un objeto, es necesario combinar varias de estas vistas.
@@ -50,6 +53,8 @@
 	\include{introducción}
 	\include{materiales_y_métodos}
 	\include{desarrollo}
+	\include{diseño}
+	\include{resultados}
 	\include{conclusiones}
 	%Resumen
 	%Introducción
@@ -76,6 +81,7 @@
 
 	%Conclusiones y trabajos futuros
 	%Bibliografía
+	%\bibliographystyle{plainnat}
 	\bibliographystyle{alpha}
 	\bibliography{biblio}
 \end{document}
