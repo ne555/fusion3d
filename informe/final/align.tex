@@ -47,7 +47,7 @@
 		\item Selección de puntos de la entrada (\emph{keypoints}).
 		\item Cálculo de descriptores y determinación de correspondencias.
 		\item Filtrado de correspondencias.
-		\item Alineación.
+		\item Estimación de la transformación de alineación.
 	\end{enumerate}
 	Variaciones en la ejecución de estos pasos nos permitirán implementar diversos métodos.
 
@@ -71,12 +71,13 @@
 		\caption{\label{fig:flow_registracion}\TODO{Diagrama de flujo de la registración.}}
 	\end{figure}
 
-	\section{Diagrama de clases}
-		En la figura~\ref{fig:align_class} se presentan las clases principales y sus interacciones.
-		A continuación se presenta una breve descripción de las mismas.
+	\subsection{Diagrama de clases}
+		Para implementar los distintos algoritmos de alineación inicial se utilizó como base
+		el diseño de clases presentado en la figura~\ref{fig:align_class}.
+		A continuación se describirán las clases principales y sus interacciones.
 		\begin{figure}
 			\Imagen{uml/align.pdf}
-			\caption{\label{fig:align_class}Diagrama de clases del módulo de registración}
+			\caption{\label{fig:align_class}Diagrama de clases del módulo de registración\TODO{actualizar}}
 		\end{figure}
 
 		\begin{itemize}
@@ -98,11 +99,11 @@
 		\end{itemize}
 
 
-	\section{Método A}
-		\subsection{Selección de keypoints}
+	\subsection{Alineación mediante \emph{sample consensus}}
+		\subsubsection{Selección de keypoints}
 			Basándonos en los resultados obtenidos por \cite{ISS},
 			se consideró utilizar el algoritmo de detección de keypoints basado en \emph{Intrinsic Shape Signatures} (algoritmo~\ref{alg:iss}),
-			el cual se haya implementado en PCL en la clase \texttt{ISSKeypoint3D}, permitiendo
+			el cual se halla implementado en PCL en la clase \texttt{ISSKeypoint3D}, permitiendo
 			definir el radio de la esfera y el nivel de disimilitud.
 
 			%ver bien el problema
@@ -166,8 +167,10 @@
 
 
 
-		\subsection{Alineación}
-			Se utilizó el algoritmo de \emph{sample consensus initial alignment (SAC-IA)} para la alineación, el cual consiste en:
+		\subsubsection{Estimación de la transformación}
+			Se utilizó el algoritmo de \emph{sample consensus initial alignment
+			(SAC-IA)} para obtener la transformación de alineación. Este algoritmo
+			consiste en:
 			\begin{enumerate}
 				\item Seleccionar al azar \emph{m} puntos de la nube A
 				\item Por cada punto, buscar aquellos con descriptores similares en B y seleccionar uno al azar.
@@ -176,12 +179,13 @@
 					error de transformación.
 				\item Repetir varias veces y devolver aquella transformación que produjo el menor error.
 			\end{enumerate}
+			%expandir
 
-			\subsection{Resultados}
+		\subsubsection{Resultados} %ver de eliminar
 			Mediante este método, se obtuvieron buenos resultados en la mayoría de las
 			capturas de \texttt{happy}
 			donde los ángulos eran cercanos a $25^{\circ}$.
-			Sin embargo, algunas alineaciones presentaban problemas de deslizamiento.
+			Sin embargo, algunas alineaciones presentaban problemas de deslizamiento. \TODO{mostrar alguno}
 
 			En el caso de \texttt{bunny}, cuyos ángulos eran cercanos a $45^{\circ}$,
 			se obtuvo una buena alineación en el caso de las capturas 315--000 y 000--045,
@@ -199,16 +203,17 @@
 
 
 	%El que tengo ahora
-	\section{Método B}
+	\subsection{Alineación mediante búsqueda de clúster}
 		En este caso no se seleccionaron keypoints, simplemente se realizó un submuestreo de
 		los puntos de la nube para reducir el costo computacional.
 		Además del descriptor, en cada punto se estableció un marco de referencia utilizando los
 		eigenvectores de la matriz de covarianza de la vecindad del punto. Este
-		marco de referencia nos permite establecer
-		la transformación de alineación considerando solamente dos puntos\cite{ISS}.
+		marco de referencia nos permite estimar
+		una transformación de alineación considerando solamente dos puntos\cite{ISS}.
 
 		Para establecer las correspondencias se utilizó el descriptor FPFH
-		comparando los histogramas mediante la distancia $\chi^2$.  Luego se
+		comparando los histogramas mediante la distancia $\chi^2$. \TODO{escribir fórmula}
+		Luego se
 		procedió a eliminar correspondencias erróneas utilizando los marcos de
 		referencia y las suposiciones de ubicación de la cámara en la obtención
 		de las capturas.  Por esto, se descartan aquellas correspondencias que
@@ -268,8 +273,3 @@
 	Se ajustó la última captura para que correspondiese con la primera, y
 	esta transformación se agregó a las otras alineaciones con un peso
 	proporcional a su posición en el bucle.
-
-
-	%informes de prueba
-
-	%casos de uso/funcionalidades resueltas
