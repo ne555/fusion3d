@@ -32,10 +32,26 @@
 %\newcommand{\Alerta}[1]{{\Huge\bfseries\sffamily#1}}
 \newcommand{\NombreItem}[1]{{\bfseries#1:}}
 
+\usepackage{environ}
+\makeatletter
+\newsavebox{\measure@tikzpicture}
+\NewEnviron{scaletikzpicturetowidth}[1]{%
+  \def\tikz@width{#1}%
+  \def\tikzscale{1}\begin{lrbox}{\measure@tikzpicture}%
+  \BODY
+  \end{lrbox}%
+  \pgfmathparse{#1/\wd\measure@tikzpicture}%
+  \edef\tikzscale{\pgfmathresult}%
+  \BODY
+}
+\makeatother
+
+\graphicspath{{./uml/}{./diagram/}}
 
 %\includeonly{conclusiones}
 \begin{document}
 \frontmatter
+\TODO{revisar tiempos verbales, ahora en pasado}
 	\maketitle
 	\chapter{Resumen}
 	%FIXME Rehacer

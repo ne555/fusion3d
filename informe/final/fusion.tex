@@ -1,14 +1,13 @@
-\chapter{Módulo de fusión}
+\section{Módulo de fusión}
 	%¿citas?
 	%en el de loop correction (surfel)
 	Cada nueva vista agrega información del objeto en zonas que no eran antes visibles
 	y además confirma o refuta la información ya presente en las zonas comunes a las otras vistas.
-
 	El módulo de fusión se encarga de combinar esta información para obtener
 	finalmente una malla que represente la porción observada del objeto.
 
 	%diagramas de clase
-	\section{Diagrama de clases}
+	\subsection{Diagrama de clases}
 		En la figura~\ref{fig:fusion_class} se presentan las clases principales y sus interacciones.
 		A continuación se presenta una breve descripción de las más importantes.
 		\begin{figure}
@@ -27,7 +26,7 @@
 	%informes de prueba
 
 	%casos de uso/funcionalidades resueltas
-	\section{Método}
+	\subsection{Método}
 	Se utiliza una representación de \emph{surfel} para cada punto similar a la propuesta en \cite{5457479} %ref in-hand scanning
 	debido a la facilidad de implementación de las funciones de actualización de los puntos.
 
@@ -42,7 +41,7 @@
 	Por cada punto de la vista se busca qué surfel lo contiene y se actualiza
 	su posición y normal ponderando según el nivel de confianza.
 	En caso de que haya caído fuera del dominio de la reconstrucción actual, se
-	considera que es un nuevo punto y se lo agrega.
+	considera que es un nuevo punto y se lo agrega. \TODO{fórmula de actualización}
 
 	\begin{algorithm}
 		\begin{algorithmic}[1]

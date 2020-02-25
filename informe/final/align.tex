@@ -7,24 +7,22 @@
 
 
 
-	%real-time 3d model adquisition
 	El algoritmo de \emph{Iterative Closest Point} (ICP) se ha convertido en el
 	método dominante para realizar la registración de modelos tridimensionales
-	utilizando únicamente la información de geometría de los mismos.
-	%generalized icp
+	utilizando únicamente la información de geometría de los mismos. \TODO{real-time 3d model adquisition}
 	La idea central de este algoritmo se puede resumir en realizar
 	iterativamente los siguientes pasos hasta lograr la convergencia.
 	\begin{enumerate}
 		\item Definir correspondencias entre dos capturas.
-		\item Calcular una transformación que minimice la distancia entre estas correspondencias.
+		\item Calcular una transformación que minimice la distancia entre estas correspondencias.  \TODO{generalized icp}
 	\end{enumerate}
-	%a method for registration
 	Sin embargo, a pesar de que está garantizado que el algoritmo convergirá a un mínimo local,
 	este puede no ser el mínimo global buscado. Entonces, es necesario proveer una alineación inicial
 	lo suficientemente cercana para obtener una correcta registración.
+	\TODO{a method for registration}
 
 	Por esta razón, y considerando que la distancia entre capturas sucesivas es
-	considerables, se plantearán algoritmos para obtener una alineación inicial
+	considerable, se plantearán algoritmos para obtener una alineación inicial
 	con cada par de capturas para luego refinar la registración mediante ICP.
 
 
@@ -63,12 +61,12 @@
 
 	\begin{figure}
 		\Imagen{example-image-a}
-		\caption{\label{fig:error_bucle}\TODO{imagen error bucle, ISS}}
+		\caption{\label{fig:error_bucle}\TODO{imagen error bucle, in-hand...}}
 	\end{figure}
 
 	\begin{figure}
 		\Imagen{example-image-a}
-		\caption{\label{fig:flow_registracion}\TODO{Diagrama de flujo de la registración.}}
+		\caption{\label{fig:flow_registracion}\TODO{Diagrama de flujo de la registración.} \TODO{flechas de interacción}}
 	\end{figure}
 
 	\subsection{Diagrama de clases}
@@ -122,17 +120,17 @@
 
 			\begin{algorithm}
 				\begin{algorithmic}[1]
-					\Function{ISS Keypoints}{nube}
+					\Function{ISS Keypoints}{nube, $r_1$, $\mbox{umbral}_1$, $\mbox{umbral}_2$, $r_2$}
 						\State keypoints $\gets\emptyset$
 						\ForAll{$p \in \mbox{nube.puntos}$}
 							\State vecinos $\gets$ obtener puntos cercanos(nube, p, $r_1$)
 							\State m $\gets$ matriz de covarianza(vecinos)
-							\State $\lambda$ = eigenvalores(m)
+							\State $\lambda$ $gets$ eigenvalores(m)
 							\If{$\lambda_1/\lambda_2 > \mbox{umbral}_1$ and $\lambda_2/\lambda_3 > \mbox{umbral}_2$}
 								\State keypoints.insert(p)
 							\EndIf
 						\EndFor
-						\State\Return Non-Max Suppression(keypoints, $r_2$)
+						\State\Return Non-Max Suppression(keypoints, $r_2$) \TODO{¿y esto qué es?}
 					\EndFunction
 				\end{algorithmic}
 				\caption{\label{alg:iss}Determinación de los keypoints mediante ISS}
@@ -140,6 +138,7 @@
 
 
 			%A partir de acá ref Rusu FPFH
+			\TODO{algoritmo}
 			Se procedió entonces a cambiar el método de selección de keypoints, eligiendo ahora un análisis de persistencia multiescala\cite{Rusu:2009:FPF:1703435.1703733}.
 			\begin{enumerate}
 				\item Por cada punto de la nube se calcula su descriptor para distintos tamaños de vecindad (escala).
@@ -170,7 +169,7 @@
 		\subsubsection{Estimación de la transformación}
 			Se utilizó el algoritmo de \emph{sample consensus initial alignment
 			(SAC-IA)} para obtener la transformación de alineación. Este algoritmo
-			consiste en:
+			consiste en: \TODO{cita}
 			\begin{enumerate}
 				\item Seleccionar al azar \emph{m} puntos de la nube A
 				\item Por cada punto, buscar aquellos con descriptores similares en B y seleccionar uno al azar.
@@ -179,7 +178,7 @@
 					error de transformación.
 				\item Repetir varias veces y devolver aquella transformación que produjo el menor error.
 			\end{enumerate}
-			%expandir
+			\TODO{expandir}
 
 		\subsubsection{Resultados} %ver de eliminar
 			Mediante este método, se obtuvieron buenos resultados en la mayoría de las
@@ -210,6 +209,7 @@
 		eigenvectores de la matriz de covarianza de la vecindad del punto. Este
 		marco de referencia nos permite estimar
 		una transformación de alineación considerando solamente dos puntos\cite{ISS}.
+		\TODO{gráfico} \TODO{expandir}
 
 		Para establecer las correspondencias se utilizó el descriptor FPFH
 		comparando los histogramas mediante la distancia $\chi^2$. \TODO{escribir fórmula}
@@ -228,7 +228,7 @@
 		\begin{figure}
 			\Imagen{img/cluster_trans}
 			\caption{\label{fig:cluster}Translaciones estimadas entre cada par
-			de puntos de las correspondencias.}
+			de puntos de las correspondencias.} \TODO{rehacer gráfico}
 		\end{figure}
 
 		\subsection{Resultados}
@@ -236,7 +236,8 @@
 
 			En el caso de \texttt{bunny} se ignoró la captura
 			\texttt{bun180.ply} ya que presentaba un salto de aproximadamente
-			$90^{\circ}$ respecto a su anterior y siguiente.  Las otras
+			$90^{\circ}$ respecto a su anterior y siguiente. \TODO{no ignorar, explicar que está fuera de rango}
+			Las otras
 			capturas presentaban un desvío no mayor a $2^{\circ}$ respecto al
 			\emph{ground truth} (figura~\ref{fig:clust_bunny}).
 
@@ -248,28 +249,34 @@
 
 		\begin{figure}
 			\Imagen{img/cluster_bunny}
-			\caption{\label{fig:clust_bunny}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{bunny}.}
+			\caption{\label{fig:clust_bunny}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{bunny}.}\TODO{rehacer}
 		\end{figure}
 
 		\begin{figure}
 			\Imagen{img/cluster_happy}
-			\caption{\label{fig:clust_happy}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{happy}.}
+			\caption{\label{fig:clust_happy}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{happy}.}\TODO{rehacer, ajustar escala}
 		\end{figure}
 
 		\begin{figure}
 			\Imagen{img/bun_clust_270_315}
-			\caption{\label{fig:clust_bun_good}Alineación exitosa entre las capturas \texttt{bun270} (verde) y \texttt{bun316} (rojo) mediante el uso de marcos de referencia en cada punto.}
+			\caption{\label{fig:clust_bun_good}Alineación exitosa entre las capturas \texttt{bun270} (verde) y \texttt{bun316} (rojo) mediante el uso de marcos de referencia en cada punto.} \TODO{Juntar con la de SAC-IA}
 		\end{figure}
 
 
 	\section{Refinamiento}
+	\TODO{rehacer la redacción}
 	Una vez obtenida la alineación inicial, se procedió a realizar una segunda
 	alineación mediante ICP.
 	Se consideraron sólo las áreas solapadas y se restringió el
 	espacio de búsqueda de las correspondencias.
+	\TODO{expandir, ICP con normales}
 
 	Luego, para reducir el error propagado por cada alineación, se propuso una
 	corrección de bucle.
 	Se ajustó la última captura para que correspondiese con la primera, y
 	esta transformación se agregó a las otras alineaciones con un peso
 	proporcional a su posición en el bucle.
+	\TODO{pseudocódigo, ¿resultados?}
+	\TODO{fórmulas de interpolación: translación+rotación(cuaternión)}
+	
+	\TODO{tengot resultados parciales acá, ¿los muevo?}

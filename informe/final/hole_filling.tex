@@ -1,4 +1,4 @@
-\chapter{Módulo de rellenado de huecos}
+\section{Módulo de rellenado de huecos}
 	Al finalizar el algoritmo de fusión se obtuvo una malla triangular a partir
 	de la información proveniente de cada vista.
 	Sin embargo, esta malla no es cerrada ya que existen zonas que ninguna
@@ -8,7 +8,7 @@
 	El módulo de rellenado de huecos se encargará de estimar, de forma automática, la superficie del
 	objeto en estas zonas para así obtener finalmente una malla cerrada.
 
-	\section{Diagrama de clases}
+	\subsection{Diagrama de clases}
 		En la figura~\ref{fig:filling_class} se presentan las clases principales y sus interacciones.
 		A continuación se presenta una breve descripción de las mismas.
 		\begin{figure}
@@ -24,7 +24,7 @@
 				que representa un borde de un hueco en la \emph{Malla}.
 		\end{itemize}
 
-	\section{Método A}
+	\subsection{Advancing front}
 		Con el fin de simplificar la identificación de los huecos primeramente se eliminan
 		todas las islas al quedarse únicamente con la componente conectada que
 		contiene la mayor cantidad de puntos.
@@ -106,7 +106,7 @@
 		\caption{\label{fig:fill_bad}Fallo en el algoritmo de \emph{advancing front}. Se intentó completar un triángulo con un punto que no pertenecía al borde.}
 	\end{figure}
 
-	\section{Método B}
+	\subsection{Reconstrucción de Poisson}
 	%Poisson
 	La clase pcl::Poisson provee algoritmos de reconstrucción basados en \cite{Kazhdan:2006:PSR:1281957.1281965}, %cite Poisson surface reconstruction
 	siendo el principal parámetro la profundidad del octree utilizado,
