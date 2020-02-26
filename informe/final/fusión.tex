@@ -11,8 +11,7 @@
 		En la figura~\ref{fig:fusion_class} se presentan las clases principales y sus interacciones.
 		A continuación se presenta una breve descripción de las más importantes.
 		\begin{figure}
-			\Imagen{example-image-a}
-			%\Imagen{uml/fusion.pdf}
+			\Imagen{uml/fusion}
 			\caption{\label{fig:fusion_class}Diagrama de clases del módulo de fusión}
 		\end{figure}
 
@@ -36,20 +35,26 @@
 	valores de posición y normal no sean producto de un error de muestreo.
 	Este valor se inicializa según el ángulo de su normal respecto a la línea
 	de la cámara y a su distancia al centro de la captura.
+	\TODO{gráfico, in-hand}
+	\TODO{mostrar confianza en una captura}
 
 
 	El algoritmo~\ref{alg:surfel} describe el agregado de una nueva vista.
 	Por cada punto de la vista se busca qué surfel lo contiene y se actualiza
 	su posición y normal ponderando según el nivel de confianza.
+	\begin{eqnarray*}
+		\hat{P}_k = \frac{\sum_{j} \alpha_j P^{(j)}_k}{\sum_{j} \alpha_j} \\
+		\hat{n}_k = \frac{\sum_{j} \alpha_j n^{(j)}_k}{\sum_{j} \alpha_j}
+	\end{eqnarray*}
 	En caso de que haya caído fuera del dominio de la reconstrucción actual, se
-	considera que es un nuevo punto y se lo agrega. \TODO{fórmula de actualización}
+	considera que es un nuevo punto y se lo agrega.
 
 	\begin{algorithm}
 		\begin{algorithmic}[1]
 			\Function{Agregar vista}{vista, reconstrucción}
 				\ForAll{$p \in \mbox{vista.puntos}$}
 					\State surfel $\gets$ reconstrucción.buscar(p)
-					\If surfel = $\emptyset$
+					\If {surfel = $\emptyset$}
 						\State reconstrucción.agregar(p)
 					\Else
 						\State surfel.actualizar(p)
@@ -66,7 +71,15 @@
 	reconstrucción.
 
 	Finalmente, se procede a la obtención de una triangulación de los surfels.
-	Para esto se utiliza el algoritmo de \emph{Greedy Projection Triangulation} que provee PCL.
+	Para esto se empleó el algoritmo de \emph{Greedy Projection Triangulation} que provee PCL,
+	el cual realiza una proyección de la vecindad de un punto en el plano definido por su normal
+	y procede a conectar los puntos según estos criterios:
+	\begin{itemize}
+		\item longitud máxima de arista del triángulo,
+		\item ángulo mínimo del triángulo,
+		\item ángulo máximo del triángulo,
+		\item ángulo máximo entre normales de los puntos.
+	\end{itemize}
 
 	\begin{figure}
 		\Imagen{img/bun_reconst}

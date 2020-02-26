@@ -367,8 +367,8 @@ namespace nih {
 		auto position =
 		    divide_triangle(p2v(prev), p2v(center), p2v(next), angle, length);
 		// proyectar el resultado en el plano definido por
-		// normal = 2*C_n + P_n + N_n
-		// punto = (2*C + P + N)/4
+		// normal = (C_n + P_n + N_n).normalize()
+		// punto = (C + P + N)/3
 		vector normal = interpolate(
 		    vector_normal(prev), vector_normal(center), vector_normal(next));
 		normal.normalize();

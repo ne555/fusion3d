@@ -22,6 +22,7 @@ nih::pointnormal weighted_average(
 	using nih::v2p;
 	double total_weight = alpha + beta;
 	nih::point position = v2p((alpha * vector(a.data) + beta * vector(b.data)) / total_weight);
+	//¿usar slerp?
 	nih::vector normal = alpha * vector(a.data_n) + beta*vector(b.data_n);
 	normal = normal/normal.norm();
 

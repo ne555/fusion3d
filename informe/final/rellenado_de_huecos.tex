@@ -3,20 +3,23 @@
 	de la información proveniente de cada vista.
 	Sin embargo, esta malla no es cerrada ya que existen zonas que ninguna
 	vista pudo capturar y por lo tanto carecen de puntos, produciendo huecos en la misma.
-	Además, es posible observar la presencia de islas, es decir, puntos dentro de los huecos que no lograron conectarse con el resto de la malla.
 
 	El módulo de rellenado de huecos se encargará de estimar, de forma automática, la superficie del
 	objeto en estas zonas para así obtener finalmente una malla cerrada.
 
-	\subsection{Diagrama de clases}
-		En la figura~\ref{fig:filling_class} se presentan las clases principales y sus interacciones.
-		A continuación se presenta una breve descripción de las mismas.
-		\begin{figure}
-			\Imagen{example-image-a}
-			%\Imagen{uml/hole_filling.pdf}
-			\caption{\label{fig:filling_class}Diagrama de clases del módulo de registración}
-		\end{figure}
+	Se plantearon dos métodos:
+	\begin{itemize}
+		\item \emph{Advancing front}, que trabaja localmente con los puntos que forman el contorno de cada hueco.
+		\item Reconstrucción de Poisson, que trabaja con todos los puntos de la nube a la vez. 
+	\end{itemize}
 
+
+	\subsection{Advancing front}
+		En este método, cada hueco se rellenará de forma independiente a los otros,
+		utilizando únicamente los puntos que conforman cada contorno para estimar
+		las posiciones de los nuevos puntos.
+		Tomando en cuenta esas consideraciones, se diseñó el diagrama de clases presentado en la figura~\ref{fig:filling_class},
+		cuyas clases principales se describen a continuación:
 		\begin{itemize}
 			\item {\bfseries Relleno de huecos:} La clase se encarga de estimar
 				nuevos puntos en zonas donde se carece de información (huecos)
@@ -25,20 +28,33 @@
 				que representa un borde de un hueco en la \emph{Malla}.
 		\end{itemize}
 
-	\subsection{Advancing front}
-		Con el fin de simplificar la identificación de los huecos primeramente se eliminan
-		todas las islas al quedarse únicamente con la componente conectada que
-		contiene la mayor cantidad de puntos.
+		\begin{figure}
+			\Imagen{uml/hole_filling}
+			\caption{\label{fig:filling_class}Diagrama de clases del módulo de registración}
+		\end{figure}
+
+		Es posible que dentro de un hueco se observen puntos que no lograron
+		conectarse al resto de la malla.  Si bien estas islas nos brindan
+		información de la superficie, su presencia dificulta la identificación
+		del contorno de cada hueco.  Por esta razón, se eliminaron todas las
+		islas al trabajar únicamente con la componente conectada que contenía
+		la mayor cantidad de puntos.
 		De esta forma, una arista que defina sólo un triángulo formará parte de un hueco,
 		y podrá obtenerse el contorno del mismo recorriendo el grafo de conectividades. 
 
-		Para realizar el rellenado se implementó una variante del método de \emph{advancing front},
-		\cite{advance_front}
-		descripta en el algoritmo~\ref{alg:adv_front}. Los nuevos puntos
-		insertados son elegidos de forma que los triángulos resultantes sean
+		\TODO{gráficos}
+		El rellenado se implementó mediante una variante del método de
+		\emph{advancing front}\cite{advance_front}, descripta en el
+		algoritmo~\ref{alg:adv_front}.
+
+		Los nuevos puntos insertados son elegidos de forma que los triángulos resultantes sean
 		aproximadamente equiláteros, como se detalla en el algoritmo~\ref{alg:new_point}.
-		Si el nuevo punto cae cerca de alguno ya existente, se utiliza aquel,
-		actualizando de forma apropiada el advancing front.
+		Estos puntos son luego proyectados en un plano de soporte definido
+		mediante las normales de los puntos del ángulo candidato.
+
+		En caso de que el nuevo punto cayese cerca de otro ya existente, se utilizará aquel.
+		Esto implica dividir en dos el hueco, y cada nueva porción se rellenará de forma independiente.
+		\TODO{gráfico}
 
 		\begin{algorithm}
 			\begin{algorithmic}[1]
@@ -63,7 +79,8 @@
 					\Until $\mbox{AF} \neq \emptyset$
 				\EndFunction
 			\end{algorithmic}
-			\caption{\label{alg:adv_front}Relleno de huecos mediante el método de \emph{advancing front}}
+			\caption{\label{alg:adv_front}Relleno de huecos mediante el método de \emph{advancing front}.
+			Los umbrales fueron elegidos de forma de obtener triángulos con ángulos cercanos a $60^{\circ}$.}
 		\end{algorithm}
 
 		\begin{algorithm}
@@ -94,8 +111,8 @@
 		forman parte del contorno del hueco, resultando una malla mal formada,
 		con aristas que corresponden a más de dos caras (figura~\ref{fig:fill_bad}).
 		Para evitar la divergencia es necesario definir una superficie de
-		soporte que asegure que los nuevos puntos no excedan los límites del
-		hueco.
+		soporte considerando todo el contorno del hueco, de forma de asegurar
+		que los nuevos puntos no excedan los límites del hueco.
 
 	\begin{figure}
 		\Imagen{img/fill_good}
@@ -105,6 +122,7 @@
 	\begin{figure}
 		\Imagen{img/fill_bad}
 		\caption{\label{fig:fill_bad}Fallo en el algoritmo de \emph{advancing front}. Se intentó completar un triángulo con un punto que no pertenecía al borde.}
+		\TODO{cambiar gráfico}
 	\end{figure}
 
 	\subsection{Reconstrucción de Poisson}
