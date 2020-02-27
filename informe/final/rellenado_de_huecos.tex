@@ -156,6 +156,14 @@
 		}
 	\end{figure}
 
+	Entre las ventajas de esta formulación podemos nombrar:
+	\begin{itemize}
+		\item La superficie reconstruida es una superficie suave y cerrada.
+		\item Los sistemas de Poisson son resistentes al ruido de entrada.
+		\item El uso de funciones de soporte local para aproximar $\chi$,
+			produce un sistema lineal bien condicionado y ralo.\cite{Kazhdan:2006:PSR:1281957.1281965}
+	\end{itemize}
+
 		\subsubsection{Condiciones de borde}
 		Para definir el sistema lineal, es necesario especificar el
 		comportamiento de la función a lo largo del contorno del dominio de
@@ -171,11 +179,7 @@
 		ortogonal (figura~\ref{fig:poisson_boundary})\cite{Kazhdan_screenedpoisson}.
 		\begin{figure}
 			\Imagen{example-image-a}
-			\caption{\label{fig:poiss_planteo}Ilustración del método de reconstrucción de Poisson.
-			Tomando como entrada una nube de puntos con sus normales $\vec{V}$ se define el gradiente de la función
-			indicadora $\nabla \chi$. Mediante la ecuación de Poisson se calculará el valor de $\chi$,
-			y al extraer una isosuperfice se obtendrá la superficie del objeto $\partial M$. 
-			}
+			\caption{\label{fig:poisson_boundary}Reconstrucción del modelo Ángel (izquierda) usando condiciones de borde Dirichlet (centro) y Neumann (derecha).}
 		\end{figure}
 
 
@@ -189,34 +193,25 @@
 			\quad \gamma = \frac{1}{N} \sum \chi(p) \]
 
 
-	%Entre las ventajas de esta formulación podemos citar:
-	%\begin{itemize}
-	%	\item La superficie reconstruida es una superficie suave y cerrada.
-	%	\item Los sistemas de Poisson son resistentes al ruido de entrada.
-	%	\item Permite usar funciones de soporte local para aproximar $\chi$,
-	%		produciendo un sistema lineal bien condicionado y ralo.
-	%\end{itemize}
 
 
 	\subsubsection{Implementación}
-	%Poisson
-	La clase \texttt{pcl::Poisson} provee algoritmos de reconstrucción basados en \cite{Kazhdan:2006:PSR:1281957.1281965}, %cite Poisson surface reconstruction
-	siendo el principal parámetro la profundidad del octree utilizado,
-	impactando directamente en la resolución de la malla resultante.
+	La clase \texttt{Poisson} de la biblioteca \emph{PCL} implementa este método de reconstrucción,
+	imponiendo condiciones de borde Neumann.
+
+	Debido a que sólo es de interés el valor de $\chi$ en los puntos cercanos a la superficie,
+	se utiliza un octree para representar esta función. Se provee de parámetros para establecer la profundidad del octree,
+	controlando de esta manera la resolución de la superficie reconstruida, la cual se extrae mediante el método de \emph{Marching Cubes}. \TODO{referencia a marching cubes}
+
+	Debido a que no se cuentan con puntos en la base de apoyo de los objetos, el uso de condiciones de borde Neumann
+	producirá un estiramiento hacia abajo de la superficie resultante y la presencia de
+	un hueco plano en la base (figura~\ref{fig:fill_poisson}.
+	Si bien este hueco podrá ser luego rellenado mediante el algoritmo de \emph{advancing front}, no puede solucionarse el estiramiento.
 
 
-	%Se realiza una discretización del dominio mediante un octree, ya que sólo
-	%interesa la solución de la función en la proximidad de la superficie a
-	%reconstruir.
-	%Luego se definen funciones de soporte local que aproximen una gaussiana.
-
-	%Una vez resuelto el problema en el dominio, se extrae la isosuperficie mediante una variante del método de marching cubes.
-
-	La malla resultante presenta un hueco en la base (figura~\ref{fig:fill_poisson}).
-	Ya que los puntos del contorno del hueco pertenecen a un mismo plano, es posible rellenarlo mediante el método de \emph{advancing front}.
 
 	\begin{figure}
-		\Imagen{img/fill_poisson}
+		\Imagen{img/fill_poisson} \TODO{usar dragon_up}
 		\caption{\label{fig:fill_poisson}Reconstrucción de la superficie mediante el método de \emph{Poisson}. Todos los huecos fueron rellenados a excepción de la base.}
 	\end{figure}
 
