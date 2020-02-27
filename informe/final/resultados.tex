@@ -149,6 +149,8 @@
 		En el cuadro~\ref{tab:reg_time} se muestran
 		los tiempos de ejecución promedio, discriminados en la alineación
 		inicial y el refinamiento posterior.
+		Graficando estos tiempos se puede apreciar el orden $\bigO(n^2)$ de la alineación inicial,
+		producto de buscar entre todos los pares de puntos para establecer las correspondencias.
 		%Si bien los tiempos no son considerables, pueden reducirse al mejorar
 		%la selección inicial de puntos y realizar la búsqueda de las
 		%correspondencias de forma más eficiente.
@@ -157,7 +159,7 @@
 
 		\input{reg_time}
 
-		%TODO: imagen del proceso
+		\TODO{imagen del proceso}
 		Para comparar las alineaciones contra el \emph{ground truth}, se
 		observó el efecto de las mismas sobre un punto orientado (simulando la
 		cámara). El punto \emph{eye} se ubicó inicialmente en las coordenadas
@@ -189,8 +191,8 @@
 
 		Como medida de error de la fusión se utilizó la distancia entre los puntos de la nube reconstruida
 		respecto al punto más cercano en el \emph{ground truth} (cuadro~\ref{tab:fus_error}).
-		La reconstrucción del modelo \texttt{armadillo} se encontraba a otra
-		escala, por lo que no fue utilizada.
+		Esta medición no se realizó para el modelo \texttt{armadillo} debido a que su reconstrucción
+		se encontraba a una escala distinta a la de las capturas.
 		Nuevamente se destaca el error de \texttt{dragon stand} producto de una mala alineación.
 
 		\input{fusion_error}
@@ -252,7 +254,7 @@
 			\includegraphics[max width=.5\linewidth, max height=.25\textheight, keepaspectratio]
 				{img/arma_foot}
 			%\Imagen{img/arma_foot}
-			\caption{\label{fig:base}Acercamiento a la base de apoyo de armadillo. Se observa un estiramiento hacia abajo.}
+			\caption{\label{fig:base}Acercamiento a la base de apoyo de armadillo. Se observa un estiramiento hacia abajo debido al uso de condiciones de borde Neumann.}
 		\end{figure}
 
 

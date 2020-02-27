@@ -178,7 +178,7 @@
 		extienda fuera del dominio de integración, cruzando el borde de forma
 		ortogonal (figura~\ref{fig:poisson_boundary})\cite{Kazhdan_screenedpoisson}.
 		\begin{figure}
-			\Imagen{example-image-a}
+			\Imagen{diagram/poisson_boundary_conditions}
 			\caption{\label{fig:poisson_boundary}Reconstrucción del modelo Ángel (izquierda) usando condiciones de borde Dirichlet (centro) y Neumann (derecha).}
 		\end{figure}
 
@@ -199,9 +199,13 @@
 	La clase \texttt{Poisson} de la biblioteca \emph{PCL} implementa este método de reconstrucción,
 	imponiendo condiciones de borde Neumann.
 
-	Debido a que sólo es de interés el valor de $\chi$ en los puntos cercanos a la superficie,
-	se utiliza un octree para representar esta función. Se provee de parámetros para establecer la profundidad del octree,
-	controlando de esta manera la resolución de la superficie reconstruida, la cual se extrae mediante el método de \emph{Marching Cubes}. \TODO{referencia a marching cubes}
+	Debido a que sólo es de interés el valor de $\chi$ en los puntos cercanos a
+	la superficie, se utiliza un octree para representar esta función. Se
+	provee de parámetros para establecer la profundidad del octree, controlando
+	de esta manera la resolución de la superficie reconstruida.
+	Sin embargo, debe considerarse que el consumo de memoria y el tiempo se incrementan de forma
+	cuadrática con la profundidad del octree.
+	%la cual se extrae mediante el método de \emph{Marching Cubes}. \TODO{referencia a marching cubes}
 
 	Debido a que no se cuentan con puntos en la base de apoyo de los objetos, el uso de condiciones de borde Neumann
 	producirá un estiramiento hacia abajo de la superficie resultante y la presencia de
@@ -211,7 +215,7 @@
 
 
 	\begin{figure}
-		\Imagen{img/fill_poisson} \TODO{usar dragon_up}
+		\Imagen{img/fill_poisson} \TODO{usar dragon up}
 		\caption{\label{fig:fill_poisson}Reconstrucción de la superficie mediante el método de \emph{Poisson}. Todos los huecos fueron rellenados a excepción de la base.}
 	\end{figure}
 

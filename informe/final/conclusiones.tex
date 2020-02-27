@@ -95,9 +95,12 @@ y podrían ser abordadas en una etapa posterior.
 		realizaron las pruebas contenían a lo sumo ochenta mil puntos. Las
 		reconstrucciones obtenidas en \cite{Pancho} pueden llegar a los
 		dos millones, es decir, 25 veces más.
-		Es necesario entonces, analizar la escalabilidad de los métodos
-		propuestos y optimizarlos o reemplazarlos según resulte conveniente.
-		En particular, puede plantearse la ejecución sobre GPU.
+		Considerando el orden $\bigO(n^2)$ de la alineación,
+		se tardaría más de 10 horas procesando cada captura.
+		Es necesario entonces, analizar la robustez del algoritmo a un sumbuestreo de la entrada
+		o proponer un método más eficiente para la búsqueda de correspondencias.
+		\TODO{poisson fue analizado en \cite{Kazhdan:2006:PSR:1281957.1281965} con 200e6 a profundidad 11
+		tardando menos de dos horas}
 	\item Implementar métricas de calidad del mallado que consideren las
 		características de la impresión 3D.
 		En este proyecto solamente se consideraron las condiciones de que la malla
