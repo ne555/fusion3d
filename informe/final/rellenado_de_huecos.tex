@@ -126,21 +126,91 @@
 	\end{figure}
 
 	\subsection{Reconstrucción de Poisson}
+	\TODO{¿dónde cito? casi todo es de \cite{Kazhdan:2006:PSR:1281957.1281965}}
+	En este método el rellenado de huecos se aborda como un problema de
+	reconstrucción de la superficie a partir de puntos orientados.  Por esta
+	razón, se consideran todos los puntos a la vez sin consideraciones
+	especiales de pertenencia o no a los contornos de los huecos.
+	Además, se convierte el problema de la reconstrucción a la resolución de
+	una ecuación de Poisson.
+
+	En esta ecuación de Poisson, se calculará una función indicadora $\chi$
+	que tomará el valor 1 en los puntos que se encuentran dentro del modelo
+	y 0 en los puntos que se encuentran fuera.
+	De esta manera, extrayendo una isosuperficie apropiada se obtendrá la frontera del modelo.
+
+	Para poder plantear la ecuación, debe notarse que el gradiente de la función indicadora $\nabla \chi$
+	es 0 en casi todos los puntos, excepto en aquellos cerca de la superficie,
+	donde es equivalente a las normales de los puntos muestreados ($\vec{V}$), pero en sentido contrario (figura~\ref{fig:poiss_planteo}).
+	Entonces, se busca calcular la función $\chi$ cuyo gradiente aproxime de la mejor forma posible el
+	campo vectorial $\vec{V}$.
+	Aplicando  el operador de divergencia se obtiene la ecuación de Poisson
+	\[ \Delta\chi \equiv \nabla \cdot \nabla \chi = \nabla\vec{V} \]
+
+	\begin{figure}
+		\Imagen{example-image-a}
+		\caption{\label{fig:poiss_planteo}Ilustración del método de reconstrucción de Poisson.
+		Tomando como entrada una nube de puntos con sus normales $\vec{V}$ se define el gradiente de la función
+		indicadora $\nabla \chi$. Mediante la ecuación de Poisson se calculará el valor de $\chi$,
+		y al extraer una isosuperfice se obtendrá la superficie del objeto $\partial M$. 
+		}
+	\end{figure}
+
+		\subsubsection{Condiciones de borde}
+		Para definir el sistema lineal, es necesario especificar el
+		comportamiento de la función a lo largo del contorno del dominio de
+		integración.
+		Tomando en consideración la definición de la función indicadora $\chi$,
+		se pueden establecer fácilmente condiciones de borde Dirichlet ($\chi = 0$)
+		o también condiciones de borde Neumann ($\nabla \chi = 0$).
+
+		Si se utilizan condiciones Dirichlet, se asegurará que la superficie resultante sea cerrada.
+		En cambio, en caso de que se tengan regiones sin información (huecos) de tamaño
+		considerable, usar condiciones Neumann permitirá que la superficie se
+		extienda fuera del dominio de integración, cruzando el borde de forma
+		ortogonal (figura~\ref{fig:poisson_boundary})\cite{Kazhdan_screenedpoisson}.
+		\begin{figure}
+			\Imagen{example-image-a}
+			\caption{\label{fig:poiss_planteo}Ilustración del método de reconstrucción de Poisson.
+			Tomando como entrada una nube de puntos con sus normales $\vec{V}$ se define el gradiente de la función
+			indicadora $\nabla \chi$. Mediante la ecuación de Poisson se calculará el valor de $\chi$,
+			y al extraer una isosuperfice se obtendrá la superficie del objeto $\partial M$. 
+			}
+		\end{figure}
+
+
+		\subsubsection{Extracción de la isosuperficie}
+		Para poder obtener la superficie del modelo $\partial M$, primeramente es necesario
+		definir un isovalor de $\chi$ para así obtener la isosuperficie correspondiente.
+		Para aproximar las posiciones de los puntos de entrada, se elegirá como isovalor
+		el promedio de los valores de $\chi$ en esos puntos.
+
+		\[\partial M \equiv {q \in \mathbb{R}^3 | \chi(q) = \gamma} \quad \mbox{con}
+			\quad \gamma = \frac{1}{N} \sum \chi(p) \]
+
+
+	%Entre las ventajas de esta formulación podemos citar:
+	%\begin{itemize}
+	%	\item La superficie reconstruida es una superficie suave y cerrada.
+	%	\item Los sistemas de Poisson son resistentes al ruido de entrada.
+	%	\item Permite usar funciones de soporte local para aproximar $\chi$,
+	%		produciendo un sistema lineal bien condicionado y ralo.
+	%\end{itemize}
+
+
+	\subsubsection{Implementación}
 	%Poisson
-	La clase pcl::Poisson provee algoritmos de reconstrucción basados en \cite{Kazhdan:2006:PSR:1281957.1281965}, %cite Poisson surface reconstruction
+	La clase \texttt{pcl::Poisson} provee algoritmos de reconstrucción basados en \cite{Kazhdan:2006:PSR:1281957.1281965}, %cite Poisson surface reconstruction
 	siendo el principal parámetro la profundidad del octree utilizado,
 	impactando directamente en la resolución de la malla resultante.
 
 
-	Entonces, se convierte el problema en la resolución de una ecuación de Poisson de la forma:
-	\[\Delta\chi \equiv \nabla \cdot\nabla\chi = \nabla \vec{n}\]
+	%Se realiza una discretización del dominio mediante un octree, ya que sólo
+	%interesa la solución de la función en la proximidad de la superficie a
+	%reconstruir.
+	%Luego se definen funciones de soporte local que aproximen una gaussiana.
 
-	Se realiza una discretización del dominio mediante un octree, ya que sólo
-	interesa la solución de la función en la proximidad de la superficie a
-	reconstruir.
-	Luego se definen funciones de soporte local que aproximen una gaussiana.
-
-	Una vez resuelto el problema en el dominio, se extrae la isosuperficie mediante una variante del método de marching cubes.
+	%Una vez resuelto el problema en el dominio, se extrae la isosuperficie mediante una variante del método de marching cubes.
 
 	La malla resultante presenta un hueco en la base (figura~\ref{fig:fill_poisson}).
 	Ya que los puntos del contorno del hueco pertenecen a un mismo plano, es posible rellenarlo mediante el método de \emph{advancing front}.
