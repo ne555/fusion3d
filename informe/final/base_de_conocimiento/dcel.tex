@@ -1,0 +1,63 @@
+%computational geometry deberg
+%2.2
+\section{The doubly-connected edge list DCEL}
+representación de grafos/mallas mediante medias aristas
+
+Se busca buscar una representación apropiada para una subdivisión.
+Lo que importa es la clase de operaciones que pretendemos realizar.
+un simple grafo donde los nodos sean los vértices o las aristas \Nota{¿se puede?}
+no nos permite de forma simple obtener bordes de las regiones.
+Nos interesa incorporar información topológica, qué segmentos bordean qué región.
+
+\Nota{La definición de subdivisión, cara, vértice y arista que da es medio complicada}
+
+Operaciones:
+-¿qué cara contiene un punto dado? Es demasiado para esta representación
+Buscamos cosas más locales:
+- recorrer el contorno de una cara
+- ir de una cara a otra vecina
+- recorrer las aristas que inciden en un vértice
+
+Almacenamos cada cara, arista y vértice de la subdivisión.
+Además de la información topológica (\Nota{¿conectividades?})
+y geométrica podemos almacenar otras propiedades del dominio.
+
+Para recorrer una cara, cada arista almacena un puntero a la siguiente arista (y es conveniente mantener el anterior también)
+Una arista en general limita dos caras, mantenemos punteros a esas.
+Cambio: en lugar de una arista, tenemos dos semiaristas (pares gemelos),
+cada semiarista limita solamente una cara.
+se orientan para recorrer en sentido antihorario (la cara cae a la izquierda)
+Como están orientadas tenemos vértices de inicio y fin.
+
+una cara necesita solamente un puntero a una media-arista
+
+Agujeros:
+\Nota{revisar bien}
+
+class edge{
+	edge *next, *previous;
+};
+
+Tres contenedores
+	vértices: coordenadas, puntero a 1 media arista que sale de aquí
+	caras: puntero a 1 media-arista que limita su borde
+	medias-aristas:
+		vértice de origen, (no hace falta el destino, lo saco del gemelo/complementario)
+		puntero a su media-arista gemela,
+		cara que delimita (queda a su izquierda)
+		punteros a media-arista siguiente y anterior en el recorrido de la cara
+
+conclusión:
+	se almacena información de tamaño constante para vértices y medias-aristas
+	una cara requiere más si se aceptan agujeros y puntos aislados dentro
+	O(n) de almacenamiento
+
+operaciones
+	recorrer el borde de una cara
+	obtener todas las aristas que inciden en un vértice
+	obtener los vecinos de un vértice
+	encontrar aristas de borde \Nota{borde de la malla}
+	encontrar vértices de borde
+
+En muchas aplicaciones, las caras no tienen un interés especial
+implementación, el grafo debe ser conectado (y triangulado)

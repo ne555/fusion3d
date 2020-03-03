@@ -1,0 +1,48 @@
+Matrix transformación lineal $3\times3$
+
+Matriz proyectiva transformación afín $4\times4$
+
+Translación
+
+Cálculo de la matriz de transformación,
+transformación de los ejes.
+
+T_{jk} x_{k} = {x'}_{j}
+T_{jk} y_{k} = {y'}_{j}
+T_{jk} z_{k} = {z'}_{j}
+
+Realizando la multiplicación
+{x'}_j = T_{j1}
+{y'}_j = T_{j2}
+{z'}_j = T_{j3}
+
+Es decir, la matriz de transformación tiene por columnas los vectores de la base en el espacio transformado
+
+Si se tienen dos transformaciones A y B, la transformación que pasa desde A hacia B es
+B_jk x_k = b_k
+A_jk x_k = a_k
+C_jk a_k = b_k
+C_jk = ¿?
+
+
+C_jr A_rk x_k = B_jk x_k
+
+C_jr A_rk = B_jk
+
+post-multiplicando por la inversa de A
+y dado que es ortogonal A^-1_jk = A_kj
+A_rj A_rk = I_jk (por definición de ortogonal) \Nota{¿o de ortonormal?}
+
+C_jk = B_jr A_kr
+\Nota{en el código lo hice al revés, C_jk = A_jr B_kr, es decir, la transformación inversa}
+
+
+Extracción del angle-axis a partir de la matriz de rotación
+\Nota{es un lío, se puede, pero no vale la pena explicarlo}
+
+
+Muchas rotaciones pueden representarse por una sola. \TODO{Eso explicar}
+usar la transformación a cuaternión
+multiplicar cuaterniones da otro cuaternión
+un cuaternión representa una rotación
+\Nota{¿se mantiene unitario? ¿cuándo representaba escala?}

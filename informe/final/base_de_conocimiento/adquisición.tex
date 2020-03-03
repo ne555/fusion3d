@@ -10,3 +10,40 @@ Se proyectan patrones de luces conocidos sobre la escena para que al analizar
 sus deformaciones al impactar en sobre las superficies nos permitan calcular la
 profundidad de los objetos dentro de la escena.
 \Nota{¿muevo lo del ruido del preproceso acá?}
+
+
+Técnicas de adquisición
+formatos de representación de colecciones de puntos
+
+
+Una nube de puntos es una colección de puntos en el espacio.
+Las coordenadas $\{x, y, z\}$ de cada punto se establecen respecto
+a un sistema de referencia cuyo origen se corresponde al dispositivo sensor.
+
+Entonces las coordenadas de cada punto representan la distancia
+desde el sensor a la superficie del que fue muestreado.
+Para lograr medir esta distancia y convertirla a coordenadas espaciales,
+puden utilizarse diversas técnicas:
+\begin{itemize}
+	\item Tiempo de vuelo: miden el tiempo que demora una señal
+		en chocar contra la superficie y volver al receptor.
+	\item Técnicas de triangulación: conectan correspondencias
+		capturadas por dos sensores distintos al mismo tiempo.
+		Es necesaria una calibración de los sensores, es decir,
+		conocer sus propiedades intrínsicas y extrínsecas.
+	\item Luz estructurada: se proyecta un patrón conocido y se observa la
+		deformación de ese patrón debida a la superficie del objeto.
+\end{itemize}
+
+Sénsores activos
+
+
+Representación de los datos
+
+Se puede almacenar más información que simplemente la posición de los puntos muestreados.
+Por ejemplo, la intensidad del láser.
+
+La mayoría de los algoritmos trabajan con los vecinos de cada punto.
+Por lo tanto, se debe permitir una búsqueda eficiente de vecinos.
+Descomponer el espacio mediante kd-trees o octress,
+particionar la nube de puntos de forma de realizar estas operaciones eficientemente.

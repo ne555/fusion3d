@@ -1,3 +1,45 @@
+%semantic 3d object maps (es basicamente la pcl)
+Features:
+
+Buscamos que el descriptor sea invariante respecto a translaciones y rotaciones,
+con el fin de identificarlo en ambas vistas.
+
+Point Feature Histogram (PFH)
+Representa la relación entre los puntos de la vecindad y sus normales de superficie estimadas.
+Intenta describir las variaciones de la superficie en la región.
+Es altamente de la calidad de la estimación de las normales.
+
+Todos los pares de puntos en la vecindad.
+
+Dados dos puntos y sus normales, se define un sistema de referencia
+y se calculan los ángulos entre las normales de los puntos y los ejes.
+
+sistema de referencia:
+u, es la normal en el punto A
+v es ortogonal al plano definido por u y la translación entre los puntos
+w es ortogonal a u y v (producto vectorial)
+
+ángulos:
+$\alpha$ es el ángulo de la normal en B contra el eje v
+$\phi$ es el ángulo entre el eje u y el vector translación
+$\theta$ es el ángulo entre la proyección de la normal en B sobre el plano uw, y el eje u
+
+\begin{eqnarray}
+	\alpha = v \cdot n_B \\
+	\phi = u \cdot \frac{P_B - P_A}{|P_B - P_A|}
+	\theta = \atan(w \cdot n_B, u \cdot n_B)
+\end{eqnarray}
+
+Significado gráfico de los valores
+
+\TODO{gráfico: plano vectores {n_A, B-A}, proyección de n_B}
+
+\alpha mide el desvío de las normales fuera de este plano, hacia arriba o abajo
+\theta mide el desvío de las normales en la proyección del plano, es el ángulo entre n_A y la proyección de n_B
+\phi mide la posición de los vecinos respecto al plano tangente, determina qué tan cóncava o convexa es la superficie
+
+
+
 \section{\emph{Fast Point Feature Histograms} (FPFH)}
 Diferencias respecto a PFH
 \begin{itemize}

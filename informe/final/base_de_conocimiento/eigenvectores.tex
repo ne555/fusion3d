@@ -1,0 +1,43 @@
+Definición
+
+M v = \lambda v
+
+\lambda es un eigenvalor
+v es su eigenvector correspondiente \Nota{¿era así?}
+
+¿Cómo se calcula?
+
+M - \lambda I = 0
+
+
+%https://blog.clairvoyantsoft.com/eigen-decomposition-and-pca-c50f4ca15501
+So, PCA is a method that:
+	* Measures how each variable is associated with one another using a Covariance matrix
+	* Understands the directions of the spread of our data using Eigenvectors
+	* Brings out the relative importance of these directions using Eigenvalues
+
+menor eigenvector corresponde a la normal
+
+
+For the covariance or correlation matrix, the eigenvectors correspond to
+principal components and the eigenvalues to the variance explained by the
+principal components.
+
+%semantic 3d
+%4.3 Surface Normals and Curvature Estimates
+The problem of determining the normal to a point on
+the surface is approximated by the problem of estimating the normal of a plane tangent to the
+surface, which in turn becomes a least-square plane fitting estimation problem in P
+k [Sha98].
+
+In general, because there is no mathematical way to solve for the sign of⃗n, the orientation of
+the normal computed via Principal Component Analysis (PCA) as shown above is ambiguous,
+and not consistently oriented over a point cloud dataset P.
+
+
+Though many different normal estimation methods exist (see [KAWB09] for a recent com-
+parison for normal estimation in 3D range data), the simplest method is based on the first order
+3D plane fitting as proposed by [BC94].
+%Jens Berkmann and Terry Caelli.
+%Computation of Surface Geometry and Segmentation Using Covariance Techniques.
+%IEEE Transactions on Pattern Analysis and Machine Intelligence (PAMI), 16(11):1114–1116, November 1994.
