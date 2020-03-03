@@ -1,6 +1,8 @@
 \documentclass{pfc}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{mathtools}
 \usepackage{pdfpages}
 \usepackage{subcaption}
 
@@ -52,10 +54,13 @@
 \makeatother
 
 \newcommand{\bigO}{\mathcal{O}}
+\newcommand{\Real}{\mathbb{R}}
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator{\atan}{atan}
 
 \graphicspath{{./uml/}{./diagram/}}
 
-\includeonly{materiales_y_métodos}
+%\includeonly{materiales_y_métodos}
 \begin{document}
 \frontmatter
 %\TODO{revisar tiempos verbales, ahora en pasado}

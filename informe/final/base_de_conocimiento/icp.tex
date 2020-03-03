@@ -1,4 +1,60 @@
 \section{\emph{Iterative Closest Point} (ICP)}
+Dadas dos vistas, encontrar la transformación que las alinee.
+¿Qué significa alinear?
+
+¿Cómo determinamos la mejor alineación?
+¿Cómo determinamos que una alineación es mejor que otra? 
+
+
+Supongamos que dos nubes de puntos $A$ y $B$,
+ambas con la misma cardinalidad,
+de las cuales se conocen las correspondencias $a_j \to b_j$
+para todos los puntos.
+Podemos definir el error de alineación como:
+\[
+	\text{Error} = \frac{1}{N} \sum || b_j - T_{jk} a_k ||
+\]
+Se busca entonces la transformación $T_{jk}$ que minimice este error.
+
+Sin embargo, las suposiciones propuestas son demasiado fuertes.
+Al trabajar con dos vistas el solapamiento no será total, ya que habrá puntos que serán observables
+en tan sólo una de las vistas, por lo que es necesario
+determinar primeramente cuáles son los puntos comunes.
+El algoritmo de ICP determina las correspondencias utilizando las propiedades geométricas.
+\begin{enumerate}
+	\item Obtener las correspondencias.
+		Para cada $a_j \in A$ buscar el punto más cercano en $B$.
+		Si la distancia entre estos puntos supera un umbral $\tau_1$
+		se considera que el punto no pertenece a la zona común y es descartado.
+	\item Calcular la transformación que alinee estos subconjuntos. 
+	\item Aplicar la transformación.
+	\item Repetir el proceso hasta que el error de alineación esté por debajo de un umbral $\tau_2$.
+\end{enumerate}
+
+Variante \emph{point-to-plane}
+
+En esta variante del algoritmo ICP se utiliza la información
+de las normales de la superficie.
+Al considerar que los puntos de la nube fueron muestreados 2.5D
+se pueden establecer ciertas restricciones.
+
+Los puntos en $A$ y $B$ no son el mismo el mismo punto, pero pertenecen al
+mismo plano.  Por esto podemos decir que conocemos con mucha confianza la
+posición del punto a lo largo de su normal, pero no su ubicación en el plano
+tangente.
+Entonces se adopta otra medida del error para reflejar esta situación.
+En lugar pedir coincidencia de las coordenadas de los puntos, buscamos que no
+se encuentren demasiado fuera del plano
+\[
+	\argmin_{T} \left\{ n_j \text{Error}_j \right \}
+\]
+
+\endinput
+
+
+
+
+
 %generalized icp
 %darpa grand challenge
 
@@ -93,7 +149,7 @@ Mejorar point-to-plane y aumentar la simetría del modelo \Nota{¿? ¿por qué m
 Generalized ICP toma información de ambas capturas
 
 La clave de point-to-plane es que los puntos fueron muestreados 2.5D, no son arbitrarios.
-Es un 2-manifold en 3-space \Nota{¿qué?}
+Es un 2-manifold en 3-space \Nota{¿qué?} \Nota{2-manifold: la vecindad es una superficie}
 
 Supone que los puntos están localmente en un plano. No muestreamos el mismísimo punto.
 Cada punto sólo presenta una restricción a lo largo de su normal.
@@ -105,3 +161,4 @@ Puede verse como restricciones de movimiento para cada correspondencia.
 Las correspondencia erróneas forman restricciones muy débiles en el alineamiento global \Nota{No entendí}
 
 \Nota{y eso es todo lo que tenía para decir acerca de esto}
+

@@ -1,13 +1,79 @@
 %semantic 3d object maps (es basicamente la pcl)
-Features:
+\section{Descriptores}
+Para lograr encontrar la transformación de alineación entre dos vistas,
+primeramente debemos hallar las correspondencias entre los puntos de ambas nubes.
+Es decir, por cada punto de la nube $A$ identificar su posición en la nube $B$.
+\Nota{no están todos los puntos y tampoco necesito todos los del área solapada}
 
-Buscamos que el descriptor sea invariante respecto a translaciones y rotaciones,
-con el fin de identificarlo en ambas vistas.
+Surge entonces la necesidad de definir un descriptor para cada punto.  Este
+descriptor es un vector de características de la vecindad del punto, eligiendo
+estas características de forma que sean invariantes respecto a translaciones y
+rotaciones y robustas respecto a perturbaciones de los puntos de la vecindad y
+el agregado o eliminación de puntos de la vecindad.
 
-Point Feature Histogram (PFH)
+\Nota{Va devuelta.}
+Un descriptor es un vector de características.
+Esas características se calculan en la vecindad del punto.
+Se pide que sea discriminante.
+Se pida invarianza respecto a transformaciones de rotación y translación, porque justamente queremos encontrar correspondencias entre capturas rotadas y trasladadas.
+Se pide robustez respecto a ruido de muestreo.
+Se pide robustez respecto a oclusiones.
+Se pide robustez respecto a la densidad del muestreo.
+Con robustez quiero decir que la distancia no varíe demasiado respecto a esas perturbaciones.
+
+
+\Nota{sigue}
+Entonces, para comparar dos puntos se calcula la distancia entre sus descriptores.
+Si esta distancia es cercana a $0$, los puntos son similares y existe la
+posibilidad de que se correspondan.
+Considerando las vecindades de los puntos se obtiene una estimación de la superficie,
+superficies parecidas darán descriptores similares.
+
+
+Vecindades
+
+- obtener los k vecinos más cercanos. \Nota{No}
+- obtener todos los vecinos que se encuentran a menos de una distancia r.
+\Nota{Sí} De esta manera, se utiliza siempre el mismo tamaño de porción de
+superficie, sin importar la cantidad de puntos muestreados o su posición y
+ángulo respecto al dispositivo de captura.
+
+Problema, ¿cómo definir el tamaño de la vecindad? ¿cómo hacerlo de forma completamente automática?
+Si la vecindad es muy pequeña, no será lo suficientemente discriminante.
+En cambio, si es muy grande, se considerarán puntos pertenecientes a otra superficie, distorsionando el descriptor.
+
+
+Valores atípicos
+
+Antes de calcular el vector de características, debe determinarse si los puntos
+de la vecindad representad adecuadamente la superficie muestreada.
+
+Muchos descriptores requieren un mínimo de vecinos para poder calcularse.
+Debido a variaciones en la densidad de muestreo, características de interacción
+entre la superficie y el dispositivo de captura o oclusiones, es posible que
+existan puntos que no cumplan con esta restricción.
+Eliminar estos puntos disminuye el costo de procesamiento.
+
+
+Estimación de la normal y la curvatura
+
+Se aproxima la normal en el punto estimando un plano tangente a la superficie
+mediante el método de mínimos cuadrados.
+El plano se representa como un punto $x_j$ y un vector normal $n_j$, la distancia de un punto
+al plano será
+\[ d = (p_j - x_j) n_j \]
+
+Los valores de $x_j$ y $n_j$ se calcularan de forma de minimizar el promedio de la distancia al considerar todos los puntos de la vecindad.
+De esta forma, tomando el centroide de los puntos de la vecindad
+\[x_j = \frac{1}{N}\sum_{j=1}{N} p_j\]
+y calculando los eigenvectores de la matriz de covarianza.
+Se tiene ambigüedad en el sentido del vector, lo cual puede resolverse orientándolo hacia el dispositivo de captura.
+\TODO{seguir}
+
+\subsection{\emph{Point Feature Histogram} (PFH)}
 Representa la relación entre los puntos de la vecindad y sus normales de superficie estimadas.
 Intenta describir las variaciones de la superficie en la región.
-Es altamente de la calidad de la estimación de las normales.
+Es altamente sensible a la calidad de la estimación de las normales.
 
 Todos los pares de puntos en la vecindad.
 
@@ -32,15 +98,15 @@ $\theta$ es el ángulo entre la proyección de la normal en B sobre el plano uw,
 
 Significado gráfico de los valores
 
-\TODO{gráfico: plano vectores {n_A, B-A}, proyección de n_B}
+\TODO{gráfico: plano vectores {n\_A, B-A}, proyección de n\_B}
 
-\alpha mide el desvío de las normales fuera de este plano, hacia arriba o abajo
-\theta mide el desvío de las normales en la proyección del plano, es el ángulo entre n_A y la proyección de n_B
-\phi mide la posición de los vecinos respecto al plano tangente, determina qué tan cóncava o convexa es la superficie
+$\alpha$ mide el desvío de las normales fuera de este plano, hacia arriba o abajo
+$\theta$ mide el desvío de las normales en la proyección del plano, es el ángulo entre $n_A$ y la proyección de $n_B$
+$\phi$ mide la posición de los vecinos respecto al plano tangente, determina qué tan cóncava o convexa es la superficie
 
 
 
-\section{\emph{Fast Point Feature Histograms} (FPFH)}
+\subsection{\emph{Fast Point Feature Histograms} (FPFH)}
 Diferencias respecto a PFH
 \begin{itemize}
 	\item FPFH No ve todos los vecinos del punto, pueden perderse pares importantes.

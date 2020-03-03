@@ -1,13 +1,28 @@
-Definición
+Se hará una relación entre el cálculo de los eigenvalores y eigenvectores de la matriz de covarianza en la vecindad
+de un punto y la estimación de la normal en ese punto.
 
-M v = \lambda v
+Definición de eigenvalor, eigenvector
 
-\lambda es un eigenvalor
-v es su eigenvector correspondiente \Nota{¿era así?}
+\[ M_{jk} v_k = \lambda v_j \]
+
+$\lambda$ es un eigenvalor
+$v_j$ es su eigenvector correspondiente \Nota{¿era así?}
 
 ¿Cómo se calcula?
 
-M - \lambda I = 0
+\[ M_{jk} - \lambda \delta_{jk} = 0 \]
+
+
+Estimación de la normal de un punto
+Matriz de covarianza
+se resuelven los eigenvalores, el menor da el eigenvector normal
+No se puede resolver el signo de los eigenvectores, por lo que se tiene ambigüedad.
+
+Análisis de componentes principales (PCA)
+En este método se busca proyectar los datos a un nuevo sistemas de coordenadas
+de forma que la mayor varianza de los datos se proyecte sobre el primer eje,
+la segunda mayor varianza sobre el segundo eje, y así sucesivamente.
+De esta forma, se puede reducir el orden al 
 
 
 %https://blog.clairvoyantsoft.com/eigen-decomposition-and-pca-c50f4ca15501

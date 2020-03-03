@@ -1,0 +1,44 @@
+\section{Definiciones}
+\begin{description}
+	\item [Imagen]
+		Una imagen representa los valores que adquiere una función $f$
+		en puntos discretos (píxeles) ordenados en una grilla rectangular.
+	\item [Imagen de profundidad]
+		En una imagen de profundidad, los valores de cada píxel se corresponden
+		con la distancia que existe entre la cámara y los objetos de la escena.
+	\item [Imagen 2.5D]
+		\TODO{Algo respecto a poder proyectar en $z=0$}
+	\item [Nube de puntos]
+		Una nube de puntos es una colección de puntos cuyas coordenadas espaciales
+		están definidas respecto a un sistema de referencia fijo.
+	\item [Malla]
+		Una malla representa una superficie al establecer conectividades entre
+		los puntos de una nube y definir de esta forma caras y aristas.
+	\item [Captura]
+		Una captura es la adquisición de las coordenadas $\{x, y, z\}$ de los puntos de una nube
+		por medio de sensores y técnicas de procesamiento adecuado.
+	\item [Vista]
+		Una vista es una captura realizada a partir de cierta posición sensor-escena específica.
+	\item [Vecindad]
+		Para un punto $p$, su vecindad son aquellos puntos que se encuentran
+		dentro de una esfera de radio $r$ centrada e $p$. Es decir, aquellos
+		puntos $q$ en los que se satisface que
+		\[ |q - p| \leq r \]
+\end{description}
+
+\section{Adquisición de la nube de puntos}
+Al definir el origen del sistema de referencia centrado en el dispositivo de captura,
+las coordenadas de cada punto de la nube representan la distancia entre el sensor y la superficie
+de la cual fue muestreado el punto.
+Para lograr medir esta distancia, se puede hacer uso de sistemas de luz estructurada,
+donde un patrón conocido es proyectado en la escena y se analizan sus deformaciones.
+
+Debido a las características geométricas de los objetos que componen la escena,
+no se podrá obtener una representación de todas las superficies a partir de tan sólo
+una vista. Es necesario entonces combinar varias vistas para lograr capturar
+esas superficies que permanecían ocultas. Sin embargo, debido a que
+cada captura se encuentra en un sistema de referencia distinto,
+esta combinación no es trivial, debiendo determinarse las transformaciones que lleven
+cada vista a un sistema de referencia global.
+
+El proceso de obtener estas transformaciones se denomina registración.

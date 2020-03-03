@@ -1,3 +1,50 @@
+\subsection{Transformaciones}
+Una transformación es una función $f(x) \rightarrow y$.
+En particular nos interesan aquellas transformaciones donde
+tanto la imagen como el dominio se encuentran en el espacio tridimensional, es decir, $\Real^3 \rightarrow \Real^3$.
+
+Nos limitaremos a transformaciones que preservan las distancias entre los puntos
+y los ángulos entre los vectores, manteniéndose siempre en un
+sistema de referencia de mano derecha.
+Es decir, nos limitaremos a rotaciones y translaciones.
+
+Estas transformaciones pueden representarse en el espacio proyectivo mediante una matriz de $4\times4$.
+\[ T_{jk} a_k = b_j \]
+\[
+	T_{jk} = \left[\begin{matrix}
+		x'_1 & y'_1 & z'_1 & t_x \\
+		x'_2 & y'_2 & z'_2 & t_y \\
+		x'_3 & y'_3 & z'_3 & t_z \\
+		0   &  0  &  0  &  1  \\
+	\end{matrix}\right] =
+	\left[
+		\begin{matrix}
+			x'_j & y'_j & z'_j & t_j \\
+			0 & 0 & 0 & 1 \\
+		\end{matrix}
+	\right]
+\]
+Donde los vectores $x'_j, y'_j, z'_j$ son los vectores resultantes de aplicar la transformación a los ejes coordenados,
+y el vector $t_j$ es la translación que sufre el origen.
+
+Si se tienen dos transformaciones $A_{jk}$ y $B_{jk}$, la transformación que pasa desde $A_{jk}$ hacia $B_{jk}$ es
+\begin{align*}
+	A_{jk} x_k &= a_k \\
+	B_{jk} x_k &= b_k \\
+	C_{jk} a_k &= b_k \\
+%
+	C_{jr} A_{rk} x_k &= B_{jk} x_k \\
+%
+	C_{jr} A_{rk} &= B_{jk} \\
+	C_{jk} &= B_{jr} A^{-1}_{rk}
+\end{align*}
+\Nota{¿sigue siendo ortogonal?}
+
+
+\endinput
+
+Transformación rígida
+
 Matrix transformación lineal $3\times3$
 
 Matriz proyectiva transformación afín $4\times4$
