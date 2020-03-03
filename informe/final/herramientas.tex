@@ -3,13 +3,13 @@ Uno de los supuestos de este proyecto era contar con un repositorio propio de
 mallas tridimensionales.
 Para la creación de este repositorio,
 se utilizarían los algoritmos de reconstrucción desarrollados en \cite{Pancho},
-ubicando al objeto de interés de una base giratoria y realizando capturas
+ubicando al objeto de interés end una base giratoria y realizando capturas
 en ángulos espaciados hasta completar una vuelta.
 De esta forma, las posiciones de las vistas describirían un círculo centrado en el objeto y
-cada captura contendría información de posición ($xyz$) y de textura ($rgb$),
-
-Por cuestiones externas, este repositorio nunca se materializó, por lo que fue necesario
-la búsqueda de otro con características similares.
+cada captura contendría información de posición ($xyz$) y de textura ($rgb$).
+Debido a los tiempos requeridos para calibrar el dispositivo de captura,
+este repositorio nunca se materializó,
+ por lo que fue necesario buscar otro con características similares.
 
 %\begin{itemize}
 %	\item redwood, freibug:
@@ -25,7 +25,7 @@ la búsqueda de otro con características similares.
 %	caso más real.
 %\end{itemize}
 
-Se decidió utilizar \emph{The Stanford 3D Scanning Repository}, que brinda
+Se decidió utilizar \emph{The Stanford 3D Scanning Repository}\cite{StanfordScanRep} que brinda
 acceso a escaneos tridimensionales y reconstrucciones detalladas para ser
 usados en investigación.
 
@@ -34,13 +34,14 @@ Las capturas fueron obtenidas mediante un escáner láser de barrido Cyberware
 base giratoria y luego estas capturas fueron combinadas para producir una única
 malla triangular utilizando el método de \emph{zippering} o el de
 \emph{volumetric merging}, ambos desarrollados en
-Stanford.\cite{StanfordScanRep}
+Stanford\cite{StanfordScanRep}. \Nota{si no explico esos métodos, volarlos de acá\\}
 
-Para resolver la registración se utilizó un método semi-automático,
-donde el usuario establece una alineación inicial que luego se ajustará mediante un algoritmo
-de ICP modificado. \cite{Turk:1994:ZPM:192161.192241} \TODO{explicar ICP}.
-%TODO explicar el escaneo cilíndrico
-Esta transformación final se provee en un archivo de configuración.
+La base de datos provee un archivo de configuración con las transformaciones de
+alineación requeridas por cada captura.
+Estas transformaciones fueron obtenidas realizando la registración de cada captura
+contra un escaneo cilíndrico del objeto mediante un método semiautomático, donde el usuario
+usuario establece una alineación inicial que luego es ajustada mediante un algoritmo
+basado en ICP\cite{Turk:1994:ZPM:192161.192241}.
 
 De esta base de datos se utilizaron los modelos
 	\texttt{armadillo},
@@ -51,10 +52,13 @@ De esta base de datos se utilizaron los modelos
 los cuales presentan distintos niveles de detalles, cantidad de escaneos y niveles de ruido.
 
 
-%TODO: imágenes de los modelos (usar meshlab, fondo blanco)
+\begin{figure}
+	\Imagen{example-image-a}
+	\caption{\label{fig:stanfod_models}\TODO{Modelos de la base de datos Stanford.}}
+\end{figure}
 
 
-Desgraciadamente, no se cuenta con información de textura de los modelos.
+Desgraciadamente, no se cuenta con información de color en estos escaneos.
 Se decidió adaptar los algoritmos a esta situación, en lugar de agregar
 artificialmente valores de color para los puntos.
 
