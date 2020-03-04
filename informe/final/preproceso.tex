@@ -4,63 +4,74 @@
 %Este patrón es observado por el sensor.
 %Se determinan las posiciones de los puntos mediante la intersección entre la
 %dirección de la luz y la del sensor.
-Este módulo se encargará de realizar una reducción de ruido a las nubes de entrada
-antes de ser procesadas por las siguientes etapas,
-por lo cual es necesario considerar
-qué características posee el ruido y cómo se produce.
-En los escáneres de luz estructurada dos fuentes de error son particularmente relevantes:
+El módulo de preproceso se encarga de realizar una reducción de ruido a las nubes de entrada
+antes de ser procesadas por las siguientes etapas.
+Para esto, es necesario considerar qué características posee el ruido y cómo se produce,
+y por esta razón no podemos independizarnos completamente del dispositivo de captura.
+
+En los escáneres de luz estructurada,
+como los utilizados en la base de datos Stanford\cite{Turk:1994:ZPM:192161.192241}
+y la biblioteca desarrollada en \cite{Pancho},
+dos fuentes de error son particularmente relevantes:
 \begin{itemize}
-	\item \emph{Ángulo de incidencia excesivo:\/}
+	\item \emph{Ángulo de incidencia excesivo:}
 		La luz proyectada impacta en una porción de la superficie del objeto
 		que es casi paralela a su dirección.
 		El sensor entonces capta una versión estirada y con menor intensidad del patrón, lo que 
 		agrega incertidumbre en la posición de los puntos.
-	\item \emph{Reflejo parcial:\/}
-		Cuando, dada una línea del patrón, solamente una porción de esta incide en el objeto (figura~\ref{fig:error_adquisicion}).
-		Se obtiene una posición incorrecta, ya que el método de triangulación
-		supone que todo el ancho de la línea impactó en el objeto.
+	\item \emph{Reflejo parcial:}
+		Se produce cuando una línea del patrón no incide completamente en el objeto (figura~\ref{fig:error_adquisicion}).
+		Debido a que el método de triangulación supone que todo el ancho de la línea impactó en el objeto,
+		se estima una posición incorrecta del punto muestreado.
 		Esto resulta en bordes distorsionados y en posiciones más alejadas que las reales.\cite{Turk:1994:ZPM:192161.192241}
 \end{itemize}
-Además, se cuenta con pequeñas variaciones en los puntos debidas a la sensibilidad del sensor.
+Además, deben tenerse en cuenta la existencia de pequeñas variaciones en las posiciones de los puntos.
 
 \begin{figure}
 	\Imagen{diagram/error_adquisición_borde}
 	\caption{\label{fig:error_adquisicion}Error en la posición estimada debido a un reflejo parcial del patrón de luz.}
+		\TODO{imagen patrón estirado}
 \end{figure}
 
-Teniendo en cuenta estas consideraciones, se desarrolló el siguiente algoritmo
-para el preproceso de las nubes de entrada:
+En base a todo eso, se desarrolló el siguiente algoritmo
+para el preproceso de cada nube de entrada:
 \begin{itemize}
 	\item Para independizarse de la escala de las capturas,
-todos los parámetros que impliquen una distancia o vecindad
-se establecen en relación a una medida de resolución de las nubes,
-la cual se definió como el promedio de las distancias entre cada punto
-contra su par más cercano.
-Si bien pueden presentarse zonas de mayor densidad de puntos que otras,
-surgen problemas para definir la localidad de estos agrupamientos,
-por lo que se optó por una medida global.
+		todos los parámetros que impliquen una distancia o vecindad
+		se establecen en relación a una medida de resolución de las nubes,
+		la cual se definió como el promedio de las distancias entre cada punto
+		contra su par más cercano.
+		Si bien pueden presentarse zonas de mayor densidad de puntos que otras,
+		surgen problemas para definir la localidad de estos agrupamientos,
+		por lo que se optó por una medida global.
 
-\item Para reducir las pequeñas perturbaciones en las posiciones de los puntos,
-se los proyectó a una superficie estimada mediante el método de mínimos cuadrados móviles.
-Para construir esta superficie se utilizó la clase
-\texttt{pcl::Moving\-Least\-Squares}, definiendo una vecindad de seis veces la
-resolución de la nube con el fin de obtener aproximadamente 100 puntos para
-realizar la estimación.
-Los resultados de este proceso se evaluaron visualmente, pudiendo observarse la pérdida de detalles
-al aumentar en exceso la vecindad (figura~\ref{fig:mls}). \TODO{ver imágenes}
-\begin{figure}
-	\caption{\label{fig:mls}\TODO{gráfico de curvatura antes y después de mls, distintas vecindades}}
-\end{figure}
+	\item Para reducir las pequeñas perturbaciones en las posiciones de los puntos,
+		se los proyectó a una superficie estimada mediante el método de mínimos cuadrados móviles.
+		Para construir esta superficie se utilizó la clase
+		\texttt{pcl::Moving\-Least\-Squares}, definiendo una vecindad de seis veces la
+		resolución de la nube con el fin de obtener aproximadamente 100 puntos para
+		realizar la estimación.
+		Los resultados de este proceso se evaluaron visualmente, pudiendo observarse la pérdida de detalles
+		al aumentar en exceso la vecindad (figura~\ref{fig:mls}). \TODO{ver imágenes}
+		\begin{figure}
+			\caption{\label{fig:mls}\TODO{gráfico de curvatura antes y después de mls, distintas vecindades}}
+		\end{figure}
 
-\item En cuanto a los errores debidos al método de adquisición, se decidió descartar estos puntos:
-	\begin{itemize}
-		\item Se eliminaron los puntos cuyas normales se encontraban a más de $80^{\circ}$ del eje $z$.
-		\item Debido a que a partir de una triangulación es trivial obtener los puntos que pertenecen al borde
-se proyectó la nube en el plano $z=0$ para realizar una triangulación Delaunay y así
-trasladar estas conexiones a los puntos en el espacio.
-		\item Se procedió a eliminar aquellas aristas cuya longitud superaba un umbral (establecido en tres veces la resolución de la nube).
-		\item Se eliminaron los puntos que resultaron aislados y aquellos que delimitaban bordes.
-	\end{itemize}
+	\item Para evitar las distorsiones debidas al ángulo de incidencia excesivo,
+		primeramente se estimaron las normales en cada punto mediante la técnica de covarianza propuesta en \cite{10.1109/34.334391}.
+		Luego se eliminaron los puntos cuyas normales se encontraban a más de $80^{\circ}$ del eje $z$.
+
+	\item Se eliminaron aquellos puntos que pudieran ser producto de distorsiones debidas al reflejo parcial.
+		Para identificar estos puntos, se procedió de la siguiente manera:
+		\begin{itemize}
+			\item \TODO{captura como imagen 2.5D z apunta al ojo}
+				Se proyectó la nube al plano $z=0$ para realizar una triangulación Delaunay y así
+				trasladar estas conexiones a los puntos en el espacio.
+			\item Se eliminaron aquellas aristas cuya longitud superaba un umbral.
+				Estas aristas corresponden a saltos excesivos de profundidad
+				o a regiones en las que no se registraron puntos.
+			\item Los puntos buscados son aquellos que delimitan bordes en la malla o se encuentran aislados.
+		\end{itemize}
 \end{itemize}
 
 Si bien al finalizar esta etapa se obtiene una triangulación de la nube de entrada,

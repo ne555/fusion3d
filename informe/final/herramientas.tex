@@ -68,7 +68,12 @@ artificialmente valores de color para los puntos.
 	A continuación se mencionan las principales herramientas de software
 	utilizadas en el desarrollo de programas de reconstrucción tridimensional.
 
+	%TODO: explicitar por qué no todas se usaron, pero que se consideraron,
+	%analizaron y descartaron por algún motivo
+
 	\subsection{KinectFusion}
+	%TODO: ¿algoritmo o biblioteca?
+	%algoritmo, incluído en la sdk de kinect v2
 	Es el algoritmo desarrollado por Microsoft para lograr reconstrucciones
 	tridimensionales utilizando el dispositivo Kinect.
 
@@ -93,6 +98,7 @@ artificialmente valores de color para los puntos.
 	maquinal.  Cuenta con módulos de procesamiento de imágenes de profundidad y
 	registración.
 
+	%TODO: demasiados utiliza
 	En un principio se consideró utilizar la información de textura de las
 	capturas para poder lograr la registración, pero debido a que la base de
 	datos utilizada sólo contenía información geométrica  no se utilizarán las
@@ -111,7 +117,7 @@ artificialmente valores de color para los puntos.
 
 	PCL se encuentra disponible para ser usada en C++.
 	Debido al uso intensivo de código templatizado, la compilación del
-	código cliente requiere de un tiempo considerable (aproximadamente un minuto).
+	código cliente suele requerir de un tiempo considerable.
 	Existen proyectos para portarla a Python y Java, pero no se encuentran
 	suficientemente avanzados.
 
@@ -121,6 +127,6 @@ artificialmente valores de color para los puntos.
 	seleccionados por el usuario), y cuentan con una implementación del
 	algoritmo \emph{Poisson Surface Reconstruction} para reconstrucción de
 	superficies.
+	\Nota{En particular, CloudCompare permite definir condiciones de borde Dirichlet}
 
-	Se utilizarán especialmente para visualización y comparación de resultados.
-
+	Se utilizaron especialmente para visualización y comparación de resultados.
