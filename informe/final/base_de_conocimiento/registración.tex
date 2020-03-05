@@ -1,22 +1,84 @@
 \section{Registración}
-La registración es el proceso por el cual se determinan las transformaciones de rotación y translación
-que alinean cada vista a un sistema de referencia global.
+Al finalizar la etapa de adquisición se obtuvo una nube de puntos
+que representaba la porción observada del objeto.
+Para lograr una reconstrucción total del objeto es necesario combinar múltiples capturas
+variando la posición relativa cámara-objeto.
+Contar con un dispositivo que nos permita definir con precisión
+tanto la posición como orientación de la cámara es altamente costoso,
+por esta razón, en la etapa de registración se calcularán las transformaciones que ubiquen cada
+captura en un sistema de referencia global, de forma que las zonas comunes encajen perfectamente.
 
-La registración se realiza de a pares de capturas.
 
-Utilizar información geométrica
+La operación de registración se realizará siempre entre dos capturas,
+buscando las transformaciones de translación y rotación que ubiquen
+la captura de partida en el marco de referencia de la captura objetivo.
+De esta manera, el problema general cuenta con seis grados de libertad.
+Primero se discutirá el caso donde la transformación de alineación sea pequeña,
+luego se permitirán incrementos mayores,
+y finalmente se extenderá el proceso para abarcar $n$ capturas.
 
-Elegir puntos que por sus características puedan identificarse en ambas vistas.
+%esto va en $N$ capturas
+%Para extender este proceso a $n$ capturas, puede alinearse $C_0$ con $C_1$,
+%$C_1$ con $C_2$, $C_2$ con $C_3$, etc.,
+%sin embargo, el error de registración se propagará en cada paso.
 
-Definir descriptores, keypoints.
 
-¿Para qué usar keypoints?
+\subsection{Perturbaciones pequeñas: algoritmo iterativo del punto más cercano (ICP)}
+Antes de describir este algoritmo, se planteará una versión simplificada del problema
+que nos permitirá establecer ciertas definiciones.
 
-Reducción del tamaño de la entrada.
+Supongamos que a una nube $A$ le aplicamos una transformación de translación y rotación arbitraria,
+y luego aplicamos una pequeña perturbación a las posiciones de los puntos transformados,
+obteniendo así la nube $B$.
+Se observa ambas nubes poseen la misma cardinalidad y podemos establecer las relaciones de origen a destino
+$a_j \to b_j$ para cada punto $a_j \in A$.
+Se puede definir el error de alineación como
+\[
+	\text{Error} = \frac{1}{N} \sum_{j=1}^n || b_j - T \left(a_j\right) ||
+\]
+y se buscará la transformación $T$ que minimice este error.
+Existe una solución cerrada para este problema, obteniéndose la rotación al
+calcular los eigenvectores de una matriz simétrica de $4\times4$,
+cuyos detalles pueden consultarse en \cite{Horn87closed-formsolution}.
 
-Identificar zonas con alto poder discriminativo. De esta manera, es más difícil que se realice una correspondencia errónea,
-ya que perturbaciones en el descriptor siguen manteniendo la misma correspondencia.
+Sin embargo, estas suposiciones son demasiado fuertes.
+Al trabajar con dos capturas realizadas desde distintas vistas, el solapamiento no será total,
+ya que habrá puntos que serán observables en tan sólo uno de las vistas,
+por lo que primero es necesario determinar cuáles son los puntos comunes.
+Además, se desconoce para los puntos de la nube $A$ cuál es su posición en $B$.
+El algoritmo iterativo del punto más cercano (ICP) supone que las nubes se encuentran
+lo suficientemente cerca como para establecer estas correspondencias mediante las coordenadas de los puntos.
+El algoritmo se describe de la siguiente manera:
+\begin{enumerate}
+	\item Obtener las correspondencias:
+		Para cada punto $a_j \in A$ buscar el punto más cercano en la nube $B$.
+		Si la distancia entre esos puntos supera un umbral $d_{\text{max}}$,
+		se considera que $a_j$ no pertenece a la zona común y no es considerado en esta iteración.
+	\item Calcular la transformación que alinee los pares de puntos de la zona común.
+	\item Aplicar la transformación.
+	\item Repetir el proceso hasta que el error de alineación esté por debajo de un umbral $\tau$.
+\end{enumerate}%\cite{conf/rss/SegalHT09}
+Si bien el algoritmo convergirá a un mínimo local, puede que este no sea el mínimo global buscado.
+Debe cumplirse la suposición de cercanía para obtener una correcta registración.\cite{regBesl92}
 
-\input{base_de_conocimiento/icp}
+%generalized conf/rss/SegalHT09
+En \cite{chen-medoni} se presenta una variante del algoritmo de ICP llamada ICP punto-a-plano,
+que resulta más robusta y precisa al trabajar con nubes de puntos en 2.5D. \TODO{definir 2.5D, que es lo que tenemos}
+Una vez establecida una correspondencia $a_j \to b_j$, si bien no se trata del mismo punto,
+se realiza la suposición de que pertenecen al mismo plano.
+Por esta razón, podemos decir que conocemos con mucha confianza la posición del punto
+a lo largo de su normal, pero no su ubicación en el plano.
+Para reflejar esto, se cambia la métrica del error, proyectando el punto transformado sobre la normal
+del punto destino (figura~\ref{fig:point_to_plane}).
+\[
+	\text{Error} = \frac{1}{N} \sum_{j=1}^n || n_j \cdot \left( b_j - T \left(a_j\right) \right) ||
+\]
 
-%keypoints y descriptores
+\begin{figure}
+	\centering
+	\input{diagram/icp_point_to_plane.pdf_tex}
+	\caption{\label{fig:point_to_plane}Medidas de error punto-a-plano entre dos superficies
+	(Imagen cortesía de \cite{icp_point_to_plane}).}
+\end{figure}
+
+\endinput

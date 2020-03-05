@@ -9,30 +9,6 @@ antes de ser procesadas por las siguientes etapas.
 Para esto, es necesario considerar qué características posee el ruido y cómo se produce,
 y por esta razón no podemos independizarnos completamente del dispositivo de captura.
 
-En los escáneres de luz estructurada,
-como los utilizados en la base de datos Stanford\cite{Turk:1994:ZPM:192161.192241}
-y la biblioteca desarrollada en \cite{Pancho},
-dos fuentes de error son particularmente relevantes:
-\begin{itemize}
-	\item \emph{Ángulo de incidencia excesivo:}
-		La luz proyectada impacta en una porción de la superficie del objeto
-		que es casi paralela a su dirección.
-		El sensor entonces capta una versión estirada y con menor intensidad del patrón, lo que 
-		agrega incertidumbre en la posición de los puntos.
-	\item \emph{Reflejo parcial:}
-		Se produce cuando una línea del patrón no incide completamente en el objeto (figura~\ref{fig:error_adquisicion}).
-		Debido a que el método de triangulación supone que todo el ancho de la línea impactó en el objeto,
-		se estima una posición incorrecta del punto muestreado.
-		Esto resulta en bordes distorsionados y en posiciones más alejadas que las reales.\cite{Turk:1994:ZPM:192161.192241}
-\end{itemize}
-Además, deben tenerse en cuenta la existencia de pequeñas variaciones en las posiciones de los puntos.
-
-\begin{figure}
-	\Imagen{diagram/error_adquisición_borde}
-	\caption{\label{fig:error_adquisicion}Error en la posición estimada debido a un reflejo parcial del patrón de luz.}
-		\TODO{imagen patrón estirado}
-\end{figure}
-
 En base a todo eso, se desarrolló el siguiente algoritmo
 para el preproceso de cada nube de entrada:
 \begin{itemize}

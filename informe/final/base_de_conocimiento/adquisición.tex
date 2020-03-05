@@ -1,42 +1,75 @@
-\section{Método de adquisición: luz estructurada}
-\Nota{requerido por preproceso.tex}
+\section{Adquisición}
+Un proceso crucial en la reconstrucción tridimensional es la adquisición de datos.
+Los distintos métodos de adquisición se diferencian de acuerdo al fenómeno físico de interacción
+con la superficie del objeto de interés. De esta manera, se pueden clasificar como:
+	\begin{itemize}
+		\item Métodos táctiles o de contacto, donde sensores en las articulaciones de un brazo robótico determinan las coordenadas relativas de la superficie. Estos son de los más robustos, introduciendo poco ruido, pero también de los más lentos y suelen tener problemas con superficies cóncavas.
+		\item Métodos de no-contacto, donde se utiliza luz (métodos ópticos), sonido u ondas electromagnéticas.
+	\end{itemize}
 
-\TODO{Adquisición ¿qué es?}
-
-\TODO{métodos ópticos}
-
-\Nota{luz estructurada}
-Se proyectan patrones de luces conocidos sobre la escena para que al analizar
-sus deformaciones al impactar en sobre las superficies nos permitan calcular la
-profundidad de los objetos dentro de la escena.
-\Nota{¿muevo lo del ruido del preproceso acá?}
-
-
-Técnicas de adquisición
-formatos de representación de colecciones de puntos
-
-
-Una nube de puntos es una colección de puntos en el espacio.
-Las coordenadas $\{x, y, z\}$ de cada punto se establecen respecto
-a un sistema de referencia cuyo origen se corresponde al dispositivo sensor.
-
-Entonces las coordenadas de cada punto representan la distancia
-desde el sensor a la superficie del que fue muestreado.
-Para lograr medir esta distancia y convertirla a coordenadas espaciales,
-puden utilizarse diversas técnicas:
+En particular, los métodos ópticos son los más populares con una rápida velocidad de adquisición\cite{Várady97reverseengineering}. %\cite{reverse engineering}.
+Dentro de los métodos ópticos podemos distinguir:
 \begin{itemize}
-	\item Tiempo de vuelo: miden el tiempo que demora una señal
-		en chocar contra la superficie y volver al receptor.
-	\item Técnicas de triangulación: conectan correspondencias
-		capturadas por dos sensores distintos al mismo tiempo.
-		Es necesaria una calibración de los sensores, es decir,
-		conocer sus propiedades intrínsicas y extrínsecas.
-	\item Luz estructurada: se proyecta un patrón conocido y se observa la
-		deformación de ese patrón debida a la superficie del objeto.
+	\item Métodos pasivos o de visión estereoscópica,
+		que utilizan dos o más cámaras y buscan correspondencias
+		entre los puntos de la escena capturados en cada fotografía.
+	\item Métodos activos o de luz estructurada,
+		que proyectan patrones de luces conocidos sobre la escena de modo de analizar sus deformaciones.
+\end{itemize}
+Identificar los patrones lumínicos es un problema más simple que el de
+encontrar las correspondencias entre imágenes, por lo que los métodos de luz
+estructuradas resultan más rápidos y robustos\cite{Pancho}.
+
+A partir de los métodos ópticos se obtendrá como resultado una imagen de profundidad, donde el valor de
+cada píxel representa la distancia entre el punto observado y la cámara.
+Conociendo los parámetros intrínsecos $K$ de la cámara,
+puede obtenerse para cada píxel $\{X, Y, d\}$ sus coordenadas $\{x, y, z\}$ en el espacio:
+\[
+	\left(\begin{matrix}
+		x \\ y \\ z \\
+	\end{matrix}\right) = 
+	K^{-1}
+	\left(\begin{matrix}
+		X \\ Y \\ d \\
+	\end{matrix}\right)
+\]
+Estas son coordenadas locales, definidas en un sistema de referencia centrado en la cámara.
+
+
+Se tendrá entonces una \emph{nube de puntos}, es decir, una colección de puntos
+sin información de conectividad entre ellos.
+Esta nube de puntos será una representación parcial de la superficie del objeto,
+ya que se corresponderá únicamente con la porción observable desde la cámara.
+
+
+\subsection{Ruido de adquisición}
+Es imposible obtener la posición exacta de los puntos muestreados sobre la superficie del objeto.
+Se tendrán distorsiones debidas a particularidades de la escena, del objeto, de los
+dispositivos utilizados y del método empleado.
+En los escáneres de luz estructurada dos fuentes de error son particularmente relevantes:
+\begin{itemize}
+	\item \emph{Ángulo de incidencia excesivo:}
+		La luz proyectada impacta en una porción de la superficie del objeto
+		que es casi paralela a su dirección.
+		El sensor entonces capta una versión estirada y con menor intensidad del patrón (figura~\ref{fig:error_distorsion}),
+		lo que agrega incertidumbre en la posición de los puntos.
+	\item \emph{Reflejo parcial:}
+		Se produce cuando una línea del patrón no incide completamente en el objeto (figura~\ref{fig:error_adquisicion}).
+		Debido a que el método de triangulación supone que todo el ancho de la línea impactó en el objeto,
+		se estima una posición incorrecta del punto muestreado.
+		Esto resulta en bordes distorsionados y en posiciones más alejadas que las reales.\cite{Turk:1994:ZPM:192161.192241}
 \end{itemize}
 
-Sénsores activos
+\begin{figure}
+	\Imagen{foo}
+	\caption{\label{fig:error_distorsion}El patrón a identificar se encuentra estirado debido a que los haces de luz inciden con un ángulo excesivo sobre la superficie.}
+\end{figure}
+\begin{figure}
+		\Imagen{diagram/error_adquisición_borde}
+		\caption{\label{fig:error_adquisicion}Error en la posición estimada debido a un reflejo parcial del patrón de luz.}
+\end{figure}
 
+\endinput
 
 Representación de los datos
 
@@ -47,3 +80,50 @@ La mayoría de los algoritmos trabajan con los vecinos de cada punto.
 Por lo tanto, se debe permitir una búsqueda eficiente de vecinos.
 Descomponer el espacio mediante kd-trees o octress,
 particionar la nube de puntos de forma de realizar estas operaciones eficientemente.
+
+\section{Definiciones}
+\begin{description}
+	\item [Imagen]
+		Una imagen representa los valores que adquiere una función $f$
+		en puntos discretos (píxeles) ordenados en una grilla rectangular.
+	\item [Imagen 2.5D o imagen de profundidad]
+		Representación bidimensional de puntos en el espacio, donde cada píxel
+		almacena el valor de la profundidad $z$.
+		\Nota{Aunque faltaría obtener los parámetros intrínsecos de la cámara\ldots,
+		o sea, ¿qué coordenadas tiene el punto? no lo sé, tengo $z$, ¿pero $\{x,y\}$?
+		}
+	\item [Nube de puntos]
+		Una nube de puntos es una colección de puntos cuyas coordenadas espaciales
+		están definidas respecto a un sistema de referencia fijo.
+	\item [Malla]
+		Una malla representa una superficie al establecer conectividades entre
+		los puntos de una nube y definir de esta forma caras y aristas.
+	\item [Captura]
+		Una captura es la adquisición de las coordenadas $\{x, y, z\}$ de los puntos de una nube
+		por medio de sensores y técnicas de procesamiento adecuado.
+		\TODO{z apunta al ojo}
+	\item [Vista]
+		Una vista es una captura realizada a partir de cierta posición sensor-escena específica.
+	\item [Vecindad]
+		Para un punto $p$, su vecindad son aquellos puntos que se encuentran
+		dentro de una esfera de radio $r$ centrada e $p$. Es decir, aquellos
+		puntos $q$ en los que se satisface que
+		\[ |q - p| \leq r \]
+\end{description}
+
+\section{Adquisición de la nube de puntos}
+Al definir el origen del sistema de referencia centrado en el dispositivo de captura,
+las coordenadas de cada punto de la nube representan la distancia entre el sensor y la superficie
+de la cual fue muestreado el punto.
+Para lograr medir esta distancia, se puede hacer uso de sistemas de luz estructurada,
+donde un patrón conocido es proyectado en la escena y se analizan sus deformaciones.
+
+Debido a las características geométricas de los objetos que componen la escena,
+no se podrá obtener una representación de todas las superficies a partir de tan sólo
+una vista. Es necesario entonces combinar varias vistas para lograr capturar
+esas superficies que permanecían ocultas. Sin embargo, debido a que
+cada captura se encuentra en un sistema de referencia distinto,
+esta combinación no es trivial, debiendo determinarse las transformaciones que lleven
+cada vista a un sistema de referencia global.
+
+El proceso de obtener estas transformaciones se denomina registración.

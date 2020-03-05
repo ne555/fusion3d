@@ -22,23 +22,6 @@
 	se pueden aplicar procesos de ingeniería inversa a objetos ya existentes.
 	%Describir los pasos de la ingeniería inversa: adquisición alineación, encuentro de superficie, descripción, segmentación, modelo CAD
 
-	Un proceso crucial en estas técnicas es la adquisición de datos.
-	Los distintos métodos de adquisición se diferencian según el fenómeno físico de interacción con la superficie del objeto de interés.
-	De esta manera, se pueden clasificar como:
-	\begin{itemize}
-		\item Métodos táctiles o de contacto, donde sensores en las articulaciones de un brazo robótico determinan las coordenadas relativas de la superficie. Estos son de los más robustos, introduciendo poco ruido, pero también de los más lentos y suelen tener problemas con superficies cóncavas.
-		\item Métodos de no-contacto, donde se utiliza luz (métodos ópticos), sonido u ondas electromagnéticas.
-	\end{itemize}
-	En particular, los métodos ópticos son los más populares con una rápida velocidad de adquisición\cite{Várady97reverseengineering}. %\cite{reverse engineering}.
-	Dentro de los métodos ópticos podemos distinguir:
-	\begin{itemize}
-		\item Métodos activos o de luz estructurada,
-			que proyectan patrones de luces conocidos sobre la escena de modo de analizar sus deformaciones;
-		\item Métodos pasivos o de visión estereoscópica,
-			que utilizan dos o mas cámaras y buscan correspondencias
-			entre los puntos de la escena entre los puntos capturados,
-			lo cual presenta gran dificultad y por eso son menos usados\cite{Várady97reverseengineering}.%\cite{reverse engineering}
-	\end{itemize}
 
 	Un avance reciente en la adquisición de datos mediante luz estructurada consiste en utilizar el sensor Kinect.
 	Este dispositivo captura una imagen RGB de 32 bits y resolución de $640 \times 480$ píxeles

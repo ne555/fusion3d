@@ -1,0 +1,21 @@
+La reconstrucción tridimensional es un proceso por el cual se combinan diversas mediciones de un objeto
+para obtener un modelo tridimensional que lo reproduzca fielmente.
+Este proceso puede dividirse en las siguientes etapas:
+\begin{enumerate}
+	\item Adquisición: en esta etapa se realizarán las mediciones del objeto,
+		obteniéndose las posiciones $\{x, y, z\}$ de puntos muestreados sobre su superficie.
+	\item Registración: en caso de que el método de adquisición no capture la totalidad del objeto,
+		esta etapa establecerá las relaciones entre las medidas parciales
+		para ajustarlas a un mismo marco de referencia.
+	\item Determinación de la superficie: en esta etapa se estimará la superficie del objeto
+		a partir de los puntos muestreados.
+	\item Rellenado de huecos: es posible que existan zonas donde
+		no se hayan obtenido muestras y, por lo tanto, la superficie presente huecos.
+		Dependiendo de la aplicación, puede ser necesario rellenar estos huecos
+		estimando la superficie mediante los puntos lindantes.
+\end{enumerate}
+
+A continuación se describirán con más detalle estas etapas y los métodos utilizados en las mismas.
+
+\input{base_de_conocimiento/adquisición}
+\input{base_de_conocimiento/registración}
