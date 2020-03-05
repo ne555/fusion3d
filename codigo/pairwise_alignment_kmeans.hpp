@@ -481,6 +481,7 @@ namespace nih {
 			for(int L = 0; L < 3; ++L)
 				for(int M = 0; M < 3; ++M)
 					//FIXME: ponderar según la distancia (ver usc / shot)
+					//FIXME: center debería ser el promedio de los puntos en la vecindad
 					covarianza(L, M) += (p.data[L] - center.data[L])
 					                    * (p.data[M] - center.data[M]);
 		}

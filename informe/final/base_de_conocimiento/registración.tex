@@ -81,4 +81,70 @@ del punto destino (figura~\ref{fig:point_to_plane}).
 	(Imagen cortesía de \cite{icp_point_to_plane}).}
 \end{figure}
 
-\endinput
+
+\subsection{Distancias mayores: búsqueda de correspondencias mediante vectores de características}
+Cuando la transformación de alineación requerida para alinear las dos nubes de puntos
+no es lo suficientemente pequeña, no se obtiene una buena aproximación al establecer las correspondencias
+utilizando únicamente las posiciones de los puntos.
+Una posibilidad es emplear métodos semiautomáticos, donde el usuario proveerá de una alineación inicial
+de las nubes o determinará las correspondencias seleccionando puntos de ambas nubes.
+Sin embargo, este es un método lento y engorroso,
+por lo que surge la necesidad de plantear un algoritmo completamente automático.
+
+Para hallar las correspondencias de manera automática, se calculará un vector de características o descriptor
+sobre una vecindad de cada punto. Al comparar luego los descriptores con alguna medida de distancia,
+si la distancia es pequeña (cercana a $0$), entonces las vecindades son similares
+y podría plantearse una correspondencia entre los puntos.
+Un buen descriptor deberá poseer las siguientes características:
+\begin{itemize}
+	\item Ser discriminante, es decir, la distancia entre los descriptores deberá reflejar
+		la distancia entre las superficies de las vecindades.
+		Es decir, en superficies similares se obtendrán descriptores parecidos y
+		en superficies diferentes habrá una gran distancia entre los descriptores. \TODO{figura pfh matriz confusión}
+	\item Ser invariante respecto a translaciones y rotaciones.
+	\item Ser robusto respecto al ruido de muestreo.
+	\item Ser robusto respecto a la densidad de muestreo.
+	\item Ser robusto respecto a la ausencia de muestras debido a oclusiones.
+\end{itemize}
+
+Además de la elección del descriptor, un parámetro importante a determinar es
+el tamaño de la vecindad que éste representará.
+En general, la vecindad de un punto $p$ incluye a todos aquellos puntos $q$
+que se encuentran dentro de una esfera de radio $r$ centrada en $p$:
+\[ |p - q| \leq r \]
+Si el valor de $r$ es demasiado pequeño, el descriptor perderá su poder discriminante
+o incluso no podrá calcularse al no contar con la cantidad de vecinos mínimos necesarios.
+En cambio, si el valor de $r$ es demasiado grande, se corre el riesgo de considerar
+dentro de la vecindad puntos pertenecientes a otra superficie, distorsionando el valor del descriptor.
+La determinación de un valor adecuado de $r$ limita la posibilidad de obtener un método completamente
+automático para el cálculo de los descriptores\cite{RusuDoctoralDissertation}.
+ %This issue is of extreme importance and constitutes a limiting factor in the automatic estimation (i.e., without user given thresholds) of a point feature representation.
+
+
+\subsubsection{Estimación de las normales}
+Para poder describir la geometría de la superficie,
+primero debe estimarse su orientación en el sistema de coordenadas, es decir, estimar su normal.
+Una opción es aproximar la normal mediante la estimación de un plano tangente a la superficie,
+lo que transforma el problema a ajustar un plano a la vecindad de $p$
+mediante el método de mínimos cuadrados. 
+Representando el plano mediante un punto $x_j$ y un vector normal $n_j$,
+la distancia de un punto $q$ de la vecindad a este plano queda definida como
+$d = (q_j - x_j) n_j$.
+Para minimizar la sumatoria del cuadrado de todas las distancias, se tiene que:
+\[x_j = \frac{1}{N} \sum_{k=1}^{N} q^{(k)}_j \]
+para los $N$ puntos de la vecindad de $p$.
+Y para obtener $n_j$ se analizan los eigenvalores y eigenvectores de la matriz de covarianza de la vecindad:
+\[ C_{jk} = \sum_{r=1}{N} (q^{(r)}_j - x_j) (q^{(r)}_k - x_k) \]
+
+Se observa que $C_{jk}$ es una matriz simétrica y por lo tanto todos sus eigenvalores son reales
+$\lambda_j \in \Real$.
+El eigenvector que corresponde al eigenvalor de menor magnitud corresponde a la normal del plano tangente,
+es decir a $+n_j$ o a $-n_j$\cite{10.1109/34.334391}.
+Si bien no puede determinarse matemáticamente el signo de $n_j$,
+\TODO{ver lo de 2.5D, explicar antes}
+puede resolverse la ambigüedad al considerar que el proceso de adquisición de la nube de puntos
+definió un sistema de referencia local ubicando a la cámara en $v_j$,
+por lo tanto, debe cumplirse que:
+\[n_j v_j > 1\]
+
+\subsubsection{Histograma de características del punto (PFH)}
