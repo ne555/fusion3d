@@ -272,3 +272,38 @@ Como ejemplos de detectores se puede mencionar el detector de esquinas Harris,
 el cual puede ser adaptado de trabajar en imágenes a trabajar en el espacio
 traduciendo cambios en la intensidad de píxeles por ángulos entre las normales de puntos vecinos;
 y el detector ISS, que analiza los eigenvalores de la matriz de covarianza en la vecindad de un punto.
+
+
+\subsection{Registración de múltiples capturas}
+Previamente se describieron métodos de registración entre dos capturas,
+sin embargo, un objeto difícilmente pueda ser observable completamente desde tan sólo dos posiciones.
+Por lo tanto, para lograr la reconstrucción tridimensional se tendrá una lista de capturas
+${A_1, A_2, \ldots, A_n}$ correspondientes a distintas posiciones relativas cámara-objeto.
+Surge entonces el problema de cómo obtener la lista de transformaciones ${T_1, T_2, \ldots, T_n}$
+que las alinee a todas correctamente.
+
+Una opción es utilizar una captura $B$ que presente zonas comunes con todas las capturas $A_j$
+y entonces calcular la registración $A_j \to B$.
+Esta captura $B$ puede obtenerse mediante un escaneo cilíndrico: el objeto se
+ubica sobre una superficie que gira lentamente a una velocidad controlada
+mientras que se proyecta una línea vertical sobre el objeto y se miden las
+distancias de los puntos que caen sobre esta línea.
+
+Una alternativa es realizar la registración entre pares sucesivos
+$A_2 \to A_1$,
+$A_3 \to A_2$,
+\ldots,
+$A_{n} \to A_{n-1}$.
+Sin embargo, los errores producidos se propagarán con cada
+captura incorporada, siendo especialmente apreciables al completar una
+vuelta alrededor del objeto (figura~\ref{fig:error_bucle}).
+Para corregir este error, se ajustará la alineación de la captura que cierre el bucle,
+propagando luego esta corrección a las demás.
+
+
+	\begin{figure}
+		\Imagen{diagram/error_bucle_inhand}
+		\caption{\label{fig:error_bucle}Visualización del error de bucle. Errores de tan sólo $1^{\circ}$
+		en cada registración producen una discrepancia considerable
+		donde el modelo debería cerrarse (círculo rojo) \RefImage{5457479}.}
+	\end{figure}
