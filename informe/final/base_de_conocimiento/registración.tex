@@ -91,7 +91,7 @@ de las nubes o determinará las correspondencias seleccionando puntos de ambas n
 Sin embargo, este es un método lento y engorroso,
 por lo que surge la necesidad de plantear un algoritmo completamente automático.
 
-Para hallar las correspondencias de manera automática, se calculará un vector de características o descriptor
+Para hallar las correspondencias de manera automática, se calculará un vector de características o \emph{descriptor}
 sobre una vecindad de cada punto. Al comparar luego los descriptores con alguna medida de distancia,
 si la distancia es pequeña (cercana a $0$), entonces las vecindades son similares
 y podría plantearse una correspondencia entre los puntos.
@@ -100,12 +100,17 @@ Un buen descriptor deberá poseer las siguientes características:
 	\item Ser discriminante, es decir, la distancia entre los descriptores deberá reflejar
 		la distancia entre las superficies de las vecindades.
 		Es decir, en superficies similares se obtendrán descriptores parecidos y
-		en superficies diferentes habrá una gran distancia entre los descriptores. \TODO{figura pfh matriz confusión}
+		en superficies diferentes habrá una gran distancia entre los descriptores (figura~\ref{fig:descriptor_matriz_confusion}).
 	\item Ser invariante respecto a translaciones y rotaciones.
 	\item Ser robusto respecto al ruido de muestreo.
 	\item Ser robusto respecto a la densidad de muestreo.
 	\item Ser robusto respecto a la ausencia de muestras debido a oclusiones.
 \end{itemize}
+
+\begin{figure}
+	\Imagen{foo}
+	\caption{\label{fig:descriptor_matriz_confusion}Matriz de confusión del descriptor FPFH para distintas clases de superficies \RefImagen{RusuDoctoralDissertation}.}
+\end{figure}
 
 Además de la elección del descriptor, un parámetro importante a determinar es
 el tamaño de la vecindad que éste representará.
@@ -142,9 +147,128 @@ El eigenvector que corresponde al eigenvalor de menor magnitud corresponde a la 
 es decir a $+n_j$ o a $-n_j$\cite{10.1109/34.334391}.
 Si bien no puede determinarse matemáticamente el signo de $n_j$,
 \TODO{ver lo de 2.5D, explicar antes}
-puede resolverse la ambigüedad al considerar que el proceso de adquisición de la nube de puntos
-definió un sistema de referencia local ubicando a la cámara en $v_j$,
-por lo tanto, debe cumplirse que:
+puede resolverse la ambigüedad al considerar que la nube de puntos que se obtiene del proceso de adquisición
+es 2.5D y se conoce la ubicación de la cámara $v_j$ en un sistema de referencia local.
+Por lo tanto, debe cumplirse que:
 \[n_j v_j > 1\]
+y se invertirá el signo de $n_j$ en caso de ser necesario.
 
 \subsubsection{Histograma de características del punto (PFH)}
+Además de que las normales no son invariantes a rotaciones, no capturan mucho
+detalle de la superficie y, por lo tanto, no presentan un gran poder
+discriminante. Por estas razones, no resulta adecuado utilizarlas como único descriptor. 
+Sin embargo, al representar las relaciones entre todos los puntos de la vecindad y sus normales,
+pueden capturarse con más detalle las variaciones de la superficie,
+aumentando la representatividad del descriptor. 
+Esta es la idea principal del histograma de características del punto (PFH) presentado en \cite{RusuDoctoralDissertation}.
+
+El vector de características de PFH es un histograma de los valores de tres ángulos
+y una distancia calculados para cada par de puntos y sus normales en la vecindad de $p$.
+Para asegurar la replicabilidad del descriptor, se define un marco de referencia de Darboux
+determinado unívocamente de la siguiente manera:
+\[
+	\vec{n}_j \cdot (p_k - p_j) > \vec{n}_k \cdot (p_j - p_k)
+			\begin{cases}
+				\text{Verdadero: }& p_s = p_j \quad p_t = p_k\\
+				\text{Falso: }& p_s = p_k \quad p_t = p_j\\
+			\end{cases}
+\]
+\[
+	\begin{cases}
+		u =& n_s \\
+		v =& u \times \displaystyle\frac{p_t - p_s}{|p_t - p_s|} \\
+		w =& u \times v \\
+	\end{cases}
+\]
+Y entonces se procede a calcular las siguientes relaciones para estos puntos:
+	\begin{align*}
+		d        &= |p_t - p_s| \\
+		\alpha   &= v \cdot n_t \\
+		\phi     &= u \cdot \frac{p_t - p_s}{d}\\
+		\theta   &= \atan(w \cdot n_t, u \cdot n_t)
+	\end{align*}
+Sin embargo, la distancia entre puntos $d$ no es de importancia para escaneos 2.5D,
+ya que la distancia entre vecinos se incrementa con la distancia a la cámara,
+y suele ser beneficioso omitirla en estos casos \cite{RusuDoctoralDissertation}.
+
+%propio
+Para entender el poder discriminante del descriptor PFH, es preciso comprender el significado
+de los ángulos calculados entre los pares de puntos.
+Considerando el plano tangente a $p_s$, el ángulo $\phi$ mide la separación de la posición de $p_t$ respecto a este plano.
+Luego, considerando el plano donde se encuentran $p_s$, $p_t$ y $n_s$, y cuya normal es $v$:
+\begin{itemize}
+	\item el ángulo $\alpha$ medirá el desvío de la normal $n_t$ respecto a este plano,
+	\item el ángulo $\theta$ medirá la distancia entre las proyecciones de las normales sobre este plano.
+\end{itemize}
+De esta manera, se logra describir con buen detalle las características de la superficie en la vecindad de cada punto.
+
+
+
+\begin{figure}
+	\Imagen{foo}
+	\caption{\label{fig:pfh_marco_referencia}Representación gráfica del marco de Darboux y las características calculadas por el descriptor PFH \RefImagen{RusuDoctoralDissertation}.}
+\end{figure}
+
+\begin{figure}
+	\Imagen{foo}
+	\caption{\label{fig:pfh_angulos}Representación gráfica de los ángulos calculados por el descriptor PFH.}
+\end{figure}
+
+\subsubsection{PFH rápido (FPFH)}
+Debido a que para obtener el descriptor PFH de un punto es necesario calcular
+las relaciones entre todos los pares de puntos de su vecindad,
+el orden de ejecución para una nube con $n$ puntos es $\bigO(nk^2)$,
+donde $k$ es la cantidad de puntos en la vecindad,
+y por esta razón el cálculo de este descriptor puede convertirse
+en uno de los cuellos de botella del proceso.
+
+Para solventar este problema, en \cite{Rusu:2009:FPF:1703435.1703733} se propone
+una simplificación del descriptor PFH, llamada PFH rápido o simplemente FPFH,
+que nos permite reducir el tiempo de ejecución a $\bigO(n^2)$
+manteniendo el poder descriptivo de PFH.
+
+El cálculo de este nuevo descriptor se realiza de la siguiente manera:
+\begin{enumerate}
+	\item Calcular por cada punto $p$ y sus vecinos las tuplas $\langle \alpha, \phi, \theta \rangle$,
+		llamamos a estas características PFH simplificado (SPFH).
+	\item Realizar un promedio ponderado de los valores del SPFH de $p$ y sus vecinos:
+		\[
+			FPFH(p) = SPFH(p) + \frac{1}{N} \sum_{j=1}^{N} \frac{1}{w_j} SPFH(p_j)
+		\]
+		donde $w_j$ es una medida de distancia entre $p$ y su vecino.
+\end{enumerate}
+Las principales diferencias respecto a PFH son:
+\begin{itemize}
+	\item FPFH no interconecta todos los vecinos de $p$.
+	\item FPFH puede incluir puntos fuera del radio $r$ de vecindad, pero no a más de $2r$.
+\end{itemize}
+
+
+\subsubsection{Puntos salientes (\emph{keypoints})}
+Al describir las características de un buen descriptor, mencionamos la capacidad discriminante del mismo.
+Se presenta una gran diferencia entre descriptores de superficies diferentes,
+pero la distancia es cercana a $0$ en superficies parecidas,
+y de esta forma se pueden establecer las correspondencias entre los puntos de dos nubes
+al comparar sus descriptores.
+
+Al analizar una zona homogénea en una nube, como, por ejemplo, un plano,
+todos los puntos presentarán descriptores parecidos.
+Surgen problemas al intentar establecer una correspondencia entre estos puntos
+y los presentes en la otra nube, ya que todos son candidatos igualmente válidos.
+
+Para solucionar este problema, es necesario identificar puntos salientes (\emph{keypoints}) 
+en la nube, para entonces establecer las correspondencias entre los descriptores de estos keypoints.
+Si bien un punto cualquiera será considerado como saliente o no dependiendo del detector utilizado,
+un buen detector presentará las siguientes características:
+\begin{itemize}
+	\item Dispersión: un subconjunto pequeño de los puntos de la nube serán considerados como keypoints.
+	\item Repetebilidad: un keypoint deberá ser detectado en la misma ubicación
+		sobre el objeto sin importar la posición de la cámara al realizar la captura.
+	\item Distinguibilidad: la superficie en la vecindad del keypoint
+		presentará características únicas que serán capturadas por un descriptor.
+\end{itemize}
+
+Como ejemplos de detectores se puede mencionar el detector de esquinas Harris,
+el cual puede ser adaptado de trabajar en imágenes a trabajar en el espacio
+traduciendo cambios en la intensidad de píxeles por ángulos entre las normales de puntos vecinos;
+y el detector ISS, que analiza los eigenvalores de la matriz de covarianza en la vecindad de un punto.
