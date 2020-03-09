@@ -21,7 +21,7 @@ encontrar las correspondencias entre imágenes, por lo que los métodos de luz
 estructuradas resultan más rápidos y robustos\cite{Pancho}.
 
 A partir de los métodos ópticos se obtendrá como resultado una imagen de profundidad, donde el valor de
-cada píxel representa la distancia entre el punto observado y la cámara.
+cada píxel representa la distancia entre el punto observado y la cámara, lo cual se conoce como imagen 2.5D.
 Conociendo los parámetros intrínsecos $K$ de la cámara,
 puede obtenerse para cada píxel $\{X, Y, d\}$ sus coordenadas $\{x, y, z\}$ en el espacio:
 \[
@@ -38,6 +38,7 @@ Estas son coordenadas locales, definidas en un sistema de referencia centrado en
 
 Se tendrá entonces una \emph{nube de puntos}, es decir, una colección de puntos
 sin información de conectividad entre ellos.
+%Se observa, además, que no existen dos puntos con las mismas coordenadas $\{x, y\}$, es decir, la nube de puntos es 2.5D.
 Esta nube de puntos será una representación parcial de la superficie del objeto,
 ya que se corresponderá únicamente con la porción observable desde la cámara.
 

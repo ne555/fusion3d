@@ -1,4 +1,72 @@
 \chapter{Pruebas y resultados}
+\section{Pruebas parciales del módulo de registración}
+%del capítulo de desarrollo
+	Se realizaron pruebas preliminares de los métodos de alineación inicial
+	de \emph{sample consensus} y búsqueda de \emph{clustering}
+	sobre los objetos \texttt{happy} y \texttt{bunny}.
+	Las capturas de \texttt{happy} se realizaron a intervalos de ángulos equiespaciados (cercanos a $24^{\circ}$) y
+	presentan zonas suaves en la base, barriga y espalda.
+	En cambio los ángulos en \texttt{bunny} son más variados y espaciados, yendo desde $35^{\circ}$ a $90^{\circ}$,
+	y se observa una superficie más irregular por todo el cuerpo (figura~\ref{fig:stanford_models}).%\TODO{Sacar foto a los modelos}
+
+	%SAC-IA
+	En el caso de la alineación mediante \emph{sample consensus},
+	se obtuvieron buenos resultados en la mayoría de las capturas de \texttt{happy}
+	donde los ángulos eran cercanos a $25^{\circ}$ (figura~\ref{fig:sac_angles}).
+
+	Pero al utilizar el modelo \texttt{bunny}, cuyos ángulos eran cercanos a $45^{\circ}$,
+	se obtuvo una buena alineación en el caso de las capturas 315--000 y 000--045,
+	sin embargo, para los otros casos las correspondencias fueron completamente erróneas (figura~\ref{fig:align_sac}).
+
+	%Clustering
+	Para el algoritmo de \emph{clustering}, en cambio,
+	no se tuvieron problemas con el modelo \texttt{bunny},
+	a pesar de presentar saltos cercanos a $90^{\circ}$ en las alineaciones
+	contra la captura \texttt{bun180}. Si bien este salto supera las restricciones impuestas,
+	en ningún caso se produjo una diferencia mayor a $5^{\circ}$ respecto al \emph{ground truth} (figura~\ref{fig:clust_bunny}).
+
+	Para el modelo \texttt{happy} se obtuvieron resultados similares a pesar de que en este
+	caso los ángulos eran más cercanos (aproximadamente $24^{\circ}$).  Las
+	diferencias respecto al \emph{ground truth} no superaban los $5^{\circ}$,
+	teniendo un error promedio de $2^{\circ}$ (figura~\ref{fig:clust_happy}).
+
+	De esta forma, se logró acercar las capturas lo suficiente como
+	para intentar alinearlas por ICP.
+
+
+	\begin{figure}
+		\TODO{unir con el de clustering}
+		\Imagen{foo}
+		\caption{\label{fig:sac_angles}\TODO{Diferencias entre la rotación estimada mediante \emph{sample consensus} y el \emph{ground truth} para el objeto \texttt{happy}}}
+	\end{figure}
+
+
+\begin{figure}
+	%\Imagen{img/cluster_bunny}
+	\resizebox{.9\linewidth}{!}{\input{diagram/bun_ang_tikz}}
+	\caption{\label{fig:clust_bunny}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{bunny}.}
+\end{figure}
+
+\begin{figure}
+	%\Imagen{img/cluster_happy}
+	\resizebox{.9\linewidth}{!}{\input{diagram/happy_ang_tikz}}
+	\caption{\label{fig:clust_happy}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{happy}.}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\begin{subfigure}{.8\linewidth}
+		\Imagen{img/bun_sac_270_315}
+		\caption{\label{fig:align_sac}Ejemplo de fallo del algoritmo de \emph{sample consensus} producto de malas correspondencias.}
+	\end{subfigure}
+	\begin{subfigure}{.8\linewidth}
+		\Imagen{img/bun_clust_270_315}
+		\caption{\label{fig:clust_bun_good}Alineación exitosa mediante el uso de marcos de referencia.}
+	\end{subfigure}
+	\caption{Alineación entre las capturas \texttt{bun270} (verde) y \texttt{bun315} (rojo).}
+\end{figure}
+
+
 	\section{Introducción}
 	En esta etapa se integraron los módulos de registración, fusión y rellenado de huecos,
 	para resolver todas las funcionalidades propuestas por el proyecto.

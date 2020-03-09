@@ -1,63 +1,37 @@
 \section{Módulo de registración}
 	%¿Qué es la registración?
 	%mover al marco teórico
-	Este módulo se encargará de obtener las transformaciones de rotación y translación
+	El módulo de registración se encarga de obtener las transformaciones de rotación y translación
 	que lleven cada vista a un sistema global de forma
 	que las zonas comunes encajen perfectamente.
 
-
-
+	Debido a que
+	\begin{quotation}
 	El algoritmo de \emph{Iterative Closest Point} (ICP) se ha convertido en el
 	método dominante para realizar la registración de modelos tridimensionales
-	utilizando únicamente la información de geometría de los mismos. \cite{Rusinkiewicz02real-time3d}
-	La idea central de este algoritmo se puede resumir en realizar
-	iterativamente los siguientes pasos hasta lograr la convergencia.
-	\begin{enumerate}
-		\item Definir correspondencias entre dos capturas.
-		\item Calcular una transformación que minimice la distancia entre estas correspondencias. \cite{conf/rss/SegalHT09}
-	\end{enumerate}
-	Sin embargo, a pesar de que está garantizado que el algoritmo convergirá a un mínimo local,
-	este puede no ser el mínimo global buscado. Entonces, es necesario proveer una alineación inicial
-	lo suficientemente cercana para obtener una correcta registración.\cite{regBesl92}
+	utilizando únicamente la información de geometría de los mismos.\cite{Rusinkiewicz02real-time3d}
+	\end{quotation}
+	y a que a pesar de que existe garantía de convergencia del método hacia un mínimo local,
+	este puede no ser el mínimo global buscado, es necesario proveer una alineación inicial
+	lo suficientemente cercana para obtener una registración correcta\cite{regBesl92}.
 
-	Por esta razón, y considerando que la distancia entre capturas sucesivas es
-	considerable, se plantearán algoritmos para obtener una alineación inicial
+	Por esto, y considerando que la distancia entre capturas sucesivas es considerable,
+	se desarrollaron algoritmos para obtener una alineación inicial
 	con cada par de capturas para luego refinar la registración mediante ICP.
-
-
-	Debido a que las coordenadas espaciales de un punto no nos suministran suficiente
-	información para poder identificarlo en otra vista, es necesario utilizar
-	sus relaciones con otros puntos en una vecindad.
-	Así, podrá describirse al punto mediante las posiciones relativas, la
-	densidad o la orientación, para luego corresponderlo con el más parecido en
-	la otra vista.
-	Sin embargo, puntos en zonas homogéneas de la nube serán descriptos de
-	forma muy similar, con lo que se corre el riesgo de realizar
-	correspondencias equívocas que producirán una alineación errónea.
-	\TODO{pero yo uso todos los puntos y funca, entonces no tengo problemas de homogeneidad ¿?}
-
-	Para solventar este último problema, se puede tomar un subconjunto de los
-	puntos de entrada, aquellos puntos que por sus características de vecindad
-	sea más probable que tengan un descriptor único (\emph{keypoints}).
-
-
-
-
-
-	Entonces, los métodos utilizados en la alineación inicial seguirán los siguientes pasos:
+	Estos algoritmos constan de los siguientes pasos:
 	\begin{enumerate}
 		\item Selección de puntos de la entrada.
 		\item Cálculo de descriptores y determinación de correspondencias.
 		\item Filtrado de correspondencias.
 		\item Estimación de la transformación de alineación.
 	\end{enumerate}
-	Variaciones en la ejecución de estos pasos nos permitirán implementar diversos métodos.
+	Variaciones en la ejecución de estos pasos nos permiten implementar diversos métodos.
 
 
 	Utilizando la primera captura para definir el sistema de coordenadas
-	global, cada nueva vista se alineará con la anterior hasta completar una
-	vuelta sobre el objeto.
-	Por esta razón, se incorporará un algoritmo de corrección de bucle al proceso de registración
+	global, cada nueva vista se alinea con la anterior hasta completar una
+	vuelta sobre el objeto, propagando el error de registración.
+	Por esta razón, se incorporó un algoritmo de corrección de bucle al proceso de registración
 	(figura~\ref{fig:flow_registracion}).
 
 
@@ -67,6 +41,7 @@
 	\end{figure}
 
 
+	A continuación se describirán dos métodos para calcular la alineación inicial entre un par de capturas. 
 
 	\subsection{Alineación mediante \emph{sample consensus}}
 		\subsubsection{Selección de keypoints}
@@ -78,9 +53,51 @@
 
 			%ver bien el problema
 			Sin embargo, no pudieron encontrarse los parámetros adecuados.
-			Al observar las zonas comunes, eran pocos los keypoints que
+			Al observar las zonas comunes en los casos de estudio
+			utilizados como referencia durante el desarrollo,
+			eran pocos los keypoints que
 			realmente se encontraban lo suficientemente cerca como para generar
 			una correspondencia válida (figura~\ref{fig:iss_key}).
+
+
+
+			\begin{algorithm}
+				\begin{algorithmic}[1]
+					\Function{ISS Keypoints}{nube, $r_1$, $\mbox{umbral}_1$, $\mbox{umbral}_2$, $r_2$}
+						\State keypoints $\gets\emptyset$
+						\ForAll{$p \in \mbox{nube.puntos}$}
+							\State vecinos $\gets$ obtener puntos cercanos(nube, p, $r_1$)
+							\State m $\gets$ matriz de covarianza(vecinos)
+							\State $\lambda\gets\text{eigenvalores}(m)$
+							\If{$\lambda_1/\lambda_2 > \text{umbral}_1$ and $\lambda_2/\lambda_3 > \text{umbral}_2$}
+								\State keypoints.insert(p)
+							\EndIf
+						\EndFor
+						\State\Return Non-Max Suppression(keypoints, $r_2$)
+					\EndFunction
+				\end{algorithmic}
+				\caption{\label{alg:iss}Determinación de los keypoints mediante ISS}
+			\end{algorithm}
+
+
+			%A partir de acá ref Rusu FPFH
+			Se procedió entonces a cambiar el método de selección de keypoints,
+			eligiendo un análisis de persistencia multiescala\cite{Rusu:2009:FPF:1703435.1703733}:
+			\begin{enumerate}
+				\item Por cada punto de la nube se calcula su descriptor para distintos tamaños de vecindad (escala).
+				\item A partir de todos los descriptores en todas las escalas se estima una distribución gaussiana que los aproxime.
+				\item Los keypoints quedan definidos como aquellos puntos cuyos descriptores se encuentran alejados de la media.
+			\end{enumerate}
+			El algoritmo se encuentra implementado en PCL en la clase
+			\texttt{Multiscale\-Feature\-Persistence} permitiendo ajustar las
+			escalas a utilizar, el umbral para ser considerado saliente y el descriptor a utilizar.
+			Debido a que es necesario calcular un descriptor para cada punto, y
+			además en diferentes escalas, se eligió utilizar el método
+			\emph{Fast Point Feature Histograms} (FPFH) para su construcción,
+			el cual es lineal en la cantidad de puntos de la vecindad.
+			%Este método calcula un histograma de los ángulos entre las normales del punto y sus vecinos\cite{Rusu:2009:FPF:1703435.1703733}.
+
+			Los keypoints se encontraban ahora agrupados, formando líneas en zonas de cambio brusco de curvatura (figura~\ref{fig:multiscale_key}).
 
 
 			\begin{figure}
@@ -101,72 +118,38 @@
 					de la nube.}
 			\end{figure}
 
-			\begin{algorithm}
-				\begin{algorithmic}[1]
-					\Function{ISS Keypoints}{nube, $r_1$, $\mbox{umbral}_1$, $\mbox{umbral}_2$, $r_2$}
-						\State keypoints $\gets\emptyset$
-						\ForAll{$p \in \mbox{nube.puntos}$}
-							\State vecinos $\gets$ obtener puntos cercanos(nube, p, $r_1$)
-							\State m $\gets$ matriz de covarianza(vecinos)
-							\State $\lambda$ $gets$ eigenvalores(m)
-							\If{$\lambda_1/\lambda_2 > \mbox{umbral}_1$ and $\lambda_2/\lambda_3 > \mbox{umbral}_2$}
-								\State keypoints.insert(p)
-							\EndIf
-						\EndFor
-						\State\Return Non-Max Suppression(keypoints, $r_2$)
-					\EndFunction
-				\end{algorithmic}
-				\caption{\label{alg:iss}Determinación de los keypoints mediante ISS}
-			\end{algorithm}
-
-
-			%A partir de acá ref Rusu FPFH
-			Se procedió entonces a cambiar el método de selección de keypoints, eligiendo ahora un análisis de persistencia multiescala\cite{Rusu:2009:FPF:1703435.1703733}.
-			\begin{enumerate}
-				\item Por cada punto de la nube se calcula su descriptor para distintos tamaños de vecindad (escala).
-				\item A partir de todos los descriptores en todas las escalas se estima una distribución gaussiana que los aproxime.
-				\item Los keypoints quedan definidos como aquellos puntos cuyos descriptores se encuentran alejados de la media.
-			\end{enumerate}
-			El algoritmo se encuentra implementado en PCL en la clase
-			\texttt{Multiscale\-Feature\-Persistence} permitiendo ajustar las
-			escalas a utilizar, el umbral para ser considerado saliente y la
-			función descriptora a utilizar.
-
-			Debido a que es necesario calcular un descriptor para cada punto, y
-			además en diferentes escalas, se eligió utilizar el método
-			\emph{Fast Point Feature Histograms} (FPFH) para su construcción,
-			el cual es lineal en la cantidad de puntos de la vecindad.
-			Este método calcula un histograma de los ángulos entre las normales del punto y sus vecinos\cite{Rusu:2009:FPF:1703435.1703733}.
-
-			Los keypoints se encontraban ahora agrupados, formando líneas en zonas de cambio brusco de curvatura (figura~\ref{fig:multiscale_key}).
-
-
-
 
 
 		\subsubsection{Estimación de la transformación}
 			Se utilizó el algoritmo de \emph{sample consensus initial alignment
-			(SAC-IA)} para obtener la transformación de alineación. Este algoritmo
-			consiste en:
+			(SAC-IA)} para obtener una estimación inicial de la transformación de alineación.
+			Este algoritmo consiste en:
 			\begin{enumerate}
-				\item Seleccionar al azar \emph{m} puntos de la nube A
+				\item Seleccionar al azar \emph{m} puntos de la nube A.
 				\item Por cada punto, buscar aquellos con descriptores similares en B y seleccionar uno al azar.
-				\item Calcular la transformación definida por estos puntos y
-					sus correspondencias. Calcular, además, una medida del
-					error de transformación.
+				\item Calcular la transformación definida por estos puntos y sus correspondencias.
+					Es decir, calcular la transformación que minimice
+					\[ \sum |b_j - T(a_j)| \]
+					para los puntos muestreados.
+				\item Calcular una medida del error de transformación.
+					Es decir, calcular el error
+					\[ \sum |b_j - T(a_j)| \]
+					para todos los puntos de la nube.
 				\item Repetir varias veces y devolver aquella transformación que produjo el menor error.\cite{Rusu:2009:FPF:1703435.1703733}
 			\end{enumerate}
 
 
 	%El que tengo ahora
 	\subsection{Alineación mediante búsqueda de clúster}
-		En este caso no se seleccionaron keypoints, simplemente se realizó un submuestreo de
-		los puntos de la nube para reducir el costo computacional.
+		En este método alternativo de alineación no se se seleccionan keypoints,
+		simplemente se realiza un submuestreo uniforme de los puntos de la nube
+		para reducir el costo computacional.
 		Además del descriptor, en cada punto se estableció un marco de referencia
-		que nos permite estimar
-		una transformación de alineación considerando solamente dos puntos\cite{ISS}.
+		que nos permite estimar una transformación de alineación
+		considerando solamente los dos puntos que conforman una correspondencia\cite{ISS}.
+		Entonces se procede a un proceso de votación para determinar la alineación final.
 
-		Este marco de referencia se calcula mediante la matriz de covarianza de la vecindad del punto:
+		Para determinar el marco de referencia se utiliza la matriz de covarianza de la vecindad del punto:
 		\begin{itemize}
 			\item Se computan los eigenvalores ${\lambda_1, \lambda_2, \lambda_3}$ en orden decreciente y sus eigenvectores correspondientes
 				$e^{1}, e^{2}, e^{3}$.
@@ -178,107 +161,41 @@
 
 		\begin{figure}
 			\Imagen{diagram/marco_referencia_iss}
-			\caption{\label{fig:marco_referencia_iss}Marcos de referencia ISS. Se observa una ambigüedad equivalente a un giro de $180^{\circ}$ sobre el eje $e^{3}$.}
+			\caption{\label{fig:marco_referencia_iss}Marcos de referencia. Se observa una ambigüedad equivalente a un giro de $180^{\circ}$ sobre el eje $e^{3}$ \RefImagen{ISS}.}
 		\end{figure}
 
-		Para establecer las correspondencias se utilizó el descriptor FPFH
-		comparando los histogramas mediante la distancia $\chi^2$.
+		Para establecer las correspondencias se eligió nuevamente el descriptor FPFH,
+		comparando los histogramas entre cada par de puntos mediante la distancia $\chi^2$:
 		\[ \chi^2 = \sum_{j=1}^{N} \frac{\left(a_j - b_j\right)^2}{a_j + b_j} \]
-		Luego se
-		procedió a eliminar correspondencias erróneas utilizando los marcos de
-		referencia y las suposiciones de ubicación de la cámara en la obtención
-		de las capturas.  Por esto, se descartan aquellas correspondencias que
+		Para identificar y eliminar las correspondencias erróneas se utilizan
+		los marcos de referencia y las suposiciones de ubicación de la cámara
+		en la obtención de las capturas.  Es decir, se descartan aquellas correspondencias que
 		requieren un movimiento en $y$ excesivo o una rotación sobre un eje no
 		vertical. 
 
 		Cada correspondencia entonces define un ángulo de giro $\theta$ sobre
-		el eje $y$ y una translación en el plano $xz$.  Se observará entonces
+		el eje $y$ y una translación en el plano $xz$.  Se observa entonces
 		una agrupación de los parámetros de estas transformaciones y, mediante el
-		algoritmo de k-means, se buscará el centroide del clúster más grande (figura~\ref{fig:cluster}).
+		algoritmo de k-means, se busca el centroide del clúster más grande (figura~\ref{fig:cluster}).
 		\begin{figure}
 			\resizebox{.9\linewidth}{!}{\input{diagram/cluster_tikz}}
 			\caption{\label{fig:cluster}Translaciones estimadas entre cada par
-			de puntos de las correspondencias.\TODO{histograma de ángulos (cube de $2^{\circ}$}}
+			de puntos de las correspondencias.\TODO{unir con histograma de ángulos (cubeta de $2^{\circ}$}}
 		\end{figure}
 
-		\section{Resultados}
-		%\TODO{revisar}
-
-			Se realizaron pruebas preliminares sobre los objetos \texttt{happy} y \texttt{bunny}.
-			Las capturas de \texttt{happy} se realizaron a intervalos de ángulos equiespaciados (cercanos a $24^{\circ}$) y
-			presentan zonas suaves en la base, barriga y espalda.
-			En cambio los ángulos en \texttt{bunny} son más variados y espaciados, yendo desde $35^{\circ}$ a $90^{\circ}$,
-			y se observa una superficie más irregular por todo el cuerpo (figura~\ref{fig:stanford_models}).%\TODO{Sacar foto a los modelos}
-
-
-			En el caso de \texttt{bunny} se presentan saltos cercanos a $90^{\circ}$ al realizar las alineaciones
-			contra la captura \texttt{bun180}. Si bien este salto supera las restricciones impuestas,
-			en ningún caso se produjo una diferencia mayor a $5^{\circ}$ respecto al \emph{ground truth} (figura~\ref{fig:clust_bunny}).
-
-			Para \texttt{happy} se obtuvieron resultados similares a pesar de que en este
-			caso los ángulos eran más cercanos (aproximadamente $24^{\circ}$).  Las
-			diferencias respecto al \emph{ground truth} no superaban los $5^{\circ}$,
-			teniendo un error promedio de $2^{\circ}$ (figura~\ref{fig:clust_happy}).
-
-			De esta forma, se logró acercar las capturas lo suficiente como
-			para intentar alinearlas por ICP.
-
-		\subsubsection{Resultados} %ver de eliminar
-			Mediante este método, se obtuvieron buenos resultados en la mayoría de las
-			capturas de \texttt{happy}
-			donde los ángulos eran cercanos a $25^{\circ}$ (figura~\ref{fig:sac_angles}).
-
-			\begin{figure}
-				\TODO{unir con el de clustering}
-				\Imagen{foo}
-				\caption{\label{fig:sac_angles}\TODO{Diferencias entre la rotación estimada mediante \emph{sample consensus} y el \emph{ground truth} para el objeto \texttt{happy}}}
-			\end{figure}
-			%Sin embargo, algunas alineaciones presentaban problemas de deslizamiento. \TODO{mostrar alguno}
-			%era ISS donde se veía eso, ya no lo tengo
-
-			En el caso de \texttt{bunny}, cuyos ángulos eran cercanos a $45^{\circ}$,
-			se obtuvo una buena alineación en el caso de las capturas 315--000 y 000--045,
-			sin embargo, para los otros casos las correspondencias fueron completamente erróneas (figura~\ref{fig:align_sac}).
-
-
-		\begin{figure}
-			%\Imagen{img/cluster_bunny}
-			\resizebox{.9\linewidth}{!}{\input{diagram/bun_ang_tikz}}
-			\caption{\label{fig:clust_bunny}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{bunny}.}
-		\end{figure}
-
-		\begin{figure}
-			%\Imagen{img/cluster_happy}
-			\resizebox{.9\linewidth}{!}{\input{diagram/happy_ang_tikz}}
-			\caption{\label{fig:clust_happy}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{happy}.}
-		\end{figure}
-
-		\begin{figure}
-			\centering
-			\begin{subfigure}{.8\linewidth}
-				\Imagen{img/bun_sac_270_315}
-				\caption{\label{fig:align_sac}Ejemplo de fallo del algoritmo de \emph{sample consensus} producto de malas correspondencias.}
-			\end{subfigure}
-			\begin{subfigure}{.8\linewidth}
-				\Imagen{img/bun_clust_270_315}
-				\caption{\label{fig:clust_bun_good}Alineación exitosa mediante el uso de marcos de referencia ISS.}
-			\end{subfigure}
-			\caption{Alineación entre las capturas \texttt{bun270} (verde) y \texttt{bun315} (rojo).}
-		\end{figure}
 
 
 	\subsection{Refinamiento}
-	Para ajustar las alineaciones iniciales se procedió a realizar una segunda alineación utilizando
+	Para ajustar las alineaciones iniciales se realiza una segunda alineación utilizando
 	el algoritmo de ICP provisto por la biblioteca PCL.
-	Se consideraron únicamente las áreas solapadas, restringiendo el espacio de
-	búsqueda de las correspondencias, minimizando la distancia entre los puntos
+	Se consideran únicamente las áreas solapadas, restringiendo el espacio de
+	búsqueda de las correspondencias, y se minimiza la distancia entre los puntos
 	de la nube a transformar hacia los planos definidos por las normales en la nube objetivo.
 
 	%@@@
-	\clearpage
-	Luego, para reducir el error propagado por cada alineación, se propuso una
-	corrección de bucle
-	ajustando la última captura para que correspondiese con la primera,
+	%\clearpage
+	Luego, para reducir el error propagado por cada alineación, se realiza una
+	corrección de bucle ajustando la última captura para que correspondiese con la primera,
 	y agregando esta transformación a las otras alineaciones ponderándola de forma
 	proporcional a su posición en el bucle (algoritmo~\ref{alg:correccion_bucle}).
 
