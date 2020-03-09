@@ -66,6 +66,29 @@
 	\caption{Alineación entre las capturas \texttt{bun270} (verde) y \texttt{bun315} (rojo).}
 \end{figure}
 
+\section{Pruebas parciales del módulo de rellenado de huecos}
+\subsection{Advancing front}
+		%mover a resultados
+		Con este método se pueden rellenar agujeros pequeños, obteniéndose una malla regular (figura~\ref{fig:fill_good}).
+		Sin embargo, debido a la localidad con la que se generan los nuevos
+		puntos, el frente puede diverger o pretender unirse a puntos que no
+		forman parte del contorno del hueco, resultando una malla mal formada,
+		con aristas que corresponden a más de dos caras (figura~\ref{fig:fill_bad}).
+		Para evitar la divergencia es necesario definir una superficie de
+		soporte considerando todo el contorno del hueco, de forma de asegurar
+		que los nuevos puntos no excedan los límites del hueco.
+
+	\begin{figure}
+		\Imagen{img/fill_good}
+		\caption{\label{fig:fill_good}Relleno de un hueco pequeño mediante \emph{advancing front}.}
+	\end{figure}
+
+	\begin{figure}
+		\Imagen{img/fill_bad}
+		\caption{\label{fig:fill_bad}Fallo en el algoritmo de \emph{advancing front}. Se intentó completar un triángulo con un punto que no pertenecía al borde.}
+		\TODO{cambiar gráfico}
+	\end{figure}
+
 
 	\section{Introducción}
 	En esta etapa se integraron los módulos de registración, fusión y rellenado de huecos,

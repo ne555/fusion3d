@@ -9,40 +9,36 @@
 
 	Se plantearon dos métodos:
 	\begin{itemize}
-		\item \emph{Advancing front}, que trabaja localmente con los puntos que forman el contorno de cada hueco.
+		\item Un algoritmo de \emph{advancing front}, que trabaja localmente con los puntos que forman el contorno de cada hueco.
 		\item Reconstrucción de Poisson, que trabaja con todos los puntos de la nube a la vez. 
 	\end{itemize}
 
 
 	\subsection{Advancing front}
-		En este método, cada hueco se rellenará de forma independiente a los otros,
+		Se implementó una variante del método propuesto por \cite{advance_front},
+		la cual se halla descripta en el algoritmo~\ref{alg:adv_front}.
+		Cada hueco se rellenará de forma independiente a los otros,
 		utilizando únicamente los puntos que conforman cada contorno para estimar
 		las posiciones de los nuevos puntos.
-		Tomando en cuenta esas consideraciones, se diseñó el diagrama de clases presentado en la figura~\ref{fig:filling_class},
-		cuyas clases principales se describen a continuación:
-		\TODO{FIX}
 
-		Es posible que dentro de un hueco se observen puntos que no lograron
-		conectarse al resto de la malla.  Si bien estas islas nos brindan
-		información de la superficie, su presencia dificulta la identificación
-		del contorno de cada hueco.  Por esta razón, se eliminaron todas las
-		islas al trabajar únicamente con la componente conectada que contenía
+		Es posible que dentro de un hueco se observen islas, es decir,
+		elementos que no lograron conectarse al resto de la malla.
+		Si bien estas islas nos brindan información de la superficie,
+		su presencia dificulta la identificación del contorno de cada hueco.
+		Por esta razón, se eliminan todas las islas,
+		quedándose únicamente con la componente conectada que contiene
 		la mayor cantidad de puntos.
 		De esta forma, una arista que defina sólo un triángulo formará parte de un hueco,
 		y podrá obtenerse el contorno del mismo recorriendo el grafo de conectividades. 
 
-		\TODO{gráficos}
-		El rellenado se implementó mediante una variante del método de
-		\emph{advancing front}\cite{advance_front}, descripta en el
-		algoritmo~\ref{alg:adv_front}.
 
 		Los nuevos puntos insertados son elegidos de forma que los triángulos resultantes sean
 		aproximadamente equiláteros, como se detalla en el algoritmo~\ref{alg:new_point}.
 		Estos puntos son luego proyectados en un plano de soporte definido
 		mediante las normales de los puntos del ángulo candidato.
 
-		En caso de que el nuevo punto cayese cerca de otro ya existente, se utilizará aquel.
-		Esto implica dividir en dos el hueco, y cada nueva porción se rellenará de forma independiente.
+		En caso de que el nuevo punto cayese cerca de otro ya existente, se utiliza aquel.
+		Esto implica dividir en dos el hueco, y rellenar cada nueva porción de forma independiente.
 		\TODO{gráfico}
 
 		\begin{algorithm}
@@ -94,25 +90,6 @@
 			\caption{\label{alg:new_point}Creación del nuevo punto}
 		\end{algorithm}
 
-		Con este método se pueden rellenar agujeros pequeños, obteniéndose una malla bastante regular (figura~\ref{fig:fill_good}).
-		Sin embargo, debido a la localidad con la que se generan los nuevos
-		puntos, el frente puede diverger o pretender unirse a puntos que no
-		forman parte del contorno del hueco, resultando una malla mal formada,
-		con aristas que corresponden a más de dos caras (figura~\ref{fig:fill_bad}).
-		Para evitar la divergencia es necesario definir una superficie de
-		soporte considerando todo el contorno del hueco, de forma de asegurar
-		que los nuevos puntos no excedan los límites del hueco.
-
-	\begin{figure}
-		\Imagen{img/fill_good}
-		\caption{\label{fig:fill_good}Relleno de un hueco pequeño mediante \emph{advancing front}.}
-	\end{figure}
-
-	\begin{figure}
-		\Imagen{img/fill_bad}
-		\caption{\label{fig:fill_bad}Fallo en el algoritmo de \emph{advancing front}. Se intentó completar un triángulo con un punto que no pertenecía al borde.}
-		\TODO{cambiar gráfico}
-	\end{figure}
 
 	\subsection{Reconstrucción de Poisson}
 	\subsubsection{Implementación}
@@ -127,10 +104,12 @@
 	cuadrática con la profundidad del octree.
 	%la cual se extrae mediante el método de \emph{Marching Cubes}. \TODO{referencia a marching cubes}
 
-	Debido a que no se cuentan con puntos en la base de apoyo de los objetos, el uso de condiciones de borde Neumann
-	producirá un estiramiento hacia abajo de la superficie resultante y la presencia de
+	Debido a que no se cuentan con puntos en la base de apoyo de los objetos,
+	el uso de condiciones de borde Neumann
+	produce un estiramiento hacia abajo de la superficie resultante y la presencia de
 	un hueco plano en la base (figura~\ref{fig:fill_poisson}.
-	Si bien este hueco podrá ser luego rellenado mediante el algoritmo de \emph{advancing front}, no puede solucionarse el estiramiento.
+	Si bien este hueco podrá ser luego rellenado mediante el algoritmo de \emph{advancing front},
+	no puede solucionarse el estiramiento.
 
 
 

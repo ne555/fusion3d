@@ -1,10 +1,10 @@
 \section{Módulo de fusión}
 	%¿citas?
 	%en el de loop correction (surfel)
-	Cada nueva vista agrega información del objeto en zonas que no eran antes visibles
+	Cada nueva captura agrega información del objeto en zonas que no eran antes visibles
 	y además confirma o refuta la información ya presente en las zonas comunes a las otras vistas.
 	El módulo de fusión se encarga de combinar esta información para obtener
-	finalmente una malla que represente la porción observada del objeto.
+	finalmente una malla que represente a la totalidad del objeto.
 
 	%diagramas de clase
 
@@ -61,15 +61,10 @@
 	Finalmente, se procede a la obtención de una triangulación de los surfels.
 	Para esto se empleó el algoritmo de \emph{Greedy Projection Triangulation} que provee PCL,
 	el cual realiza una proyección de la vecindad de un punto en el plano definido por su normal
-	y procede a conectar los puntos según estos criterios:
-	\begin{itemize}
-		\item longitud máxima de arista del triángulo,
-		\item ángulo mínimo del triángulo,
-		\item ángulo máximo del triángulo,
-		\item ángulo máximo entre normales de los puntos.
-	\end{itemize}
+	y procede a conectar los puntos de modo que los triángulos resultantes
+	respeten umbrales de longitud y ángulos definidos por el usuario.
 
 	\begin{figure}
 		\Imagen{img/bun_reconst}
-		\caption{\label{fig:surface}Superficie reconstruída.\TODO{marcar los huecos}}
+		\caption{\label{fig:surface}Superficie reconstruida.\TODO{marcar los huecos}}
 	\end{figure}
