@@ -1,0 +1,114 @@
+\section{Casos de uso}
+Para la identificación de requerimientos se utilizó la técnica de casos de usos,
+cuyos resultados se reproducen a continuación.
+
+\begin{figure}[h]
+	\Imagen{uml/usecase}
+	\caption{\label{fig:casos_de_uso}Diagrama de casos de uso.}
+\end{figure}
+
+\begin{CasoDeUso}{Preprocesar nube}
+	\CUField{Actor}{Usuario}
+	\CUNormal
+	\begin{enumerate}
+		\item El usuario introduce el nombre de archivo de la nube de puntos.
+		\item El sistema lee la malla del disco.
+		\item El sistema realiza una reducción de ruidos y eliminación de outliers.
+		\item El sistema calcula normales y vecindades de los puntos de la nube.
+		\item El sistema devuelve una nube de puntos con sus normales y vecindades.
+	\end{enumerate}
+\end{CasoDeUso}
+
+\begin{CasoDeUso}{Alinear dos nubes de puntos}
+	\CUField{Actor}{Usuario}
+	\CUField{Descripción}{Se calcula la transformación que posiciona la nube \emph{fuente}
+	en el sistema de referencia de la nube \emph{objetivo}.}
+	\CUNormal
+	\begin{enumerate}
+		\item El usuario introduce las nubes preprocesadas \emph{fuente} y la nube \emph{objetivo}. \IncCU{Preprocesar nube}
+		\item El usuario selecciona los parámetros del algoritmo.
+		\item El sistema selecciona puntos salientes.
+		\item El sistema calcula descriptores y sus correspondencias.
+		\item El sistema elimina correspondencias espurias.
+		\item El sistema estima una transformación a partir de las correspondencias.
+		\item El sistema devuelve la transformación de alineación.
+	\end{enumerate}
+\end{CasoDeUso}
+
+\begin{CasoDeUso}{Obtener métrica de alineación}
+	\CUField{Actor}{Usuario}
+	\CUField{Descripción}{Se calculan medidas sobre las nubes alineadas para
+	reflejar la calidad de la alineación.}
+	\CUNormal
+	\begin{enumerate}
+		\item El usuario introduce las nubes preprocesadas \emph{fuente} y la nube \emph{objetivo}. \IncCU{Preprocesar nube}
+		\item El usuario introduce una \emph{transformación}.
+		\item El sistema aplica la \emph{transformación} a la nube \emph{fuente}.
+		\item El sistema determina los puntos que corresponden al área común entre las nubes (área solapada).
+		\item El sistema devuelve medidas sobre el área solapada:
+			cantidad de puntos en relación a las nubes originales,
+			distancia punto a punto entre las nubes.
+	\end{enumerate}
+\end{CasoDeUso}
+
+
+\begin{CasoDeUso}{Corregir error de bucle}
+	\CUField{Actor}{Usuario}
+	\CUField{Descripción}{Se ajustan las transformaciones de las nubes para lograr que el bucle cierre correctamente.}
+	\CUField{Requisitos}{}
+	\begin{itemize}
+		\item Las nubes describen una vuelta completa.
+		\item Las nubes se encuentran alineadas.
+	\end{itemize}
+	\CUNormal
+	\begin{enumerate}
+		\item El usuario introduce una lista de nubes preprocesadas. \IncCU{Preprocesar nube}
+		\item El sistema calcula la transformación de la última nube para lograr que la superficie cierre. \UseCU{Alinear dos nubes de puntos}
+		\item El sistema propaga el ajuste hacia las otras nubes.
+		\item El sistema devuelve una lista de las transformaciones.
+	\end{enumerate}
+\end{CasoDeUso}
+
+%\CasoUso{Rechazar malla}
+%	Actor: {Usuario}
+
+\begin{CasoDeUso}{Extraer superficie}
+	\CUField{Actor}{Usuario}
+	\CUField{Descripción}{Se obtendrá una malla poligonal que represente una colección de nubes de puntos.}
+	\CUField{Requisito}{Las nubes se encuentran alineadas.}
+	\CUNormal
+	\begin{enumerate}
+		\item El usuario introduce una lista de nubes.
+		\item El sistema une todas las nubes en una sola.
+		\item El sistema filtra el ruido y elimina los outliers de la nube.
+		\item El sistema calcula las vecindades de los puntos y realiza una triangulación.
+		\item El sistema calcula las normales para cada triángulo.
+		\item El sistema devuelve la superficie representativa.
+	\end{enumerate}
+\end{CasoDeUso}
+
+\begin{CasoDeUso}{Identificar huecos}
+	\CUField{Actor}{Usuario}
+	\CUField{Descripción}{Se determinarán las zonas donde existen huecos.}
+	\CUNormal
+	\begin{enumerate}
+		\item El usuario introduce una malla poligonal.
+		\item El sistema identifica los vértices que forman parte de un hueco.  %[PANCHO] Aca los identifica el sistema, no deberia el usuario tener que elegir huecos para rellenar luego.
+		\item El sistema calcula los contornos de los huecos.
+		\item El sistema devuelve una lista con cada hueco y los vértices de su contorno.
+	\end{enumerate}
+\end{CasoDeUso}
+
+\begin{CasoDeUso}{Rellenar huecos}
+	\CUField{Actor}{Usuario}
+	\CUField{Descripción}{Se estimarán las posiciones de puntos dentro de las zonas
+	donde existen huecos.}
+	\CUNormal
+	\begin{enumerate}
+		\item El usuario introduce una malla poligonal.
+		\item El usuario elige un hueco a rellenar. \IncCU{Identificar huecos} %[PANCHO] Usuario identifica hueco?
+		\item El sistema agrega puntos en el interior del hueco.
+		\item El sistema integra los nuevos puntos a la malla.
+		\item El sistema devuelve la malla resultante.
+	\end{enumerate}
+\end{CasoDeUso}

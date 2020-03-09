@@ -16,7 +16,15 @@
 \newcommand{\IncCU}[1]{{\bfseries Include (#1)}}
 \newcommand{\UseCU}[1]{{\bfseries Use (#1)}}
 \newcommand{\CUField}[2]{{\bfseries#1:} #2\par}
-\newcommand{\CUNormal}{\smallskip{\bfseries Curso Normal:}\par}
+\newcommand{\CUNormal}{{\bfseries Curso Normal:}\par}
+
+\newenvironment{CasoDeUso}[1]{%
+	\bigskip\begin{minipage}{.9\linewidth}
+		{\bfseries Caso de uso: #1}\par
+}
+{%
+	\end{minipage}
+}
 
 
 \newcommand{\Requerimiento}[2]{%
@@ -68,24 +76,13 @@
 %\TODO{revisar tiempos verbales, ahora en pasado}
 	\maketitle
 	\include{resumen}
-	\chapter{Resumen}
-	\Nota{
-		sensores de profundidad y técnicas para determinar la profundidad.
-
-		Hablar de prime-sense, kinect fusion, que requieren que el usuario
-		tome las capturas con mucho cuidado
-
-		Nosotros hacemos pocas capturas espaciadas, esa es la gracia
-	%TODO: motivación continuar lo de pancho
-	%explayarse en la forma de adquisición
-	%vistas parciales
-	}
-		%\noindent{\bfseries Palabras clave:} fusión de mallas, imágenes de profundidad, impresión 3D, reconstrucción 3D.
 
 	\tableofcontents
 \mainmatter
 	\include{introducción}
-	\include{materiales_y_métodos}
+	\include{reconstrucción}
+	\include{herramientas}
+
 	\include{diseño}
 	\include{desarrollo}
 	\include{resultados}
