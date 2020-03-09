@@ -38,7 +38,7 @@
 	class Malla{}
 	class DCEL{}
 
-	class "Relleno de huecos"{
+	class "Rellenado de huecos"{
 		rellenar()
 		dividir()
 		unir()
@@ -56,7 +56,7 @@
 	Malla *-> "1" DCEL
 	Nube "1" <-* Malla
 
-	"Relleno de huecos" --> "1" Malla
+	"Rellenado de huecos" --> "1" Malla
 	'Malla "1" - "*" Borde
 	DCEL -- "*" Borde
 @enduml

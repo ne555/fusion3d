@@ -66,32 +66,6 @@
 		\caption{\label{fig:flow_registracion}Diagrama de flujo de la registración.}
 	\end{figure}
 
-	\subsection{Diagrama de clases}
-		Para implementar los distintos algoritmos de alineación inicial se utilizó como base
-		el diseño de clases presentado en la figura~\ref{fig:align_class}.
-		A continuación se describirán las clases principales y sus interacciones.
-		\begin{figure}
-			\Imagen{uml/align.pdf}
-			\caption{\label{fig:align_class}Diagrama de clases del módulo de registración.}
-		\end{figure}
-
-		\begin{itemize}
-			\item {\bfseries Registración:} se encarga de obtener la \emph{Transformación} que
-				permita alinear dos \emph{Nubes} entre sí.  Para esto establece
-				correspondencias entre los \emph{Anclaje}.
-			\item {\bfseries Anclaje:} a partir de puntos salientes de \emph{Nube} calcula
-				\emph{descriptores}  que permitan asociarlos y un
-				\emph{marco de referencia} para obtener una estimación de la
-				\emph{Transformación}.
-			\item {\bfseries Nube:} representa una vista del objeto que se desea alinear.
-				Es una colección de \emph{Puntos} sin organización. Clase
-				provista por PCL.
-			\item {\bfseries Punto:} contiene las coordenadas $xyz$ obtenidas por el
-				dispositivo de captura. El algoritmo estimará las normales.
-			\item {\bfseries Transformación:} representa una transformación rígida
-				(rotación y translación) que será aplicada a una \emph{Nube}
-				para alinearla.
-		\end{itemize}
 
 
 	\subsection{Alineación mediante \emph{sample consensus}}

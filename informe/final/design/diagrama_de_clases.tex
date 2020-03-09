@@ -21,3 +21,39 @@ A continuación se presentará el diagrama de clases del sistema y una breve des
 	\Imagen{uml/diagrama_de_clases}
 	\caption{\label{fig:diagrama_de_clases}Diagrama de clases del sistema.}
 \end{figure}
+
+\begin{itemize}
+	\item {\bfseries Nube:}
+		Representa una captura del objeto desde una posición de la cámara en particular.
+		Es una colección de \emph{Puntos} sin organización. Clase provista por PCL.
+	\item {\bfseries Punto:} contiene las coordenadas $\{x, y, z\}$ obtenidas por el
+		dispositivo de captura. Sus normales se estimarán durante el preproceso.
+
+		%alineación
+	\item {\bfseries Registración:} se encarga de obtener la \emph{Transformación} que
+		permita alinear dos \emph{Nubes} entre sí.  Para esto establece
+		correspondencias entre los \emph{Anclajes}.
+	\item {\bfseries Anclaje:} a partir de puntos salientes de \emph{Nube} calcula
+		\emph{descriptores}  que permitan asociarlos y un
+		\emph{marco de referencia} para obtener una estimación de la
+		\emph{Transformación}.
+	\item {\bfseries Transformación:} representa una transformación de rotación y translación
+		que será aplicada a una \emph{Nube} para alinearla.
+
+		%fusión
+	\item {\bfseries Fusión:} une las \emph{Nubes} ya alineadas para
+		obtener una superficie global que represente al objeto.
+		Esto supone corregir la posición de los puntos, descartar
+		aquellos considerados como ruido y triangular la superficie.
+	\item {\bfseries Malla:} triangulación de la \emph{Nube}
+		representada por un grafo de conectividades (\emph{DCEL}).
+	\item {\bfseries DCEL:} relaciona las caras, aristas y vértices de una superficie mediante
+		una estructura de medias aritas.
+
+		%rellenado de huecos
+	\item {\bfseries Rellenado de huecos:} La clase se encarga de estimar
+		nuevos puntos en zonas donde se carece de información (huecos)
+		y triangularlos para que la \emph{Malla} sea cerrada.
+	\item {\bfseries Borde:} Es una colección de puntos ordenados
+		que representa un borde de un hueco en la \emph{Malla}.
+\end{itemize}
