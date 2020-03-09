@@ -1,0 +1,23 @@
+\section{Diagrama de clases}
+El sistema se dividió en cuatro módulos principales:
+\begin{enumerate}
+	\item Preproceso:
+		donde se realiza una reducción de ruido a las nubes de entrada
+		antes de ser procesadas por las siguientes etapas.
+	\item Registración:
+		donde se obtienen las transformaciones de rotación y translación
+		que lleven a cada captura a un sistema global
+		de forma que las zonas comunes encajen perfectamente.
+	\item Fusión:
+		donde se combina la información presente en cada captura
+		para obtener finalmente una malla que represente la porción observada del objeto.
+	\item Rellenado de huecos:
+		donde se estima la superficie del objeto en las zonas sin información.
+\end{enumerate}
+
+A continuación se presentará el diagrama de clases del sistema y una breve descripción de las clases más importantes.
+
+\begin{figure}[h]
+	\Imagen{uml/diagrama_de_clases}
+	\caption{\label{fig:diagrama_de_clases}Diagrama de clases del sistema.}
+\end{figure}
