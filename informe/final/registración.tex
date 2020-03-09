@@ -56,19 +56,10 @@
 
 	Utilizando la primera captura para definir el sistema de coordenadas
 	global, cada nueva vista se alineará con la anterior hasta completar una
-	vuelta sobre el objeto.  Sin embargo, debido a que la registración se
-	realiza de a pares sucesivos, los errores producidos se propagarán con cada
-	captura incorporada, siendo especialmente apreciable al completar una
-	vuelta alrededor del objeto (figura~\ref{fig:error_bucle}).
+	vuelta sobre el objeto.
 	Por esta razón, se incorporará un algoritmo de corrección de bucle al proceso de registración
 	(figura~\ref{fig:flow_registracion}).
 
-	\begin{figure}
-		\Imagen{diagram/error_bucle_inhand}
-		\caption{\label{fig:error_bucle}Visualización del error de bucle. Errores de tan sólo $1^{\circ}$
-		en cada registración producen una discrepancia considerable
-		donde el modelo debería cerrarse (círculo rojo).}
-	\end{figure}
 
 	\begin{figure}
 		\Imagen{uml/registration_flow.pdf}
