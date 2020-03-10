@@ -1,0 +1,8 @@
+@startuml
+
+(*) -> "estimar resolución"
+-> "Second Activity"
+--> "Third Activity"
+-left-> (*)
+
+@enduml

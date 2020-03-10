@@ -1,0 +1,38 @@
+@startuml
+	skinparam monochrome true
+	skinparam shadowing false
+	'skinparam defaultFontName Tex Gyre Pagella
+	'skinparam dpi 300
+	hide circle
+	hide empty members
+
+	class Punto{
+		posición
+		normal
+	}
+
+	class Nube{}
+
+	class Registración{
+		establecer correspondencias()
+		filtrar correspondencias()
+		calcular transformación()
+	}
+
+	class Transformación{}
+
+	class Anclaje{
+		descriptor
+		marco de referencia
+
+		calcular transformación(Anclaje)
+		distancia(Anclaje)
+	}
+
+	Nube *--> "*" Punto
+	Nube -> "1" Transformación
+	Anclaje "*" <- Registración
+	Registración --> "1" Transformación
+	Anclaje --> "1" Nube
+
+@enduml

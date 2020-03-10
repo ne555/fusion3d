@@ -1,0 +1,16 @@
+@startuml
+	skinparam monochrome true
+	skinparam shadowing false
+	skinparam defaultFontName "Latin Modern Roman"
+	'skinparam dpi 300
+	hide circle
+	hide empty members
+
+	class Capturas{}
+
+	Capturas -> Preproceso
+	Preproceso -> Registración
+	Registración -> Fusión
+	Fusión -> "Rellenado\nde huecos"
+	"Rellenado\nde huecos" -> "Superficie\ncerrada"
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+	skinparam monochrome true
+	skinparam shadowing false
+	hide circle
+	hide empty members
+
+	class Nube{}
+	class Transformación{}
+
+	class Fusión{
+		unir()
+		descartar()
+		triangular()
+	}
+
+	class Malla{}
+	class DCEL{}
+
+	Nube --> "1" Transformación
+	Nube "*" <-o Fusión
+	Malla "1" <-- Fusión
+	Malla *-> "1" DCEL
+	Malla *--> "1" Nube
+
+@enduml

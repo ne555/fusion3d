@@ -1,0 +1,28 @@
+@startuml
+	skinparam monochrome true
+	skinparam shadowing false
+
+	left to right direction
+
+	actor Usuario as user
+	rectangle "Reconstrucción 3D" {
+		(Preprocesar nube) as (preprocess)
+		(Alinear dos nubes\nde puntos) as (align)
+		(Corregir error\nde bucle) as (loop)
+		(Obtener métrica\nde alineación) as (metric)
+		(Extraer superficie) as (surface)
+		(Identificar hueco) as (hole)
+		(Rellenar huecos) as (filling)
+	}
+	user -- align
+	user -- loop
+	user -- surface
+	user -- metric
+	user -- filling
+	(align) ..> (preprocess) : include
+	(loop) ..> (preprocess) : include
+	(metric) ..> (preprocess) : include
+
+	(filling) ..> (hole) : include
+	(loop) .> (align) : uses
+@enduml

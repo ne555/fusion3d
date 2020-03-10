@@ -1,0 +1,133 @@
+\section{Rellenado de huecos}
+Los huecos son regiones que ninguna de las vistas logró capturar,
+por lo que se carece de información de la superficie en esas zonas.
+La existencia de huecos elimina la propiedad de \emph{watertight} de la malla,
+la cual es necesaria para su impresión 3D,
+por lo tanto, se deben estimar los valores de la superficie en los huecos.
+
+%Idealmente, los algoritmos de rellenado de huecos deberían poseer las siguientes propiedades:
+%\begin{itemize}
+%	\item Robustez: se deben rellenar huecos de formas arbitrarias.
+%	\item Eficiencia: se deben rellenar huecos grandes en tiempos razonables.
+%	\item Precisión: la superficie reconstruida debe estimar correctamente los puntos faltantes.
+%\end{itemize}
+%\Nota{¿cómo mido la precisión?}
+
+Las características de los huecos dependerán no sólo de la geometría del objeto y las
+posiciones desde donde se realizaron las captura, sino también del método usado
+para integrar las capturas.
+Por ejemplo, el método de fusión volumétrica nos presenta una superficie sin huecos.
+
+
+A continuación se presentarán métodos para el rellenado los huecos de forma de conseguir una malla cerrada.
+
+\subsection{Identificación de los huecos}
+Antes de poder rellenar cada hueco es necesario identificar los vértices y aristas que los delimitan.
+Este proceso se facilita al utilizar una representación
+de lista de medias aristas (DCEL) para describir la malla.
+
+En esta representación, se almacena cada cara, arista y vértice de la malla.
+Cada arista se divide en dos medias aristas gemelas, que comparten los mismos vértices
+pero poseen orientaciones opuestas.
+Cada media arista posee punteros \emph{siguiente} y \emph{anterior},
+formando la triada que delimita una cara (aquella que queda a la izquierda al recorrerla).
+
+Si una media arista no delimita una cara, entonces forma parte del borde de la malla.
+Siguiendo los punteros, se puede recorrer este borde, obteniéndose su contorno.
+Como la malla que reconstruye el objeto debe ser cerrada, no puede presentar aristas de borde,
+por lo cual estos bordes nos identifican los huecos.
+Debe hacerse la salvedad de que lo anterior es cierto únicamente cuando la malla conste
+de una sola componente conectada.
+En caso de que la malla conste de varias porciones desconectadas,
+se dificulta la identificación del borde del hueco al estar formado por el contorno de diversas mallas.
+
+
+
+\subsection{Advancing front}
+Los algoritmos de advancing front construyen una malla del dominio a partir de su contorno.
+El proceso puede ser resumido de la siguiente manera:
+\begin{enumerate}
+	\item Inicialización del frente.
+	\item Análisis del frente para definir un candidato.
+	\item Creación de nuevos elementos a partir del candidato.
+	\item Actualización del frente.
+	\item Repetición de los pasos 2--4 hasta vaciar el frente.
+\end{enumerate}
+
+Podemos utilizar estas técnicas para el rellenado de huecos
+inicializando el frente a partir del contorno de cada hueco
+y rellenando hacia su interior.
+Los diversos métodos se diferenciarán según la elección del próximo candidato
+y la determinación de las posiciones de los nuevos puntos.
+En este último punto debe considerarse que el nuevo punto debe caer dentro del dominio y
+los nuevos triángulos no deben ser extremadamente aplanados.
+
+Los detalles de implementación serán discutidos en un capítulo posterior.
+
+\subsection{Reconstrucción de Poisson}
+En este método el rellenado de huecos se aborda como un problema de
+reconstrucción de la superficie a partir de puntos orientados.  Por esta
+razón, se consideran todos los puntos a la vez sin consideraciones
+especiales de pertenencia o no a los contornos de los huecos.
+Además, se convierte el problema de la reconstrucción a la resolución de
+una ecuación de Poisson.
+
+En esta ecuación de Poisson, se calcula una función indicadora $\chi$
+que toma el valor 1 en los puntos que se encuentran dentro del modelo
+y 0 en los puntos que se encuentran fuera.
+De esta manera, extrayendo una isosuperficie apropiada se obtiene la frontera del modelo.
+
+Para poder plantear la ecuación, debe notarse que el gradiente de la función indicadora $\nabla \chi$
+es 0 en casi todos los puntos, excepto en aquellos cerca de la superficie,
+donde es equivalente a las normales de los puntos muestreados ($\vec{V}$), pero en sentido contrario (figura~\ref{fig:poiss_planteo}).
+Entonces, se busca calcular la función $\chi$ cuyo gradiente aproxime de la mejor forma posible el
+campo vectorial $\vec{V}$.
+Aplicando  el operador de divergencia se obtiene la ecuación de Poisson
+\[ \Delta\chi \equiv \nabla \cdot \nabla \chi = \nabla\vec{V} \]
+
+\begin{figure}
+	\Imagen{foo}
+	\caption{\label{fig:poiss_planteo}Ilustración del método de reconstrucción de Poisson.
+	Tomando como entrada una nube de puntos con sus normales $\vec{V}$ se define el gradiente de la función
+	indicadora $\nabla \chi$. Mediante la ecuación de Poisson se calculará el valor de $\chi$,
+	y al extraer una isosuperfice se obtendrá la superficie del objeto $\partial M$. 
+	}
+\end{figure}
+
+Entre las ventajas de esta formulación podemos nombrar:
+\begin{itemize}
+	\item La superficie reconstruida es una superficie suave y cerrada.
+	\item Los sistemas de Poisson son resistentes al ruido de entrada.
+	\item El uso de funciones de soporte local para aproximar $\chi$,
+		produce un sistema lineal bien condicionado y ralo.\cite{Kazhdan:2006:PSR:1281957.1281965}
+\end{itemize}
+
+	\subsubsection{Condiciones de borde}
+	Para definir el sistema lineal, es necesario especificar el
+	comportamiento de la función a lo largo del contorno del dominio de
+	integración.
+	Tomando en consideración la definición de la función indicadora $\chi$,
+	se pueden establecer fácilmente condiciones de borde Dirichlet ($\chi = 0$)
+	o también condiciones de borde Neumann ($\nabla \chi = 0$).
+
+	Si se utilizan condiciones Dirichlet, se asegurará que la superficie resultante sea cerrada.
+	En cambio, en caso de que se tengan regiones sin información (huecos) de tamaño
+	considerable, usar condiciones Neumann permitirá que la superficie se
+	extienda fuera del dominio de integración, cruzando el borde de forma
+	ortogonal (figura~\ref{fig:poisson_boundary})\cite{Kazhdan_screenedpoisson}.
+	\begin{figure}
+		\Imagen{diagram/poisson_boundary_conditions}
+		\caption{\label{fig:poisson_boundary}Reconstrucción del modelo Ángel (izquierda) usando condiciones de borde Dirichlet (centro) y Neumann (derecha).}
+	\end{figure}
+
+
+	\subsubsection{Extracción de la isosuperficie}
+	Para poder obtener la superficie del modelo $\partial M$, es necesario
+	definir un isovalor de $\chi$ para así obtener la isosuperficie correspondiente.
+	Para aproximar las posiciones de los puntos de entrada, se utiliza como isovalor
+	el promedio de los valores de $\chi$ en esos puntos.
+
+	\[\partial M \equiv {q \in \mathbb{R}^3 | \chi(q) = \gamma} \quad \mbox{con}
+		\quad \gamma = \frac{1}{N} \sum \chi(p) \]
+
+	Esta elección de isovalor presenta la propiedad de que un escalado de $\chi$ no cambia la isosuperficie.

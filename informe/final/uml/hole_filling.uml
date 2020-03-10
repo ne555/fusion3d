@@ -1,0 +1,17 @@
+@startuml
+	skinparam monochrome true
+	skinparam shadowing false
+	hide circle
+	hide empty members
+
+	class "Relleno de huecos"{
+		rellenar()
+		dividir()
+		unir()
+	}
+	class Malla{}
+	class Borde{}
+
+	"Relleno de huecos" --> "1" Malla
+	Malla "1" -- "*" Borde
+@enduml

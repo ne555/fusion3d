@@ -1,0 +1,69 @@
+\section{Determinación de la superficie}
+Una vez alineadas todas las capturas en un mismo sistema de referencia,
+debemos combinar estas nubes de puntos para obtener un único modelo
+que describa la geometría del objeto escaneado.
+Cada captura presentará nueva información en las zonas
+que no pudieron ser observadas desde otras posiciones,
+y confirmará o refutará la información ya presente en las zonas comunes a otras capturas.
+
+A continuación se presentarán métodos para lograr la integración de las distintas capturas.
+
+%zippered
+\subsection{\emph{Mesh zippering}}
+Este método combina dos mallas poligonales en una única superficie,
+obteniéndose el objeto completo al agregar las capturas una a una a la superficie final.
+El proceso consta de los siguientes pasos:
+\begin{enumerate}
+	\item Triangulación de la captura.
+		Debido a que este método trabaja con mallas, cada nube de puntos debe ser primero triangulada.
+	\item Eliminación de superficies redundantes.
+		Se eliminan los triángulos de ambas mallas que se encuentren completamente dentro del área solapada.
+		De esta manera, los únicos triángulos que presentarán un solapamiento
+		serán aquellos pertenecientes a los bordes de las mallas.
+	\item \emph{Clipping}.
+		Los triángulos de la malla A se recortan por el borde de la malla B.
+		Es decir, se eliminan las porciones de los triángulos que caen dentro de la otra malla.
+\end{enumerate}
+
+De esta forma se obtiene una malla triangular que representa burdamente la topología del objeto.
+Para ajustar los detalles de la superficie, se realiza un proceso de refinamiento,
+donde cada vértice de la malla final es perturbado por un promedio ponderado
+de los vértices de los triángulos que caen cerca de él en las capturas originales\cite{Turk:1994:ZPM:192161.192241}.
+
+
+%volumetric (ocupar el del kinect)
+\subsection{Fusión volumétrica (\emph{volumetric merge})}
+En este método, cada captura se representa de forma volumétrica,
+definiendo un volumen 3D que mapea las coordenadas $\{x, y, z\}$ de los puntos a posiciones $\{w, h, d\}$
+de una grilla de vóxeles.
+En cada uno de estos vóxeles se codifica una función de distancia a la superficie,
+siendo positiva si el punto se encuentra adelante de la superficie, y negativa si se encuentra después.
+De esta manera, la superficie queda definida de forma implícita en el cruce por cero,
+donde los valores cambian de signo, y debe ser extraída
+mediante un algoritmo de \emph{marching cubes} o similar.
+
+En cada nueva registración se actualizan las distancias de los vóxeles mediante raycasting,
+desde la posición estimada de la cámara hacia la superficie,
+realizando un promedio ponderado con los valores anteriormente calculados.\cite{Curless:1996:VMB:237170.237269} %a_volumetric_method_for_building_complex_models_from_range_images.txt
+Debido a que sólo nos interesan las zonas donde la distancia es cercana a 0
+es posible utilizar una representación rala para los vóxeles.\cite{Steinbrucker:2013:LMS:2586117.2586926} % large-scale_multi-resolution_surface_reconstruction_from_rgb-d_sequences
+
+
+%surfel
+\subsection{Representación de surfel}
+En este método, la superficie se representa como un conjunto de discos orientados o elementos de superficie (\emph{surfels}).
+Cada uno de estos \emph{surfels} posee una posición $p_j$,
+un vector normal $n_j$, un radio $r$ y una medida de confianza de visibilidad $v$,
+que nos indica cuántas capturas confirmaron las características del \emph{surfel}.
+Esta representación facilita la actualización, agregado o eliminación de vértices y además nos permite detectar ciertos puntos atípicos\cite{5457479}.
+
+El modelo se actualiza con cada nueva captura, comparándose la nueva información
+con la ya existente en el modelo y realizando las operaciones correspondientes:
+\begin{itemize}
+	\item Se crean nuevos \emph{surfels} para las porciones que el modelo actual no puede explicar.
+	\item Se ajustan las posiciones y confianza de aquellos que están en concordancia.
+	\item Se eliminan los \emph{surfels} con baja confianza y que presentan conflictos con la nueva información.
+\end{itemize}
+
+Al finalizar el proceso, se utilizan las posiciones y normales de los \emph{surfels} para realizar una
+triangulación y así obtener una malla que represente al objeto.

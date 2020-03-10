@@ -36,6 +36,11 @@
 	\end{eqnarray*}
 	En caso de que haya caído fuera del dominio de la reconstrucción actual, se
 	considera que es un nuevo punto y se lo agrega.
+	Si la distancia de proximidad elegida es demasiado pequeña,
+	nunca se realizará la actualización ya que todos los puntos serán considerados como nuevos surfels.
+	En cambio, si la distancia es muy grande, se considerarán puntos
+	que deberían haber sido descartados como atípicos.
+
 
 	\begin{algorithm}
 		\begin{algorithmic}[1]

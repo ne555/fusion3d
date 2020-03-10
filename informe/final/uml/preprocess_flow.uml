@@ -1,0 +1,12 @@
+@startuml
+	skinparam monochrome true
+	skinparam shadowing false
+(*) -> "estimar resolución"
+	-> "filtrado mls"
+	-> "eliminar puntos con normales\ncasi ortogonales"
+	-> "triangulación Delaunay,\nproyectado en z=0"
+	-> "eliminar aristas grandes"
+	-> "eliminar puntos de borde"
+	-> "eliminar puntos aislados"
+-> (*)
+@enduml
