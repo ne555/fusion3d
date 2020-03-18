@@ -1,10 +1,10 @@
 \section{Módulo de rellenado de huecos}
-	Al finalizar el algoritmo de fusión se obtuvo una malla triangular a partir
+	Al finalizar el algoritmo de fusión se obtiene una malla triangular a partir
 	de la información proveniente de cada vista.
 	Sin embargo, esta malla no es cerrada ya que existen zonas que ninguna
 	vista pudo capturar y por lo tanto carecen de puntos, produciendo huecos en la misma.
 
-	El módulo de rellenado de huecos se encargará de estimar, de forma automática, la superficie del
+	El módulo de rellenado de huecos se encarga de estimar, de forma automática, la superficie del
 	objeto en estas zonas para así obtener finalmente una malla cerrada.
 
 	Se plantearon dos métodos:
@@ -14,10 +14,10 @@
 	\end{itemize}
 
 
-	\subsection{Advancing front}
+	\subsection{\label{part:adv_font_implementación}Advancing front}
 		Se implementó una variante del método propuesto por \cite{advance_front},
 		la cual se halla descripta en el algoritmo~\ref{alg:adv_front}.
-		Cada hueco se rellenará de forma independiente a los otros,
+		Cada hueco se rellena de forma independiente a los otros,
 		utilizando únicamente los puntos que conforman cada contorno para estimar
 		las posiciones de los nuevos puntos.
 
@@ -28,18 +28,38 @@
 		Por esta razón, se eliminan todas las islas,
 		quedándose únicamente con la componente conectada que contiene
 		la mayor cantidad de puntos.
-		De esta forma, una arista que defina sólo un triángulo formará parte de un hueco,
-		y podrá obtenerse el contorno del mismo recorriendo el grafo de conectividades. 
+		De esta forma, una arista que defina sólo un triángulo forma parte de un hueco,
+		y puede obtenerse el contorno del mismo recorriendo el grafo de conectividades. 
 
-
+		El frente se inicializa a partir del contorno del hueco, y se recorre el borde
+		calculando los ángulos entre las aristas a fin de encontrar los tres puntos
+		que definen el menor ángulo $\alpha$. Según el valor de $\alpha$, se determina
+		si insertar o no un nuevo punto (figura~\ref{fig:af_triangle}).
 		Los nuevos puntos insertados son elegidos de forma que los triángulos resultantes sean
 		aproximadamente equiláteros, como se detalla en el algoritmo~\ref{alg:new_point}.
 		Estos puntos son luego proyectados en un plano de soporte definido
 		mediante las normales de los puntos del ángulo candidato.
 
-		En caso de que el nuevo punto cayese cerca de otro ya existente, se utiliza aquel.
-		Esto implica dividir en dos el hueco, y rellenar cada nueva porción de forma independiente.
-		\TODO{gráfico}
+		En caso de que el nuevo punto cayese cerca de otro ya existente, se utiliza este último.
+		Esto implica dividir en dos el hueco, y rellenar cada nueva porción de forma independiente (figura~\ref{fig:af_split}).
+
+		\begin{figure}
+			\centering
+			\input{diagram/af_new.pdf_tex}
+			\caption{\label{fig:af_triangle}Creación de los nuevos triángulos
+			mediante un algoritmo de advancing front. Dependiendo del valor del
+			ángulo candidato $\alpha$ se utilizan los puntos existentes
+			(izquierda), o se crea un nuevo punto en $\alpha/2$ (centro) o
+			$\alpha/3$ (derecha).}
+		\end{figure}
+
+		\begin{figure}
+			\centering
+			%\Imagen{diagram/af_split.pdf}
+			\input{diagram/af_split.pdf_tex}
+			\caption{\label{fig:af_split}División del frente en dos
+			al utilizar un punto de la malla para crear el nuevo triángulo.}
+		\end{figure}
 
 		\begin{algorithm}
 			\begin{algorithmic}[1]
@@ -51,15 +71,15 @@
 						\State Malla.agregar triángulo(P, C, N)
 						\State AF.eliminar punto(C)
 					\ElsIf{$\alpha < 135^{\circ}$}
-						\State nuevo $\gets$ crear punto(P, C, N, $\alpha/2$)
-						\State Malla.agregar punto(nuevo)
-						\State Malla.agregar triángulo(nuevo, C, N)
-						\State AF.insertar punto(nuevo)
+						\State Q $\gets$ crear punto(P, C, N, $\alpha/2$)
+						\State Malla.agregar punto(Q)
+						\State Malla.agregar triángulo(Q, C, N)
+						\State AF.insertar punto(Q)
 					\ElsIf{$\alpha < 180^{\circ}$}
-						\State nuevo $\gets$ crear punto(P, C, N, $\alpha/3$)
-						\State Malla.agregar punto(nuevo)
-						\State Malla.agregar triángulo(nuevo, C, N)
-						\State AF.insertar punto(nuevo)
+						\State Q $\gets$ crear punto(P, C, N, $\alpha/3$)
+						\State Malla.agregar punto(Q)
+						\State Malla.agregar triángulo(Q, C, N)
+						\State AF.insertar punto(Q)
 					\EndIf
 					\Until $\mbox{AF} \neq \emptyset$
 				\EndFunction
@@ -114,7 +134,7 @@
 
 
 	\begin{figure}
-		\Imagen{img/fill_poisson} \TODO{usar dragon up}
-		\caption{\label{fig:fill_poisson}Reconstrucción de la superficie mediante el método de \emph{Poisson}. Todos los huecos fueron rellenados a excepción de la base.}
+		\Imagen{img/bun_poisson}
+		\caption{\label{fig:fill_poisson}Reconstrucción de la superficie mediante el método de \emph{Poisson}. Todos los huecos fueron rellenados a excepción de la base de apoyo, donde se observa, además, un estiramiento debido a las condiciones de borde Neumann.}
 	\end{figure}
 

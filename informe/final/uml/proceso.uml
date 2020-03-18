@@ -2,6 +2,7 @@
 	skinparam monochrome true
 	skinparam shadowing false
 	skinparam defaultFontName "Latin Modern Roman"
+	'skinparam defaultFontSize 8
 	'skinparam dpi 300
 	hide circle
 	hide empty members
@@ -10,7 +11,8 @@
 
 	Capturas -> Preproceso
 	Preproceso -> Registración
-	Registración -> Fusión
+	Registración --> Fusión
+	Preproceso -> Fusión
 	Fusión -> "Rellenado\nde huecos"
 	"Rellenado\nde huecos" -> "Superficie\ncerrada"
 @enduml

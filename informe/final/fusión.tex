@@ -1,16 +1,15 @@
 \section{Módulo de fusión}
 	%¿citas?
 	%en el de loop correction (surfel)
-	Cada nueva captura agrega información del objeto en zonas que no eran antes visibles
-	y además confirma o refuta la información ya presente en las zonas comunes a las otras vistas.
-	El módulo de fusión se encarga de combinar esta información para obtener
-	finalmente una malla que represente a la totalidad del objeto.
+	El módulo de fusión tiene como objetivo obtener un modelo que
+	describa la geometría del objeto escaneado.
+	Para esto, el modelo se inicializa a partir de una captura cualquiera
+	y se procesan una a una las capturas correspondientes a las otras vistas.
+	En cada nueva vista se agrega información del objeto en zonas que no eran antes visibles
+	y además se confirma o refuta la información ya presente en el modelo.
+	Al combinar esta información, el módulo de fusión obtiene finalmente una malla
+	que represente a la totalidad del objeto.
 
-	%diagramas de clase
-
-	%informes de prueba
-
-	%casos de uso/funcionalidades resueltas
 	\subsection{Método}
 	Se utiliza una representación de \emph{surfel} para cada punto similar a la propuesta en \cite{5457479} %ref in-hand scanning
 	debido a la facilidad de implementación de las funciones de actualización de los puntos.
@@ -19,12 +18,9 @@
 	fue observado.  El valor de confianza nos indica la probabilidad de que sus
 	valores de posición y normal no sean producto de un error de muestreo.
 	Este valor se inicializa según el ángulo de su normal respecto a la línea
-	de la cámara y a su distancia al centro de la captura (figura~\ref{fig:confianza_surfel}).
+	de la cámara (figura~\ref{fig:confianza_surfel}).
+	%y a su distancia al centro de la captura %terminé usando sólo las normales
 
-	\begin{figure}
-		\Imagen{foo}
-		\caption{\label{fig:confianza_surfel}\TODO{Confianza de cada surfel}.}
-	\end{figure}
 
 
 	El algoritmo~\ref{alg:surfel} describe el agregado de una nueva vista.
@@ -40,6 +36,23 @@
 	nunca se realizará la actualización ya que todos los puntos serán considerados como nuevos surfels.
 	En cambio, si la distancia es muy grande, se considerarán puntos
 	que deberían haber sido descartados como atípicos.
+
+
+	Al terminar de procesar todas las vistas, habrá surfels que hayan sido
+	observados desde sólo una posición y tengan un nivel de confianza bajo.
+	Estos son considerados como ruido y eliminados de la
+	reconstrucción.
+
+	Finalmente, se procede a la obtención de una triangulación de los surfels.
+	Para esto se empleó el algoritmo de \emph{Greedy Projection Triangulation} que provee PCL,
+	el cual realiza una proyección de la vecindad de un punto en el plano definido por su normal
+	y procede a conectar los puntos de modo que los triángulos resultantes
+	respeten umbrales de longitud y ángulos definidos por el usuario.
+
+	\begin{figure}
+		\Imagen{img/bunny_confianza}
+		\caption{\label{fig:confianza_surfel}Visualización de los valores de confianza de los súrfeles para la captura \texttt{bun000}.}
+	\end{figure}
 
 
 	\begin{algorithm}
@@ -58,18 +71,9 @@
 		\caption{\label{alg:surfel}Actualización de la reconstrucción al agregar una nueva vista.}
 	\end{algorithm}
 
-	Al terminar de procesar todas las vistas, habrá surfels que hayan sido
-	observados desde sólo una posición y tengan un nivel de confianza bajo.
-	Estos son considerados como ruido y eliminados de la
-	reconstrucción.
-
-	Finalmente, se procede a la obtención de una triangulación de los surfels.
-	Para esto se empleó el algoritmo de \emph{Greedy Projection Triangulation} que provee PCL,
-	el cual realiza una proyección de la vecindad de un punto en el plano definido por su normal
-	y procede a conectar los puntos de modo que los triángulos resultantes
-	respeten umbrales de longitud y ángulos definidos por el usuario.
-
 	\begin{figure}
-		\Imagen{img/bun_reconst}
-		\caption{\label{fig:surface}Superficie reconstruida.\TODO{marcar los huecos}}
+		\Imagen{img/bun_fusion}
+
+		%\Imagen{img/bun_fusion_conf}
+		\caption{\label{fig:surface}Superficie reconstruida. En verde se destacan los bordes de los huecos.}
 	\end{figure}

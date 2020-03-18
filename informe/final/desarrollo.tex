@@ -7,11 +7,14 @@ se las combina para obtener una sola malla total
 y se rellenan los huecos de esta malla para obtener una superficie cerrada que represente al objeto.
 
 \begin{figure}[h]
-	\Imagen{uml/proceso}
+	\centering
+	\begin{scaletikzpicturetowidth}{\linewidth}
+	\input{uml/proceso.tex}
+	\end{scaletikzpicturetowidth}
 	\caption{\label{fig:proceso_de_reconstrucción}Proceso de reconstrucción tridimensional.}
 \end{figure}
 
-A continuación se desarrollarán los detalles de implementación de cada uno de estos procesos.
+A continuación se desarrollan los detalles de implementación de cada uno de estos procesos.
 
 
 \input{preproceso}

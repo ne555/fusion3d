@@ -47,6 +47,9 @@
 %\newcommand{\Alerta}[1]{{\Huge\bfseries\sffamily#1}}
 \newcommand{\NombreItem}[1]{{\bfseries#1:}}
 
+\usepackage{tikz}
+\usetikzlibrary{arrows,chains,matrix,positioning,scopes}
+
 \usepackage{environ}
 \makeatletter
 \newsavebox{\measure@tikzpicture}
@@ -66,7 +69,7 @@
 \DeclareMathOperator*{\argmin}{argmin}
 \DeclareMathOperator{\atan}{atan}
 
-\graphicspath{{./uml/}{./diagram/}}
+\graphicspath{{./uml/}{./diagram/}{./graph/}}
 
 \newcommand{\RefImagen}[1]{ (Imagen cortesía de \cite{#1})}
 

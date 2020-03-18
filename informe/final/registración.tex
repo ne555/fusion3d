@@ -5,12 +5,12 @@
 	que lleven cada vista a un sistema global de forma
 	que las zonas comunes encajen perfectamente.
 
+	%para evitar que se corte en el quotation
+	%\clearpage
 	Debido a que
-	\begin{quotation}
-	El algoritmo de \emph{Iterative Closest Point} (ICP) se ha convertido en el
+	«el algoritmo de \emph{Iterative Closest Point} (ICP) se ha convertido en el
 	método dominante para realizar la registración de modelos tridimensionales
-	utilizando únicamente la información de geometría de los mismos.\cite{Rusinkiewicz02real-time3d}
-	\end{quotation}
+	utilizando únicamente la información de geometría de los mismos\cite{Rusinkiewicz02real-time3d}»
 	y a que a pesar de que existe garantía de convergencia del método hacia un mínimo local,
 	este puede no ser el mínimo global buscado, es necesario proveer una alineación inicial
 	lo suficientemente cercana para obtener una registración correcta\cite{regBesl92}.
@@ -41,11 +41,11 @@
 	\end{figure}
 
 
-	A continuación se describirán dos métodos para calcular la alineación inicial entre un par de capturas. 
+	A continuación se describen dos métodos para calcular la alineación inicial entre un par de capturas. 
 
 	\subsection{Alineación mediante \emph{sample consensus}}
 		\subsubsection{Selección de keypoints}
-			Basándonos en los resultados obtenidos por \cite{ISS},
+			En base a los resultados obtenidos por \cite{ISS},
 			se consideró utilizar el algoritmo de detección de keypoints basado en \emph{Intrinsic Shape Signatures} (algoritmo~\ref{alg:iss}),
 			el cual se halla implementado en PCL en la clase \texttt{ISSKeypoint3D}, permitiendo
 			definir el radio de la vecindad y el nivel de disimilitud de los eigenvalores.
@@ -81,12 +81,12 @@
 
 
 			%A partir de acá ref Rusu FPFH
-			Se procedió entonces a cambiar el método de selección de keypoints,
-			eligiendo un análisis de persistencia multiescala\cite{Rusu:2009:FPF:1703435.1703733}:
+			Por esta razón, se cambió el método de selección de keypoints,
+			eligiendo un análisis de persistencia multiescala:
 			\begin{enumerate}
 				\item Por cada punto de la nube se calcula su descriptor para distintos tamaños de vecindad (escala).
 				\item A partir de todos los descriptores en todas las escalas se estima una distribución gaussiana que los aproxime.
-				\item Los keypoints quedan definidos como aquellos puntos cuyos descriptores se encuentran alejados de la media.
+				\item Los keypoints quedan definidos como aquellos puntos cuyos descriptores se encuentran alejados de la media\cite{Rusu:2009:FPF:1703435.1703733}.
 			\end{enumerate}
 			El algoritmo se encuentra implementado en PCL en la clase
 			\texttt{Multiscale\-Feature\-Persistence} permitiendo ajustar las
@@ -97,7 +97,7 @@
 			el cual es lineal en la cantidad de puntos de la vecindad.
 			%Este método calcula un histograma de los ángulos entre las normales del punto y sus vecinos\cite{Rusu:2009:FPF:1703435.1703733}.
 
-			Los keypoints se encontraban ahora agrupados, formando líneas en zonas de cambio brusco de curvatura (figura~\ref{fig:multiscale_key}).
+			Con este algoritmo, los keypoints se agrupan formando líneas en zonas de cambio brusco de curvatura (figura~\ref{fig:multiscale_key}).
 
 
 			\begin{figure}
@@ -141,13 +141,13 @@
 
 	%El que tengo ahora
 	\subsection{Alineación mediante búsqueda de clúster}
-		En este método alternativo de alineación no se se seleccionan keypoints,
-		simplemente se realiza un submuestreo uniforme de los puntos de la nube
+		En este método alternativo de alineación no se seleccionan keypoints,
+		sino que se realiza un submuestreo uniforme de los puntos de la nube
 		para reducir el costo computacional.
 		Además del descriptor, en cada punto se estableció un marco de referencia
-		que nos permite estimar una transformación de alineación
+		que permite estimar una transformación de alineación
 		considerando solamente los dos puntos que conforman una correspondencia\cite{ISS}.
-		Entonces se procede a un proceso de votación para determinar la alineación final.
+		Entonces, se procede a un proceso de votación para determinar la alineación final.
 
 		Para determinar el marco de referencia se utiliza la matriz de covarianza de la vecindad del punto:
 		\begin{itemize}
@@ -156,8 +156,8 @@
 			\item Debido a que $e^{3}$ representa la normal del punto, se ajusta su sentido para que coincida con el del eje $z$.
 			\item Los otros ejes se definen mediante $e^{1}$ y $e^{1} \times e^{3}$.
 		\end{itemize}
-		Se tiene entonces una ambigüedad en el marco de referencia según el sentido que se le asigne a $e^{(1)}$ (figura~\ref{fig:marco_referencia_iss}),
-		la cual se resolverá al definir un eje de giro para la alineación.
+		Se presenta una ambigüedad en el marco de referencia según el sentido que se le asigne a $e^{1}$ (figura~\ref{fig:marco_referencia_iss}),
+		la cual se resuelve definiendo un eje de giro para la alineación.
 
 		\begin{figure}
 			\Imagen{diagram/marco_referencia_iss}
@@ -173,14 +173,28 @@
 		requieren un movimiento en $y$ excesivo o una rotación sobre un eje no
 		vertical. 
 
-		Cada correspondencia entonces define un ángulo de giro $\theta$ sobre
-		el eje $y$ y una translación en el plano $xz$.  Se observa entonces
-		una agrupación de los parámetros de estas transformaciones y, mediante el
-		algoritmo de k-means, se busca el centroide del clúster más grande (figura~\ref{fig:cluster}).
+		Cada correspondencia define un ángulo de giro $\theta$ sobre
+		el eje $y$ y una translación en el plano $xz$, observándose una agrupación
+		de los parámetros de estas transformaciones (figura~\ref{fig:cluster}).
+		Mediante el algoritmo de k-means, se busca el centroide del clúster más grande
+		para estimar la transformación final.
+
 		\begin{figure}
-			\resizebox{.9\linewidth}{!}{\input{diagram/cluster_tikz}}
-			\caption{\label{fig:cluster}Translaciones estimadas entre cada par
-			de puntos de las correspondencias.\TODO{unir con histograma de ángulos (cubeta de $2^{\circ}$}}
+			\centering
+			\begin{subfigure}{\linewidth}
+				\centering
+				\begin{tikzpicture}
+					\input{graph/bun_angle.tikz}
+				\end{tikzpicture}
+				%\caption{Ángulos sobre el eje $y$.}
+			\end{subfigure}
+			\begin{subfigure}{\linewidth}
+				\input{graph/cluster_tikz_scaled}
+				%\caption{Translaciones en $x$ y $z$.}
+			\end{subfigure}
+				\caption{\label{fig:cluster}Estimación de la transformación de alineación
+				mediante los marcos de referencia de los puntos de cada correspondencia
+				entre las capturas \texttt{bun000} y \texttt{bun045}.}
 		\end{figure}
 
 
