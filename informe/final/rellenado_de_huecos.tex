@@ -46,7 +46,7 @@
 		\begin{figure}
 			\centering
 			\input{diagram/af_new.pdf_tex}
-			\caption{\label{fig:af_triangle}Creación de los nuevos triángulos
+			\caption[Creación de los nuevos triángulos mediante un algoritmo de advancing front]{\label{fig:af_triangle}Creación de los nuevos triángulos
 			mediante un algoritmo de advancing front. Dependiendo del valor del
 			ángulo candidato $\alpha$ se utilizan los puntos existentes
 			(izquierda), o se crea un nuevo punto en $\alpha/2$ (centro) o
@@ -57,7 +57,7 @@
 			\centering
 			%\Imagen{diagram/af_split.pdf}
 			\input{diagram/af_split.pdf_tex}
-			\caption{\label{fig:af_split}División del frente en dos
+			\caption[División del frente en dos]{\label{fig:af_split}División del frente en dos
 			al utilizar un punto de la malla para crear el nuevo triángulo.}
 		\end{figure}
 
@@ -84,7 +84,7 @@
 					\Until $\mbox{AF} \neq \emptyset$
 				\EndFunction
 			\end{algorithmic}
-			\caption{\label{alg:adv_front}Relleno de huecos mediante el método de \emph{advancing front}.
+			\caption[Relleno de huecos mediante el método de \emph{advancing front}]{\label{alg:adv_front}Relleno de huecos mediante el método de \emph{advancing front}.
 			Los umbrales fueron elegidos de forma de obtener triángulos con ángulos cercanos a $60^{\circ}$.}
 		\end{algorithm}
 
@@ -107,7 +107,7 @@
 					\State \Return proyección(Q, planoB)
 				\EndFunction
 			\end{algorithmic}
-			\caption{\label{alg:new_point}Creación del nuevo punto}
+			\caption[Creación del nuevo punto]{\label{alg:new_point}Creación del nuevo punto}
 		\end{algorithm}
 
 
@@ -137,6 +137,6 @@
 
 	\begin{figure}
 		\Imagen{img/bun_poisson}
-		\caption{\label{fig:fill_poisson}Reconstrucción de la superficie mediante el método de \emph{Poisson}. Todos los huecos fueron rellenados a excepción del presente en la base de apoyo (destacado en verde), donde se observa, además, un estiramiento debido a las condiciones de borde Neumann.}
+		\caption[Reconstrucción de la superficie mediante el método de \emph{Poisson}]{\label{fig:fill_poisson}Reconstrucción de la superficie mediante el método de \emph{Poisson}. Todos los huecos fueron rellenados a excepción del presente en la base de apoyo (destacado en verde), donde se observa, además, un estiramiento debido a las condiciones de borde Neumann.}
 	\end{figure}
 

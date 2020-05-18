@@ -38,7 +38,7 @@
 
 	\begin{figure}
 		\Imagen{uml/registration_flow.pdf}
-		\caption{\label{fig:flow_registracion}Diagrama de flujo de la registración.}
+		\caption[Diagrama de flujo de la registración]{\label{fig:flow_registracion}Diagrama de flujo de la registración.}
 	\end{figure}
 
 
@@ -77,7 +77,7 @@
 						\State\Return Non-Max Suppression(keypoints, $r_2$)
 					\EndFunction
 				\end{algorithmic}
-				\caption{\label{alg:iss}Determinación de los keypoints mediante ISS}
+				\caption[Determinación de los keypoints mediante ISS]{\label{alg:iss}Determinación de los keypoints mediante ISS}
 			\end{algorithm}
 
 
@@ -105,14 +105,14 @@
 				\centering
 				\begin{subfigure}{\linewidth}
 					\Imagen{img/iss_happy}
-					\caption{\label{fig:iss_key}Keypoints ISS}
+					\caption[Keypoints ISS]{\label{fig:iss_key}Keypoints ISS}
 				\end{subfigure}
 
 				\begin{subfigure}{\linewidth}
 					\Imagen{img/multiscale_happy}
-					\caption{\label{fig:multiscale_key}Keypoints FPFH de persistencia multiescala.}
+					\caption[Keypoints FPFH de persistencia multiescala]{\label{fig:multiscale_key}Keypoints FPFH de persistencia multiescala.}
 				\end{subfigure}
-				\caption{\label{fig:keypoints}Visualización de los keypoints calculados en las vistas
+				\caption[Visualización de los keypoints]{\label{fig:keypoints}Visualización de los keypoints calculados en las vistas
 					\texttt{happy\_0} (verde) y \texttt{happy\_24} (rojo).
 					A la derecha se seleccionaron aquellos cuyo par
 					más cercano se encontraban a menos de 4 veces la resolución
@@ -162,7 +162,7 @@
 
 		\begin{figure}
 			\Imagen{diagram/marco_referencia_iss}
-			\caption{\label{fig:marco_referencia_iss}Marcos de referencia. Se observa una ambigüedad equivalente a un giro de $180^{\circ}$ sobre el eje $e^{3}$ \RefImagen{ISS}.}
+			\caption[Marcos de referencia]{\label{fig:marco_referencia_iss}Marcos de referencia. Se observa una ambigüedad equivalente a un giro de $180^{\circ}$ sobre el eje $e^{3}$ \RefImagen{ISS}.}
 		\end{figure}
 
 		Para establecer las correspondencias se eligió nuevamente el descriptor FPFH,
@@ -193,7 +193,7 @@
 				\input{graph/cluster_tikz_scaled}
 				%\caption{Translaciones en $x$ y $z$.}
 			\end{subfigure}
-				\caption{\label{fig:cluster}Estimación de la transformación de alineación
+				\caption[Estimación de la transformación de alineación mediante los marcos de referencia]{\label{fig:cluster}Estimación de la transformación de alineación
 				mediante los marcos de referencia de los puntos de cada correspondencia
 				entre las capturas \texttt{bun000} y \texttt{bun045}.}
 		\end{figure}
@@ -227,5 +227,5 @@
 				\EndFor
 			\EndFunction
 		\end{algorithmic}
-		\caption{\label{alg:correccion_bucle}Corrección de la propagación del error de alineación.}
+		\caption[Corrección de la propagación del error de alineación]{\label{alg:correccion_bucle}Corrección de la propagación del error de alineación.}
 	\end{algorithm}

@@ -39,33 +39,33 @@
 	\begin{figure}
 		\TODO{unir con el de clustering}
 		\Imagen{foo}
-		\caption{\label{fig:sac_angles}\TODO{Diferencias entre la rotación estimada mediante \emph{sample consensus} y el \emph{ground truth} para el objeto \texttt{happy}}}
+		\caption[Diferencias en la rotación estimada para el objeto \texttt{happy}]{\label{fig:sac_angles}\TODO{Diferencias entre la rotación estimada mediante \emph{sample consensus} y el \emph{ground truth} para el objeto \texttt{happy}}}
 	\end{figure}
 
 
 \begin{figure}
 	%\Imagen{img/cluster_bunny}
 	\resizebox{.9\linewidth}{!}{\input{diagram/bun_ang_tikz}}
-	\caption{\label{fig:clust_bunny}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{bunny}.}
+	\caption[Diferencias en la rotación estimada para el objeto \texttt{bunny}]{\label{fig:clust_bunny}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{bunny}.}
 \end{figure}
 
 \begin{figure}
 	%\Imagen{img/cluster_happy}
 	\resizebox{.9\linewidth}{!}{\input{diagram/happy_ang_tikz}}
-	\caption{\label{fig:clust_happy}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{happy}.}
+	\caption[Diferencias en la rotación estimada para el objeto \texttt{bunny}]{\label{fig:clust_happy}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{happy}.}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\begin{subfigure}{.8\linewidth}
 		\Imagen{img/bun_sac_270_315}
-		\caption{\label{fig:align_sac}Ejemplo de fallo del algoritmo de \emph{sample consensus} producto de malas correspondencias.}
+		\caption[Fallo en el algoritmo de \emph{sample consensus}]{\label{fig:align_sac}Ejemplo de fallo del algoritmo de \emph{sample consensus} producto de malas correspondencias.}
 	\end{subfigure}
 	\begin{subfigure}{.8\linewidth}
 		\Imagen{img/bun_clust_270_315}
-		\caption{\label{fig:clust_bun_good}Alineación exitosa mediante el uso de marcos de referencia.}
+		\caption[Registración exitosa mediante el uso de marcos de referencia]{\label{fig:clust_bun_good}Registración exitosa mediante el uso de marcos de referencia.}
 	\end{subfigure}
-	\caption{Alineación entre las capturas \texttt{bun270} (verde) y \texttt{bun315} (rojo).}
+	\caption[Registración entre las capturas \texttt{bun270}  y \texttt{bun315}]{Registración entre las capturas \texttt{bun270} (verde) y \texttt{bun315} (rojo).}
 \end{figure}
 
 \section{Pruebas parciales del módulo de rellenado de huecos}
@@ -82,12 +82,12 @@
 
 	\begin{figure}
 		\Imagen{img/fill_good}
-		\caption{\label{fig:fill_good}Relleno de un hueco pequeño mediante \emph{advancing front}.}
+		\caption[Relleno de un hueco pequeño mediante \emph{advancing front}]{\label{fig:fill_good}Relleno de un hueco pequeño mediante \emph{advancing front}.}
 	\end{figure}
 
 	\begin{figure}
 		\Imagen{img/fill_bad}
-		\caption{\label{fig:fill_bad}Fallo en el algoritmo de \emph{advancing front}. Se intentó completar un triángulo con un punto que no pertenecía al borde.}
+		\caption[Fallo en el algoritmo de \emph{advancing front}]{\label{fig:fill_bad}Fallo en el algoritmo de \emph{advancing front}. Se intentó completar un triángulo con un punto que no pertenecía al borde.}
 		\TODO{cambiar gráfico}
 	\end{figure}
 
@@ -276,7 +276,7 @@
 				%\scalebox{.75}{\input{fitness.tikz}}
 				%\resizebox{\linewidth}{!}{\input{fitness.tikz}}
 				\Imagen{foo}
-			\caption{\label{fig:fitness}Métrica de alineación para el modelo \texttt{dragon stand}. El bajo
+			\caption[Métrica de alineación para el modelo \texttt{dragon stand}]{\label{fig:fitness}Métrica de alineación para el modelo \texttt{dragon stand}. El bajo
 			porcentaje de solapamiento en la captura 12 se corresponde
 			con un error de registración.}
 		\end{figure}
@@ -302,7 +302,7 @@
 
 		\begin{figure}
 			\Imagen{img/happy_diff}
-			\caption{\label{fig:fus_happy}Diferencia contra el \emph{ground truth} del modelo \texttt{happy}.}
+			\caption[Medida de error en la fusión]{\label{fig:fus_happy}Diferencia contra el \emph{ground truth} del modelo \texttt{happy}.}
 		\end{figure}
 
 
@@ -322,7 +322,7 @@
 
 		\begin{figure}
 			\Imagen{img/models_b}
-			\caption{\label{fig:poiss_all}Resultado de las reconstrucciones luego del rellenado de huecos mediante el método de Poisson.
+			\caption[Resultado de las reconstrucciones]{\label{fig:poiss_all}Resultado de las reconstrucciones luego del rellenado de huecos mediante el método de Poisson.
 			De izquierda a derecha y de arriba a abajo, los modelos son:
 			\texttt{armadillo},
 			\texttt{bunny},
@@ -336,7 +336,7 @@
 			\includegraphics[max width=.5\linewidth, max height=.25\textheight, keepaspectratio]
 				{img/bunny_ear}
 			%\Imagen{img/bunny_ear}
-			\caption{\label{fig:bun_ear}Acercamiento a la oreja derecha de bunny.}
+			\caption[Acercamiento a la oreja derecha de \texttt{bunny}]{\label{fig:bun_ear}Acercamiento a la oreja derecha de \texttt{bunny}.}
 		\end{figure}
 
 		\begin{figure}
@@ -344,7 +344,7 @@
 			\centering
 			\includegraphics[max width=.5\linewidth, max height=.25\textheight, keepaspectratio]
 				{img/drill_drops}
-			\caption{\label{fig:drill_drops}Acercamiento a la mecha de drill. Se observan componentes inconexas con la malla principal.}
+			\caption[Acercamiento a la mecha de \texttt{drill}]{\label{fig:drill_drops}Acercamiento a la mecha de \texttt{drill}. Se observan componentes inconexas con la malla principal.}
 		\end{figure}
 
 		\begin{figure}
@@ -352,7 +352,7 @@
 			\includegraphics[max width=.5\linewidth, max height=.25\textheight, keepaspectratio]
 				{img/arma_foot}
 			%\Imagen{img/arma_foot}
-			\caption{\label{fig:base}Acercamiento a la base de apoyo de armadillo. Se observa un estiramiento hacia abajo debido al uso de condiciones de borde Neumann.}
+			\caption[Acercamiento a la base de apoyo de \texttt{armadillo}]{\label{fig:base}Acercamiento a la base de apoyo de \texttt{armadillo}. Se observa un estiramiento hacia abajo debido al uso de condiciones de borde Neumann.}
 		\end{figure}
 
 
