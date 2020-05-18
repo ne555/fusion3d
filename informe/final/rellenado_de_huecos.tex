@@ -113,7 +113,7 @@
 
 	\subsection{Reconstrucción de Poisson}
 	\subsubsection{Implementación}
-	La clase \texttt{Poisson} de la biblioteca \emph{PCL} implementa este método de reconstrucción,
+	La clase \texttt{Poisson} de la biblioteca \emph{PCL} implementa este método de reconstrucción
 	imponiendo condiciones de borde Neumann.
 
 	Debido a que sólo es de interés el valor de $\chi$ en los puntos cercanos a
@@ -121,9 +121,11 @@
 	provee de parámetros para establecer la profundidad del octree, controlando
 	de esta manera la resolución de la superficie reconstruida.
 	Sin embargo, debe considerarse que el consumo de memoria y el tiempo se incrementan de forma
-	cuadrática con la profundidad del octree.
+	cuadrática con la profundidad del octree. \TODO{cita}
 	%la cual se extrae mediante el método de \emph{Marching Cubes}. \TODO{referencia a marching cubes}
 
+
+	%mover a pruebas
 	Debido a que no se cuentan con puntos en la base de apoyo de los objetos,
 	el uso de condiciones de borde Neumann
 	produce un estiramiento hacia abajo de la superficie resultante y la presencia de
