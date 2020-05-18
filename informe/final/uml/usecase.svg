@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg897"
+   inkscape:version="0.92.4 5da689c313, 2019-01-14"
+   sodipodi:docname="usecase.svg">
+  <defs
+     id="defs891" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.0148241"
+     inkscape:cx="400"
+     inkscape:cy="804.87002"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1366"
+     inkscape:window-height="768"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata894">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       id="rect4"
+       y="15.766816"
+       x="54.490219"
+       width="118.26875"
+       style="fill:#ffffff;stroke:#000000;stroke-width:0.39687499"
+       height="122.50208" />
+    <text
+       id="text6"
+       y="42.4063"
+       x="258.5"
+       textLength="132"
+       lengthAdjust="spacingAndGlyphs"
+       font-weight="bold"
+       font-size="14"
+       style="font-weight:bold;font-size:14px;font-family:'Latin Modern Roman';fill:#000000;-inkscape-font-specification:'Latin Modern Roman,  Bold';font-style:normal;font-stretch:normal;font-variant:normal;"
+       transform="matrix(0.26458333,0,0,0.26458333,27.767304,9.4168164)">Reconstrucción 3D</text>
+    <ellipse
+       id="ellipse8"
+       style="fill:#f8f8f8;stroke:#383838;stroke-width:0.39687499"
+       ry="4.7492709"
+       rx="20.571381"
+       cy="63.907753"
+       cx="147.82202" />
+    <text
+       id="text10"
+       y="212.46471"
+       x="398.25009"
+       textLength="111"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="14"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14px;font-family:'Latin Modern Roman';-inkscape-font-specification:'Latin Modern Roman,  Bold';fill:#000000"
+       transform="matrix(0.26458333,0,0,0.26458333,27.757364,8.6191751)">Preprocesar nube</text>
+    <ellipse
+       id="ellipse12"
+       style="fill:#f8f8f8;stroke:#383838;stroke-width:0.39687499"
+       ry="7.6692915"
+       rx="20.017103"
+       cy="63.917358"
+       cx="79.005241" />
+    <text
+       id="text14"
+       y="205.9592"
+       x="137.6552"
+       textLength="112"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="14"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14px;font-family:'Latin Modern Roman';-inkscape-font-specification:'Latin Modern Roman,  Bold';fill:#000000"
+       transform="matrix(0.26458333,0,0,0.26458333,27.764024,8.7660623)">Alinear dos nubes</text>
+    <text
+       id="text16"
+       y="225.98849"
+       x="162.6552"
+       textLength="62"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="14"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14px;font-family:'Latin Modern Roman';-inkscape-font-specification:'Latin Modern Roman,  Bold';fill:#000000"
+       transform="matrix(0.26458333,0,0,0.26458333,27.764024,7.7077289)">de puntos</text>
+    <ellipse
+       id="ellipse18"
+       style="fill:#f8f8f8;stroke:#383838;stroke-width:0.39687499"
+       ry="7.796874"
+       rx="14.779519"
+       cy="34.014732"
+       cx="78.927032" />
+    <text
+       id="text20"
+       y="92.194397"
+       x="153.3596"
+       textLength="80"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="14"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14px;font-family:'Latin Modern Roman';-inkscape-font-specification:'Latin Modern Roman,  Bold';fill:#000000"
+       transform="matrix(0.26458333,0,0,0.26458333,27.719978,9.3100447)">Corregir error</text>
+    <text
+       id="text22"
+       y="112.2237"
+       x="166.3596"
+       textLength="54"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="14"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14px;font-family:'Latin Modern Roman';-inkscape-font-specification:'Latin Modern Roman,  Bold';fill:#000000"
+       transform="matrix(0.26458333,0,0,0.26458333,27.719978,8.2517113)">de bucle</text>
+    <ellipse
+       id="ellipse24"
+       style="fill:#f8f8f8;stroke:#383838;stroke-width:0.39687499"
+       ry="8.0177212"
+       rx="18.827274"
+       cy="89.004326"
+       cx="79.006035" />
+    <text
+       id="text26"
+       y="298.7774"
+       x="143.6582"
+       textLength="100"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="14"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14px;font-family:'Latin Modern Roman';-inkscape-font-specification:'Latin Modern Roman,  Bold';fill:#000000"
+       transform="matrix(0.26458333,0,0,0.26458333,27.674799,9.6541837)">Obtener métrica</text>
+    <text
+       id="text28"
+       y="318.8067"
+       x="151.6582"
+       textLength="84"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="14"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14px;font-family:'Latin Modern Roman';-inkscape-font-specification:'Latin Modern Roman,  Bold';fill:#000000"
+       transform="matrix(0.26458333,0,0,0.26458333,27.674799,8.5958503)">de alineación</text>
+    <ellipse
+       id="ellipse30"
+       style="fill:#f8f8f8;stroke:#383838;stroke-width:0.39687499"
+       ry="4.6907187"
+       rx="20.27854"
+       cy="111.07732"
+       cx="79.00209" />
+    <text
+       id="text32"
+       y="390.74329"
+       x="139.6433"
+       textLength="108"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="14"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14px;font-family:'Latin Modern Roman';-inkscape-font-specification:'Latin Modern Roman,  Bold';fill:#000000"
+       transform="matrix(0.26458333,0,0,0.26458333,27.757761,8.6303106)">Extraer superficie</text>
+    <ellipse
+       id="ellipse34"
+       style="fill:#f8f8f8;stroke:#383838;stroke-width:0.39687499"
+       ry="4.6137776"
+       rx="19.893888"
+       cy="124.75872"
+       cx="147.93828" />
+    <text
+       id="text36"
+       y="442.45261"
+       x="402.18951"
+       textLength="104"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="14"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14px;font-family:'Latin Modern Roman';-inkscape-font-specification:'Latin Modern Roman,  Bold';fill:#000000"
+       transform="matrix(0.26458333,0,0,0.26458333,27.767301,8.9784823)">Identificar hueco</text>
+    <ellipse
+       id="ellipse38"
+       style="fill:#f8f8f8;stroke:#383838;stroke-width:0.39687499"
+       ry="4.5569983"
+       rx="19.610043"
+       cy="129.59673"
+       cx="78.995056" />
+    <text
+       id="text40"
+       y="460.73801"
+       x="143.1167"
+       textLength="101"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="14"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14px;font-family:'Latin Modern Roman';-inkscape-font-specification:'Latin Modern Roman,  Bold';fill:#000000"
+       transform="matrix(0.26458333,0,0,0.26458333,27.767302,8.9581024)">Rellenar huecos</text>
+    <circle
+       id="ellipse42"
+       style="fill:#f8f8f8;stroke:#383838;stroke-width:0.39687499"
+       cy="80.722023"
+       cx="35.704803"
+       r="2.1166666" />
+    <path
+       id="path44"
+       style="fill:none;stroke:#383838;stroke-width:0.39687499"
+       d="m 35.704804,82.83869 v 7.14375 m -3.439583,-5.027083 h 6.879166 m -3.439583,5.027083 -3.439583,3.96875 m 3.439583,-3.96875 3.439583,3.96875"
+       inkscape:connector-curvature="0" />
+    <text
+       id="text46"
+       y="338.40631"
+       x="6"
+       textLength="48"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="14"
+       style="font-size:14px;font-family:'Latin Modern Roman';fill:#000000;-inkscape-font-specification:'Latin Modern Roman,  Bold';font-weight:bold;font-style:normal;font-stretch:normal;font-variant:normal;"
+       transform="matrix(0.26458333,0,0,0.26458333,27.767304,9.4168164)">Usuario</text>
+    <path
+       style="fill:none;stroke:#383838;stroke-width:0.26458332"
+       id="user-align"
+       d="m 42.126241,83.775315 c 2.9845,-2.423583 6.686021,-5.236104 10.247313,-7.418916 4.071937,-2.497667 8.725958,-4.844521 12.975166,-6.813021"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;stroke:#383838;stroke-width:0.26458332"
+       id="user-loop"
+       d="m 38.885096,78.197899 c 2.561166,-8.03275 6.921499,-18.89125 13.488458,-26.712333 4.230687,-5.040313 10.281708,-9.191625 15.51252,-12.181417"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;stroke:#383838;stroke-width:0.26458332"
+       id="user-surface"
+       d="m 42.105075,94.567669 c 2.950104,2.44475 6.630458,5.209646 10.268479,7.188731 4.233333,2.30452 9.154583,4.21746 13.586354,5.69383"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;stroke:#383838;stroke-width:0.26458332"
+       id="user-metric"
+       d="m 42.091845,89.056399 c 4.73075,0 11.541125,0 18.010188,0"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;stroke:#383838;stroke-width:0.26458332"
+       id="user-filling"
+       d="m 39.366637,99.914899 c 2.595563,6.693961 6.799792,14.996581 13.006917,20.362331 3.354916,2.89983 7.672916,4.90802 11.840104,6.29444"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;stroke:#383838;stroke-width:0.26458332;stroke-dasharray:1.85208331, 1.85208331"
+       id="align-&gt;preprocess"
+       d="m 99.011657,63.920982 c 8.387293,0 18.192753,0 26.791713,0"
+       inkscape:connector-curvature="0" />
+    <polygon
+       id="polygon54"
+       style="fill:#383838;stroke:#383838;stroke-width:1"
+       points="366.7,210 375.7,206 366.7,202 370.7,206 "
+       transform="matrix(0.26458333,0,0,0.26458333,27.767304,9.4168164)" />
+    <text
+       id="text56"
+       y="202.23441"
+       x="301"
+       textLength="44"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="13"
+       style="font-size:13px;font-family:'Latin Modern Roman';fill:#000000;-inkscape-font-specification:'Latin Modern Roman,  Bold';font-weight:bold;font-style:normal;font-stretch:normal;font-variant:normal;"
+       transform="matrix(0.26458333,0,0,0.26458333,27.767304,9.4168164)">include</text>
+    <path
+       style="fill:none;stroke:#383838;stroke-width:0.26458332;stroke-dasharray:1.85208331, 1.85208331"
+       id="loop-&gt;preprocess"
+       d="m 90.523824,38.960191 c 12.800546,5.595937 33.527996,14.657917 46.175086,20.185062"
+       inkscape:connector-curvature="0" />
+    <polygon
+       id="polygon59"
+       style="fill:#383838;stroke:#383838;stroke-width:1"
+       points="406.6714,190.1285 416.52,190.06 409.8695,182.7956 411.9369,188.0612 "
+       transform="matrix(0.26458333,0,0,0.26458333,27.767304,9.4168164)" />
+    <text
+       id="text61"
+       y="136.23441"
+       x="301"
+       textLength="44"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="13"
+       style="font-size:13px;font-family:'Latin Modern Roman';fill:#000000;-inkscape-font-specification:'Latin Modern Roman,  Bold';font-weight:bold;font-style:normal;font-stretch:normal;font-variant:normal;"
+       transform="matrix(0.26458333,0,0,0.26458333,27.767304,9.4168164)">include</text>
+    <path
+       style="fill:none;stroke:#383838;stroke-width:0.26458332;stroke-dasharray:1.85208331, 1.85208331"
+       id="metric-&gt;preprocess"
+       d="M 93.399845,83.849399 C 105.78234,79.298566 123.57293,72.758066 135.35747,68.429482"
+       inkscape:connector-curvature="0" />
+    <polygon
+       id="polygon64"
+       style="fill:#383838;stroke:#383838;stroke-width:1"
+       points="404.3322,228.1287 411.41,221.28 401.5836,220.6157 406.7144,222.9979 "
+       transform="matrix(0.26458333,0,0,0.26458333,27.767304,9.4168164)" />
+    <text
+       id="text66"
+       y="244.23441"
+       x="301"
+       textLength="44"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="13"
+       style="font-size:13px;font-family:'Latin Modern Roman';fill:#000000;-inkscape-font-specification:'Latin Modern Roman,  Bold';font-weight:bold;font-style:normal;font-stretch:normal;font-variant:normal;"
+       transform="matrix(0.26458333,0,0,0.26458333,27.767304,9.4168164)">include</text>
+    <path
+       style="fill:none;stroke:#383838;stroke-width:0.26458332;stroke-dasharray:1.85208331, 1.85208331"
+       id="filling-&gt;hole"
+       d="m 97.736366,128.24913 c 9.162524,-0.63765 20.245914,-1.41023 29.633334,-2.06375"
+       inkscape:connector-curvature="0" />
+    <polygon
+       id="polygon69"
+       style="fill:#383838;stroke:#383838;stroke-width:1"
+       points="372.9356,445.578 381.64,440.97 372.3868,437.5969 376.6518,441.313 "
+       transform="matrix(0.26458333,0,0,0.26458333,27.767304,9.4168164)" />
+    <text
+       id="text71"
+       y="440.23441"
+       x="301"
+       textLength="44"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="13"
+       style="font-size:13px;font-family:'Latin Modern Roman';fill:#000000;-inkscape-font-specification:'Latin Modern Roman,  Bold';font-weight:bold;font-style:normal;font-stretch:normal;font-variant:normal;"
+       transform="matrix(0.26458333,0,0,0.26458333,27.767304,9.4168164)">include</text>
+    <path
+       style="fill:none;stroke:#383838;stroke-width:0.26458332;stroke-dasharray:1.85208331, 1.85208331"
+       id="loop-&gt;align"
+       d="m 78.964178,41.905003 c 0,3.974042 0,8.815917 0,12.946063"
+       inkscape:connector-curvature="0" />
+    <polygon
+       id="polygon74"
+       style="fill:#383838;stroke:#383838;stroke-width:1"
+       points="189.5,167.9 193.5,176.9 197.5,167.9 193.5,171.9 "
+       transform="matrix(0.26458333,0,0,0.26458333,27.767304,9.4168164)" />
+    <text
+       id="text76"
+       y="155.98441"
+       x="166"
+       textLength="29"
+       lengthAdjust="spacingAndGlyphs"
+       font-size="13"
+       style="font-size:13px;font-family:'Latin Modern Roman';fill:#000000;-inkscape-font-specification:'Latin Modern Roman,  Bold';font-weight:bold;font-style:normal;font-stretch:normal;font-variant:normal;"
+       transform="matrix(0.26458333,0,0,0.26458333,27.767304,9.4168164)">uses</text>
+  </g>
+</svg>

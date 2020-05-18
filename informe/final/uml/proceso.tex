@@ -1,0 +1,18 @@
+\begin{tikzpicture}[node distance=2em and 2em]
+	\tikzstyle{modulo} = [align=center,rectangle, minimum width=1em, minimum height=1em, text centered, draw=black]
+	\tikzstyle{terminal} = [align=center,rectangle, minimum width=1em, minimum height=1em, text centered, draw=white]
+	\tikzstyle{arrow} = [thick,->,>=stealth]
+
+	\node (captura) [terminal] {Capturas};
+	\node (preproceso) [modulo, right= of captura] {Preproceso};
+	\node (registracion) [modulo, right=of preproceso] {Registración};
+	\node (fusion) [modulo, below=of registracion] {Fusión};
+	\node (relleno) [modulo, right=of fusion] {Rellenado\\de huecos};
+	\node (superficie) [terminal, right=of relleno] {Superficie\\cerrada};
+
+	\draw [arrow] (captura) -- (preproceso);
+	\draw [arrow] (preproceso) -- (registracion);
+	\draw [arrow] (registracion) -- (fusion);
+	\draw [arrow] (fusion) -- (relleno);
+	\draw [arrow] (relleno) -- (superficie);
+\end{tikzpicture}

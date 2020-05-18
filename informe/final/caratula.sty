@@ -1,0 +1,66 @@
+\ProvidesPackage{caratula}
+\RequirePackage{graphicx}
+
+\newlength{\drop} % generate specific amount of whitespace
+\drop=0.1\textheight
+
+\newcommand{\subtitle}[1]{%
+	\newcommand{\thesubtitle}{#1}
+}
+\newcommand{\Director}[1]{%
+	\newcommand{\theDirector}{Director: #1}
+}
+\newcommand{\Codirector}[1]{%
+	\newcommand{\theCodirector}{Codirector: #1}
+}
+
+\newcommand{\Logo}[1]{%
+	\newcommand{\@Logo}{%
+		\centerline{\includegraphics[width=0.3\linewidth, keepaspectratio]{#1}}
+	}
+}
+
+\renewcommand{\maketitle}{%
+	\makeatletter
+	\begin{titlepage}
+		\titleUNL
+	\end{titlepage}
+	\makeatother
+}
+
+\newcommand{\Encabezado}[1]{
+	\newcommand{\@Encabezado}{
+		\begin{center}
+			{\sc\noindent#1}
+		\end{center}
+	}
+}
+
+\newcommand{\titleUNL}{
+	\@Logo
+	{\large\@Encabezado}
+	\vspace{\drop}
+	\begin{center}
+		\ifcsname thesubtitle\endcsname
+			{\LARGE\thesubtitle}
+			\vspace{\drop}
+		\fi
+
+		{\Huge\@title\par}
+	\end{center}
+
+	\vfill
+	\begin{center}
+		{\LARGE\@author}\\[\baselineskip]
+		\ifcsname theDirector\endcsname
+			\large\theDirector
+		\fi
+
+		\ifcsname theCodirector\endcsname
+			\large\theCodirector
+		\fi
+	\end{center}
+
+	\vfill
+	\centerline{\@date}
+}
