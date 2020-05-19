@@ -14,6 +14,8 @@
 
 #include <pcl/keypoints/iss_3d.h>
 
+#include "functions.hpp"
+
 namespace nih {
 	/** \defgroup registration Registración
 	 * @{ */
@@ -24,7 +26,7 @@ namespace nih {
 		cloud::Ptr source, target;
 		cloud::Ptr result;
 		normal::Ptr source_normal, target_normal;
-		transformation current, previous, gt_transformation;
+		//transformation current, previous, gt_transformation;
 
 		/** Método ISS para obtener puntos salientes */
 		inline cloud::Ptr
@@ -259,8 +261,11 @@ namespace nih {
 		// pcl::transformPointCloud(*result, *result, previous); //the alignment
 		// is done in 0 position transform the whole cloud
 		pcl::transformPointCloud(
-		    *this->source, *result, previous * sc_ia_transf * icp_transf);
-		current = previous * sc_ia_transf * icp_transf;
+		    *this->source, *result, sc_ia_transf * icp_transf);
+		//current = previous * sc_ia_transf * icp_transf;
+
+		transformation total = sc_ia_transf * icp_transf;
+		show_transformation(sc_ia_transf, std::cerr, separation);
 #endif
 
 		this->result = result;
@@ -270,7 +275,7 @@ namespace nih {
 	void pairwise_alignment::next_iteration() {
 		target = source;
 		target_normal = source_normal;
-		previous = current;
+		//previous = current;
 		// aligned = ground_truth;
 	}
 
