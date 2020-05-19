@@ -14,7 +14,7 @@
 	%SAC-IA
 	En el caso de la alineación mediante \emph{sample consensus},
 	se obtuvieron buenos resultados en la mayoría de las capturas de \texttt{happy}
-	donde los ángulos eran cercanos a $25^{\circ}$ (figura~\ref{fig:sac_angles}). \TODO{mentira, falló en una con happy}
+	donde los ángulos eran cercanos a $25^{\circ}$ (figura~\ref{fig:dif_rot_happy}). \TODO{mentira, falló en una con happy}
 
 	Pero al utilizar el modelo \texttt{bunny}, cuyos ángulos eran cercanos a $45^{\circ}$,
 	se obtuvo una buena alineación en el caso de las capturas 315--000 y 000--045,
@@ -30,29 +30,22 @@
 	Para el modelo \texttt{happy} se obtuvieron resultados similares a pesar de que en este
 	caso los ángulos eran más cercanos (aproximadamente $24^{\circ}$).  Las
 	diferencias respecto al \emph{ground truth} no superaban los $5^{\circ}$,
-	teniendo un error promedio de $2^{\circ}$ (figura~\ref{fig:clust_happy}).
+	teniendo un error promedio de $2^{\circ}$ (figura~\ref{fig:dif_rot_happy}).
 
 	De esta forma, se logró acercar las capturas lo suficiente como
 	para intentar alinearlas por ICP.
 
-
-	\begin{figure}
-		\TODO{unir con el de clustering}
-		\Imagen{foo}
-		\caption[Diferencias en la rotación estimada para el objeto \texttt{happy}]{\label{fig:sac_angles}\TODO{Diferencias entre la rotación estimada mediante \emph{sample consensus} y el \emph{ground truth} para el objeto \texttt{happy}}}
-	\end{figure}
-
-
 \begin{figure}
-	%\Imagen{img/cluster_bunny}
-	\resizebox{.9\linewidth}{!}{\input{diagram/bun_ang_tikz}}
+	\input{graph/dif_rot_bun.tex}
 	\caption[Diferencias en la rotación estimada para el objeto \texttt{bunny}]{\label{fig:clust_bunny}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{bunny}.}
 \end{figure}
 
 \begin{figure}
-	%\Imagen{img/cluster_happy}
-	\resizebox{.9\linewidth}{!}{\input{diagram/happy_ang_tikz}}
-	\caption[Diferencias en la rotación estimada para el objeto \texttt{bunny}]{\label{fig:clust_happy}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{happy}.}
+	\input{graph/dif_rot_happy.tex}
+	\caption[Diferencias en la rotación estimada para el objeto
+	\texttt{happy}]{\label{fig:dif_rot_happy}Diferencias absolutas entre la
+	rotación estimada y el \emph{ground truth} para el objeto \texttt{happy},
+	para los algoritmos de sample consensus (oscuro) y marco de referencia (claro).}
 \end{figure}
 
 \begin{figure}
@@ -273,9 +266,7 @@
 
 		\begin{figure}
 			\centering
-				%\scalebox{.75}{\input{fitness.tikz}}
-				%\resizebox{\linewidth}{!}{\input{fitness.tikz}}
-				\Imagen{foo}
+				\input{graph/fitness.tex}
 			\caption[Métrica de alineación para el modelo \texttt{dragon stand}]{\label{fig:fitness}Métrica de alineación para el modelo \texttt{dragon stand}. El bajo
 			porcentaje de solapamiento en la captura 12 se corresponde
 			con un error de registración.}
