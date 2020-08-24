@@ -131,8 +131,8 @@ namespace nih {
 		double sample_ratio_; ///<submuestreo
 		double feature_radius_; ///<radio del descriptor
 		double resolution_; ///<a calcular de la entrada (igual para todas)
-		double y_threshold_; ///<umbral de movimiento en y
-		double axis_threshold_; ///<umbral de distancia al eje vertical
+		double y_threshold_; ///<umbral de desplazamiento en y
+		double axis_threshold_; ///<umbral del ángulo del eje de giro respecto al eje y (radianes)
 		int max_iterations_; ///<iteraciones de kmeans
 		int n_clusters_; ///<cantidad de clústers para kmeans
 
@@ -331,9 +331,10 @@ namespace nih {
 	      feature_radius_(8),
 	      resolution_(0),
 	      y_threshold_(8),
-	      axis_threshold_(0.2),
 	      max_iterations_(3),
-	      n_clusters_(3) {}
+	      n_clusters_(3) {
+			this->set_axis_threshold_(10*M_PI/180);
+	}
 	transformation
 	alignment::align(cloud_with_normal &source, const cloud_with_normal &target) {
 		if(resolution_ == 0)
@@ -432,7 +433,7 @@ namespace nih {
 		double doty = aa.axis()(1);
 		angle = aa.angle();
 
-		return 1 - std::abs(doty) < axis_threshold_;
+		return axis_threshold_ <= std::abs(doty);
 	}
 
 	// class anchor
