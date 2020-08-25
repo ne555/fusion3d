@@ -42,7 +42,7 @@
 	\end{figure}
 
 
-	A continuación se describen dos métodos para calcular la alineación inicial entre un par de capturas. 
+	A continuación se describen dos métodos para calcular la alineación inicial entre un par de capturas.
 
 	\subsection{Alineación mediante \emph{sample consensus}}
 		\subsubsection{Selección de keypoints}
@@ -136,8 +136,47 @@
 					Es decir, calcular el error
 					\[ \sum |b_j - T(a_j)| \]
 					para todos los puntos de la nube.
-				\item Repetir varias veces y devolver aquella transformación que produjo el menor error.\cite{Rusu:2009:FPF:1703435.1703733}
+				\item Repetir varias veces y devolver aquella transformación que produzca el menor error.\cite{Rusu:2009:FPF:1703435.1703733}
 			\end{enumerate}
+
+		\subsubsection{Búsqueda de parámetros}
+			%Para determinar los valores idóneos de los parámetros del algoritmo
+			Para ajustar los valores de los parámetros del algoritmo
+			se eligieron dos modelos de la base de datos Stanford\cite{StanfordScanRep}
+			Seleccionando pares de capturas de cada modelo, se estableció un conjunto de parámetros que alinee apropiadamente a todos los pares,
+			buscando, además, independencia respecto a las características geométricas del modelo.
+
+			Los modelos escogidos fueron \texttt{happy stand} y \texttt{bunny} debido a las diferencias geométricas que presentan:
+			\begin{itemize}
+				\item Las capturas de \texttt{happy stand} se realizaron a intervalos de ángulos equiespaciados (cercanos a $24^{\circ}$) y
+					presentan zonas suaves en la base, vientre y espalda.
+				\item Los ángulos entre las capturas de \texttt{bunny} son más variados y espaciados, yendo desde $35^{\circ}$ hasta $90^{\circ}$,
+				y se observa una superficie más irregular por todo el cuerpo (figura~\ref{fig:stanford_models}).
+			\end{itemize}
+
+			Primero se trabajó sobre el modelo \texttt{happy stand}.
+			Se observó que una selección de keypoints demasiado agresiva no permitía la convergencia del algoritmo de SAC-IA,
+			mientras que una selección demasiado permisiva elevaba el costo computacional de forma excesiva.
+			Finalmente, utilizando escalas diádicas y estableciendo un umbral de un desvío y medio
+			se obtuvieron buenos resultados en la mayoría de las capturas (figura~\ref{fig:dif_rot_happy_sac}).
+
+			Sin embargo, fue imposible hallar los parámetros adecuados para el modelo \texttt{bunny}.
+			Exceptuando las alineaciones entre las capturas \{315, 000\} y \{000, 045\},
+			el algoritmo de registración establecía correspondencias completamente erróneas (figura~\ref{fig:align_sac}).
+			Por esta razón, no se continuó con el desarrollo de este algoritmo.
+
+			\begin{figure}
+				\input{graph/dif_rot_happy_sac.tex}
+				\caption[Diferencias en la rotación estimada para el objeto \texttt{happy stand} (SAC-IA)]
+				{\label{fig:dif_rot_happy_sac}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{happy stand}
+				utilizando el algoritmo de sample consensus.}
+			\end{figure}
+
+			\begin{figure}
+				\Imagen{img/bun_sac_270_315}
+				\caption[Fallo en el algoritmo de \emph{sample consensus}]{\label{fig:align_sac}Ejemplo de fallo del algoritmo de \emph{sample consensus} producto de malas correspondencias
+				(par de capturas \{270, 315\} del modelo \texttt{bunny})}
+			\end{figure}
 
 
 	%El que tengo ahora
@@ -172,7 +211,7 @@
 		los marcos de referencia y las suposiciones de ubicación de la cámara
 		en la obtención de las capturas.  Es decir, se descartan aquellas correspondencias que
 		requieren un movimiento en $y$ excesivo o una rotación sobre un eje no
-		vertical. 
+		vertical.
 
 		Cada correspondencia define un ángulo de giro $\theta$ sobre
 		el eje $y$ y una translación en el plano $xz$, observándose una agrupación
@@ -198,6 +237,53 @@
 				entre las capturas \texttt{bun000} y \texttt{bun045}.}
 		\end{figure}
 
+		\subsubsection{Búsqueda de parámetros}
+			Para establecer los valores de los parámetros se procedió de la
+			misma manera que en el caso del algoritmo de SAC-IA.
+			Se definieron umbrales permisivos para el desplazamiento y el ángulo de giro
+			($8$ veces la resolución de la nube y $10^\circ$ respecto a la vertical, respectivamente)
+			y se realizaron incrementos discretos del tamaño de la vecindad para el cálculo de los marcos de referencia y los descriptores,
+			obteniéndose los mejores resultados para una vecindad de $8$ veces la resolución de la nube.
+
+			Para el modelo \texttt{happy}, las diferencias respecto al \emph{ground truth}
+			no superaron los $5^{\circ}$, teniendo un error promedio de $2^{\circ}$ (figura~\ref{fig:dif_rot_happy}).
+			Tampoco se tuvieron problemas con el modelo \texttt{bunny},
+			a pesar de presentar saltos cercanos a $90^{\circ}$ en las alineaciones
+			contra la captura \texttt{bun180}. Si bien este salto supera las restricciones impuestas,
+			en ningún caso se produjo una diferencia mayor a $5^{\circ}$ respecto al \emph{ground truth} (figura~\ref{fig:clust_bunny}).
+
+
+			\begin{figure}[t]
+				\input{graph/dif_rot_happy.tex}
+				\caption[Diferencias en la rotación estimada para el objeto \texttt{happy}]
+				{\label{fig:dif_rot_happy}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{happy},
+				para los algoritmos de sample consensus (claro) y búsqueda de clúster (oscuro).}
+			\end{figure}
+
+			\begin{figure}
+				\input{graph/dif_rot_bun.tex}
+				\caption[Diferencias en la rotación estimada para el objeto \texttt{bunny}]
+				{\label{fig:clust_bunny}Diferencias absolutas entre la rotación estimada y el \emph{ground truth} para el objeto \texttt{bunny} utilizando el algoritmo de búsqueda de clúster.}
+			\end{figure}
+
+			De esta manera, se logró acercar las capturas lo suficiente como
+			para intentar alinearlas por ICP.
+
+			%\begin{figure}
+			%	\Imagen{img/bun_clust_270_315}
+			%	\caption[Registración exitosa mediante el uso de búsqueda de clúster]
+			%	{\label{fig:clust_bun_good}Registración exitosa mediante el uso de búsqueda de clúster (par de capturas \{270, 315\} del modelo \texttt{bunny}).}
+			%\end{figure}
+
+
+			%parámetros
+	    % sample_ratio_(0.25),
+	    %  feature_radius_(8),
+	    %  resolution_(0),
+	    %  y_threshold_(8),
+	    %  max_iterations_(3),
+	    %  n_clusters_(3) {
+		%	this->set_axis_threshold_(10*M_PI/180);
 
 
 	\subsection{Refinamiento}
