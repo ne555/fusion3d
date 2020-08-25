@@ -36,7 +36,7 @@ usados en investigación.
 Las capturas fueron obtenidas mediante un escáner láser de barrido Cyberware
 3030~MS.  Se realizaron escaneos del objeto en diversas posiciones sobre una
 base giratoria y luego estas capturas fueron combinadas para producir una única
-malla triangular utilizando el método de \emph{zippering}\cite{Turk:1994:ZPM:192161.192241} o el de
+malla triangular mediante el método de \emph{zippering}\cite{Turk:1994:ZPM:192161.192241} o el de
 \emph{volumetric merging}\cite{Curless:1996:VMB:237170.237269}, ambos desarrollados en
 Stanford.
 
@@ -47,7 +47,7 @@ contra un escaneo cilíndrico del objeto mediante un método semiautomático, do
 usuario establece una alineación inicial que luego es ajustada mediante un algoritmo
 basado en ICP\cite{Turk:1994:ZPM:192161.192241}.
 
-De esta base de datos se utilizaron los modelos
+De esta base de datos se escogieron los modelos
 	\texttt{armadillo},
 	\texttt{bunny},
 	\texttt{dragon},
@@ -89,9 +89,9 @@ para lograr reconstrucciones tridimensionales utilizando el dispositivo Kinect.
 	%kinectfusion_real-time_3d_reconstruction_and_interaction_using_a_moving_depth_camera
 	Debido a que uno de sus objetivos era lograr una implementación en tiempo
 	real, el algoritmo de registración requiere de poca variación
-	de la posición relativa cámara-objeto entre capturas, por lo que no fue utilizado.
+	de la posición relativa cámara-objeto entre capturas, por lo que fue descartado.
 
-	Para realizar la fusión utiliza una variación del método de
+	La fusión se realiza mediante una variación del método de
 	\emph{volumetric merging} sobre GPU\cite{Izadi:2011:KRR:2047196.2047270}.
 
 	%Suposiciones:
@@ -107,7 +107,6 @@ para lograr reconstrucciones tridimensionales utilizando el dispositivo Kinect.
 	maquinal.  Cuenta con módulos de procesamiento de imágenes de profundidad y
 	registración.
 
-	%TODO: demasiados utiliza
 	En un principio se consideró utilizar la información de color de las capturas
 	para poder lograr la registración, pero debido a que la base de datos
 	finalmente elegida contiene únicamente información geométrica
@@ -139,3 +138,8 @@ para lograr reconstrucciones tridimensionales utilizando el dispositivo Kinect.
 	%\Nota{En particular, CloudCompare permite definir condiciones de borde Dirichlet}
 
 	Se utilizaron especialmente para visualización y comparación de resultados.
+
+	\subsection{Otras herramientas de software}
+	Para aquellas funcionalidades no provistas por la biblioteca PCL, se buscaron herramientas de software libre multiplataforma.
+	En particular, se escogió \emph{delaunator-cpp}\footnote{\url{https://github.com/delfrrr/delaunator-cpp}} para realizar triangulaciones Delaunay 2D,
+	y \emph{DKM}\footnote{\url{https://github.com/genbattle/dkm}} para la búsqueda de clústeres mediante el algoritmo de k-means.
