@@ -1,6 +1,6 @@
 #/* vim: set filetype=gnuplot:*/
 
-set terminal latex rotate
+set terminal tikz
 set output 'dif_rot_bun.tex'
 #set terminal dumb ansirgb
 set xlabel 'captura'

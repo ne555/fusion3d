@@ -1,10 +1,10 @@
 #/* vim: set filetype=gnuplot:*/
 
 set terminal tikz
-set output 'dif_rot_happy_total.tex'
+set output 'dif_rot_happy_sac.tex'
 #set terminal dumb ansirgb
 set xlabel 'captura'
 set ylabel 'ángulo (grados)'
 unset key
 
-plot 'data/happy_dif_total.angles' using 2:xtic(1) with histogram
+plot 'data/happy.angles' using (abs($3-$4)):xtic(1) with histogram fs pattern 1
