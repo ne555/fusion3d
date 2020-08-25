@@ -1,6 +1,6 @@
 #/* vim: set filetype=gnuplot:*/
 
-set terminal tikz
+set terminal tikz monochrome
 set output 'dif_rot_bun_total.tex'
 #set terminal dumb ansirgb
 set xlabel 'captura'
