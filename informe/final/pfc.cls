@@ -45,4 +45,5 @@ Ingeniería en Informática\\
 
 \newcommand{\Imagen}[1]{\centering\includegraphics[max width=.9\linewidth, max height=.9\textheight, keepaspectratio]{#1}}
 
+\synctex=1
 \endinput
