@@ -1,0 +1,40 @@
+\chapter{Pruebas y resultados}
+	A continuación se detallan las pruebas realizadas y los resultados obtenidos
+	por cada módulo desarrollado utilizando como base los modelos
+	\texttt{armadillo}, \texttt{bunny}, \texttt{dragon}, \texttt{drill} y \texttt{happy}
+	del repositorio de Stanford\cite{StanfordScanRep}.
+
+	\section{Módulo de registración}
+	Para la registración se utilizó el método basado en la búsqueda de clúster,
+	seguido de un refinamiento mediante ICP y una corrección de bucle.
+	Se plantearon dos métodos para evaluar la calidad de cada registración:
+	\begin{itemize}
+		\item Mediante la comparación entre la transformación calculada y aquella provista por la base de datos (\emph{ground truth});
+		\item Mediante una métrica de \emph{fitness} que se obtiene a partir de la nube transformada y las nubes de entrada.
+	\end{itemize}
+
+	Para comparar las alineaciones contra el \emph{ground truth}, se
+	observa el efecto de las mismas sobre un punto orientado simulando la
+	cámara (figura~\ref{fig:err_reg}). El punto \emph{eye} ($C$) se ubica inicialmente en las coordenadas
+	$\{0, -0.1, 0.7\}$ (valores obtenidos de la base de datos), y se
+	orienta el vector \emph{target} hacia $-z$ y el \emph{up} hacia $y$.
+	El error de posicionamiento es la razón entre la distancia al punto
+	de inicio y la distancia al punto obtenido por el \emph{ground truth}.
+	\[\text{Error} = \frac{|C'-C_{gt}|}{|C_{gt} - C|}\]
+	Los errores de \emph{target} y \emph{up} se corresponden al ángulo contra los
+	vectores correspondientes obtenidos por el \emph{ground truth}.
+
+	\begin{figure}
+		\centering
+		\input{diagram/error_registration.pdf_tex}
+		\caption{\label{fig:err_reg}Comparación entre las transformaciones de alineación.
+		Se observa el efecto producido en un punto orientado $C$ que simula la posición de la cámara.}
+	\end{figure}
+
+	Los errores de la registración se observan en el
+	cuadro~\ref{tab:reg_error}.  Los errores no superan $1^{\circ}$ en
+	orientación ni $1\%$ en posicionamiento.  Se da una excepción en el
+	caso de \texttt{dragon stand}, debido a una mala alineación en la
+	captura 12 (figura~\ref{fig:fitness}).
+
+	\input{reg_error}
