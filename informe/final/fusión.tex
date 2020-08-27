@@ -13,6 +13,8 @@
 	\subsection{Método}
 	Se utiliza una representación de \emph{surfel} para cada punto similar a la propuesta en \cite{5457479} %ref in-hand scanning
 	debido a la facilidad de implementación de las funciones de actualización de los puntos.
+	Como es necesario integrar la información de posición y normal de cada punto,
+	se idearon funciones de conversión del formato de nube usado en el módulo de registración.
 
 	Cada surfel tiene asociado un valor de confianza y las vistas en las que
 	fue observado.  El valor de confianza nos indica la probabilidad de que sus
@@ -20,8 +22,6 @@
 	Este valor se inicializa según el ángulo de su normal respecto a la línea
 	de la cámara (figura~\ref{fig:confianza_surfel}).
 	%y a su distancia al centro de la captura %terminé usando sólo las normales
-
-
 
 	El algoritmo~\ref{alg:surfel} describe el agregado de una nueva vista.
 	Por cada punto de la vista se busca qué surfel lo contiene y se actualiza
