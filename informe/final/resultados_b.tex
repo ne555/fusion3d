@@ -9,7 +9,7 @@
 	seguido de un refinamiento mediante ICP y una corrección de bucle.
 	Se plantearon dos métodos para evaluar la calidad de cada registración:
 	\begin{itemize}
-		\item Mediante la comparación entre la transformación calculada y aquella provista por la base de datos (\emph{ground truth});
+		\item Mediante la comparación entre la transformación calculada y aquella provista por la base de datos (\emph{ground truth}).
 		\item Mediante una métrica de \emph{fitness} que se obtiene a partir de la nube transformada y las nubes de entrada.
 	\end{itemize}
 
@@ -21,8 +21,8 @@
 	El error de posicionamiento es la razón entre la distancia al punto
 	de inicio y la distancia al punto obtenido por el \emph{ground truth}.
 	\[\text{Error} = \frac{|C'-C_{gt}|}{|C_{gt} - C|}\]
-	Los errores de \emph{target} y \emph{up} se corresponden al ángulo contra los
-	vectores correspondientes obtenidos por el \emph{ground truth}.
+	Los errores de \emph{target} y \emph{up} se corresponden al ángulo formado contra los
+	vectores respectivos obtenidos por el \emph{ground truth}.
 
 	\begin{figure}
 		\centering
@@ -31,10 +31,31 @@
 		Se observa el efecto producido en un punto orientado $C$ que simula la posición de la cámara.}
 	\end{figure}
 
-	Los errores de la registración se observan en el
-	cuadro~\ref{tab:reg_error}.  Los errores no superan $1^{\circ}$ en
-	orientación ni $1\%$ en posicionamiento.  Se da una excepción en el
-	caso de \texttt{dragon stand}, debido a una mala alineación en la
-	captura 12 (figura~\ref{fig:fitness}).
+	En el cuadro~\ref{tab:reg_error} se presentan los errores de registración promedio para cada orientación de los modelos.
+	En la mayoría de los casos, los errores no superan $1^{\circ}$ en orientación ni $1\%$ en posicionamiento,
+	observándose dos excepciones: \texttt{bunny} y \texttt{dragon stand}.
+	El aumento en el error del modelo \texttt{bunny} se debe a que la captura \texttt{bun180} presenta una distancia cercana a $90^\circ$,
+	superando las restricciones impuestas en este trabajo.
+	Sin embargo, en el caso de \texttt{dragon stand} el error refleja una mala
+	alineación en la captura~12, debida a una mala selección de los parámetros.
+	Mediante un posterior ajuste de los parámetros, en particular, del tamaño de la vecindad para el cálculo de los descriptores, se obtuvo una alineación correcta.
 
 	\input{reg_error}
+
+	Para evaluar la alineación entre un par de capturas prescindiendo del \emph{ground truth}, y situándonos en un escenario más realista,
+	se diseñó una medida de \emph{fitness}.
+	Esta medida se define como el porcentaje del área solapada entre las nubes una vez alineadas,
+	donde un bajo solapamiento nos indicaría un posible error de alineación, como
+	se observa en la figura~\ref{fig:fitness}.
+
+	\begin{figure}
+		\centering
+			\input{graph/fitness.tex}
+		\caption[Métrica de alineación para el modelo \texttt{dragon stand}]{\label{fig:fitness}Métrica de alineación para el modelo \texttt{dragon stand}. El bajo
+		porcentaje de solapamiento en la captura 12 se corresponde
+		con un error de registración.}
+	\end{figure}
+
+
+	\section{Módulo de fusión}
+
