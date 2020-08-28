@@ -50,14 +50,14 @@ bool is_cloud(std::string filename){
 	return filename.substr(filename.size()-4, 4) == ".ply";
 }
 
-void mostrar_error(camera yo, camera el, camera initial) {
+std::tuple<double, double, double> mostrar_error(camera yo, camera el, camera initial) {
 	double error = (yo.eye - el.eye).norm() / (initial.eye - el.eye).norm();
 	double angle_target = acos(yo.target.dot(el.target));
 	double angle_up = acos(yo.up.dot(el.up));
 
 	using nih::rad2deg;
-	std::cerr << error << ' ' << rad2deg(angle_target) << ' '
-	          << rad2deg(angle_up) << '\n';
+	return {error, rad2deg(angle_target), rad2deg(angle_up)};
+	//std::cerr << error << ' ' << rad2deg(angle_target) << ' ' << rad2deg(angle_up) << '\n';
 }
 
 int main(int argc, char **argv){
@@ -69,12 +69,17 @@ int main(int argc, char **argv){
 	camera initial;
 	transformation prev_gt, prev_mine;
 	prev_gt = prev_mine = transformation::Identity();
+
+	bool first = true;
+	int count = 0;
+	double position = 0, target = 0, up = 0;
 	while(mine>>filename_mine){
 		while(gt>>filename_gt and filename_gt not_eq filename_mine)
 			;
 		if(filename_gt not_eq filename_mine){
-			std::cerr << "Sync error: " << filename_gt << ' ' << filename_mine << '\n';
-			return 1;
+			//std::cerr << "Sync error: " << filename_gt << ' ' << filename_mine << '\n';
+			//return 1;
+			break;
 		}
 
 		//leer transformacion
@@ -84,12 +89,27 @@ int main(int argc, char **argv){
 		camera el = transformar(initial, prev_gt.inverse() * current_gt);
 		camera yo = transformar(initial, prev_mine.inverse() * current_mine);
 
-		std::cerr << filename_gt << ' ';
-		mostrar_error(yo, el, initial);
+		if(not first){
+			auto [err_pos, err_targ, err_up] = mostrar_error(yo, el, initial);
+			position += err_pos;
+			target += err_targ;
+			up += err_up;
+			++count;
+
+			std::cerr << filename_gt << ' ';
+			std::cerr << err_pos << ' ' << err_targ << ' ' << err_up << '\n';
+		}
+		else
+			first = false;
 
 		prev_gt = current_gt;
 		prev_mine = current_mine;
 	}
+
+	position /= count;
+	target /= count;
+	up /= count;
+	std::cerr << "Average\n" << position << ' ' << target << ' ' << up << '\n';
 
 
 	return 0;
