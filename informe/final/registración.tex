@@ -210,8 +210,13 @@
 		Para identificar y eliminar las correspondencias erróneas se utilizan
 		los marcos de referencia y las suposiciones de ubicación de la cámara
 		en la obtención de las capturas.  Es decir, se descartan aquellas correspondencias que
-		requieren un movimiento en $y$ excesivo o una rotación sobre un eje no
-		vertical.
+		requieren un movimiento en $y$ excesivo o una rotación sobre un eje no vertical (figura~\ref{fig:bun_corr}).
+
+		\begin{figure}
+			\centering
+			\Imagen{img/bun_corr_clust_edit}
+			\caption{\label{fig:bun_corr}Correspondencias supervivientes al filtrar mediante los marcos de referencia.}
+		\end{figure}
 
 		Cada correspondencia define un ángulo de giro $\theta$ sobre
 		el eje $y$ y una translación en el plano $xz$, observándose una agrupación
