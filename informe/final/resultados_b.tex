@@ -147,7 +147,7 @@
 			%\Imagen{img/drill_drops}
 			\centering
 			\includegraphics[max width=.5\linewidth, max height=.25\textheight, keepaspectratio]
-				{img/drill_drops}
+				{img/dragon_belly}
 			\caption[Acercamiento al vientre de \texttt{dragon}]{\label{fig:dragon_belly}Acercamiento al vientre de \texttt{dragon}.}
 		\end{figure}
 
@@ -164,3 +164,24 @@
 		%soporte considerando todo el contorno del hueco, de forma de asegurar
 		%que los nuevos puntos no excedan los límites del hueco.
 
+	\section{Tiempo de ejecución}
+		Durante el proceso de reconstrucción, se observa que la etapa de reconstrucción
+		es responsable de la mayor parte del costo computacional, sobre todo al aumentar
+		la cantidad de puntos en las capturas (cuadro~\ref{tab:reconstr_time}).
+		En el cuadro~\ref{tab:reg_time} se muestran
+		los tiempos de ejecución promedio, discriminados en la alineación
+		inicial y el refinamiento posterior.
+		El orden $\bigO\left(n^2\right)$ de la alineación inicial se debe a la búsqueda
+		entre todos los pares de puntos para establecer las correspondencias (figura~\ref{fig:registration_order}).
+		%Si bien los tiempos no son considerables, pueden reducirse al mejorar
+		%la selección inicial de puntos y realizar la búsqueda de las
+		%correspondencias de forma más eficiente.
+		\input{reconst_time}
+
+		\input{reg_time}
+
+		\begin{figure}
+			\centering
+			\input{graph/registration_order.tex}
+			\caption{\label{fig:registration_order}Tiempo de ejecución de la registración, ajustado a una función de orden $\bigO\left(n^2\right)$.}
+		\end{figure}
