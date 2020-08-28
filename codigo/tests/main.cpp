@@ -50,10 +50,16 @@ bool is_cloud(std::string filename){
 	return filename.substr(filename.size()-4, 4) == ".ply";
 }
 
+auto clamp(auto value, auto min, auto max){
+	if(value < min) return min;
+	if(value > max) return max;
+	return value;
+}
+
 std::tuple<double, double, double> mostrar_error(camera yo, camera el, camera initial) {
 	double error = (yo.eye - el.eye).norm() / (initial.eye - el.eye).norm();
-	double angle_target = acos(yo.target.dot(el.target));
-	double angle_up = acos(yo.up.dot(el.up));
+	double angle_target = acos(clamp(yo.target.dot(el.target), -1.f, 1.f));
+	double angle_up = acos(clamp(yo.up.dot(el.up), -1.f, 1.f));
 
 	using nih::rad2deg;
 	return {error, rad2deg(angle_target), rad2deg(angle_up)};
