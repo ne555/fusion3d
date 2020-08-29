@@ -146,8 +146,8 @@ namespace nih {
 		inline void set_sample_ratio(double sample_ratio);
 		inline void set_feature_radius(double feature_radius);
 		inline void set_resolution(double resolution);
-		inline void set_y_threshold_(double y_threshold);
-		inline void set_axis_threshold_(double axis_threshold); // angle in radians
+		inline void set_y_threshold(double y_threshold);
+		inline void set_axis_threshold(double axis_threshold); // angle in radians
 		inline void set_max_iterations_cluster(int max_iterations);
 		inline void set_n_clusters(int n_clusters);
 	};
@@ -333,7 +333,7 @@ namespace nih {
 	      y_threshold_(8),
 	      max_iterations_(3),
 	      n_clusters_(3) {
-			this->set_axis_threshold_(10*M_PI/180);
+			this->set_axis_threshold(10*M_PI/180);
 	}
 	transformation
 	alignment::align(cloud_with_normal &source, const cloud_with_normal &target) {
@@ -559,10 +559,10 @@ namespace nih {
 	void alignment::set_resolution(double resolution) {
 		resolution_ = resolution;
 	}
-	void alignment::set_y_threshold_(double y_threshold) {
+	void alignment::set_y_threshold(double y_threshold) {
 		y_threshold_ = y_threshold;
 	}
-	void alignment::set_axis_threshold_(double axis_threshold) {
+	void alignment::set_axis_threshold(double axis_threshold) {
 		axis_threshold_ = std::cos(axis_threshold);
 	}
 	void alignment::set_max_iterations_cluster(int max_iterations) {
