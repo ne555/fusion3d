@@ -1,0 +1,61 @@
+\chapter{Uso de la biblioteca}
+En este apéndice se presenta una reseña de la biblioteca desarrollada.
+Se explica brevemente la instalación, compilación y el uso de las funciones fundamentales
+que provee cada módulo de la misma.
+
+	\section{Instalación}
+	La biblioteca se encuentra contenida en archivos de cabecera, los cuales serán incluidos por los fuentes del proyecto.
+	Se requiere la instalación de las siguientes dependencias:
+	\begin{itemize}
+		\item \texttt{PCL} versión 1.9 (\url{https://pointclouds.org/downloads/}).
+		\item \texttt{delaunator-cpp} versión 0.4 (\url{https://github.com/delfrrr/delaunator-cpp}).
+		\item \texttt{DKM} (\url{https://github.com/genbattle/dkm}).
+	\end{itemize}
+
+	Para la compilación se recomienda el uso de la herramienta \texttt{cmake} con el siguiente esqueleto para su archivo de configuración \texttt{CMakeLists.txt}:
+	\inputminted{cmake}{code/CMakeLists.txt}
+
+	\section{Clases principales}
+	\begin{itemize}
+		\item \verb|cloud_with_transformation|: agrupa la nube de puntos y la transformación de alineación.
+		\item \verb|alignment|: realiza la registración de dos nubes mediante el método de búsqueda de clúster.
+		\item \verb|fusion|: 
+	\end{itemize}
+
+	\section{Módulo de preproceso}
+	Carga de una nube desde archivo y su preparación para ser usada por el módulo de registración
+	\inputminted{cpp}{code/preproceso.cpp}
+
+	\section{Módulo de registración}
+	Alineación inicial de un par de nubes
+	\inputminted{cpp}{code/pairwise_reg.cpp}
+
+	Hasta este punto, la información de posición y normales se mantenía en dos nubes separadas.
+	Los pasos siguientes requieren que esta información se encuentre integrada por lo que es necesario utilizar la función de conversión:
+	\mintinline{cpp}{join_cloud_and_normal(nube)}.
+
+	Ajuste mediante el algoritmo de ICP
+	\inputminted{cpp}{code/pairwise_icp.cpp}
+
+	Corrección de bucle: se realiza sobre un vector que contiene todas las capturas realizadas alrededor del objecto, las cuales fueron alineadas de la forma descripta anteriormente.
+	\inputminted{cpp}{code/loop.cpp}
+
+	Medir la calidad de la registración
+	\inputminted{cpp}{code/fitness.cpp}
+
+	\section{Módulo de fusión}
+	Una vez calculadas todas las transformaciones de alineación, se procede a la fusión de las capturas.
+	\emph{¡Advertencia! No se debe aplicar la transformación a la nube, ya que el algoritmo de fusión se encargará de hacerlo}.
+	\inputminted{cpp}{code/fusion.cpp}
+
+	\section{Rellenado de huecos}
+	Detección de huecos
+	\inputminted{cpp}{code/holes.cpp}
+
+	Rellenado mediante el método de advancing front.
+	\emph{¡Advertencia! El algoritmo falla excepto en huecos pequeños. No se recomienda su uso}
+	\inputminted{cpp}{code/adv_front.cpp}
+
+	\section{Reconstrucción de Poisson}
+	La reconstrucción de Poisson se halla implementada en la biblioteca PCL.
+	\inputminted{cpp}{code/poisson.cpp}
