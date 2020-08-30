@@ -1,261 +1,120 @@
 \chapter{Pruebas y resultados}
-%intro
+	A continuación se detallan las pruebas realizadas y los resultados obtenidos
+	por cada módulo desarrollado utilizando como base los modelos
+	\texttt{armadillo}, \texttt{bunny}, \texttt{dragon}, \texttt{drill} y \texttt{happy}
+	del repositorio de Stanford\cite{StanfordScanRep}.
+
+	\section{Módulo de registración}
+	Para la registración se utilizó el método basado en la búsqueda de clúster,
+	seguido de un refinamiento mediante ICP y una corrección de bucle.
+	Se plantearon dos métodos para evaluar la calidad de cada registración:
+	\begin{itemize}
+		\item Mediante la comparación entre la transformación calculada y aquella provista por la base de datos (\emph{ground truth}).
+		\item Mediante una métrica de \emph{fitness} que se obtiene a partir de la nube transformada y las nubes de entrada.
+	\end{itemize}
+
+	Para comparar las alineaciones contra el \emph{ground truth}, se
+	observa el efecto de las mismas sobre un punto orientado simulando la
+	cámara (figura~\ref{fig:err_reg}). El punto \emph{eye} ($C$) se ubica inicialmente en las coordenadas
+	$\{0, -0.1, 0.7\}$ (valores obtenidos de la base de datos), y se
+	orienta el vector \emph{target} hacia $-z$ y el \emph{up} hacia $y$.
+	El error de posicionamiento es la razón entre la distancia al punto
+	de inicio y la distancia al punto obtenido por el \emph{ground truth}.
+	\[\text{Error} = \frac{|C'-C_{gt}|}{|C_{gt} - C|}\]
+	Los errores de \emph{target} y \emph{up} se corresponden al ángulo formado contra los
+	vectores respectivos obtenidos por el \emph{ground truth}.
+
+	\begin{figure}
+		\centering
+		\input{diagram/error_registration.pdf_tex}
+		\caption{\label{fig:err_reg}Comparación entre las transformaciones de alineación.
+		Se observa el efecto producido en un punto orientado $C$ que simula la posición de la cámara.}
+	\end{figure}
+
+	En el cuadro~\ref{tab:reg_error} se presentan los errores de registración promedio para cada orientación de los modelos.
+	En la mayoría de los casos, los errores no superan $1^{\circ}$ en orientación ni $1\%$ en posicionamiento,
+	observándose dos excepciones: \texttt{bunny} y \texttt{dragon stand}.
+	El aumento en el error del modelo \texttt{bunny} se debe a que la captura \texttt{bun180} presenta una distancia cercana a $90^\circ$,
+	superando las restricciones impuestas en este trabajo.
+	Sin embargo, en el caso de \texttt{dragon stand} el error refleja una mala
+	alineación en la captura~12, debida a una mala selección de los parámetros.
+	Mediante un posterior ajuste de los parámetros, en particular, del tamaño de la vecindad para el cálculo de los descriptores, se obtuvo una alineación correcta.
+
+	\input{reg_error}
+
+	Para evaluar la alineación entre un par de capturas prescindiendo del \emph{ground truth}, y situándonos en un escenario más realista,
+	se diseñó una medida de \emph{fitness}.
+	Esta medida se define como el porcentaje del área solapada entre las nubes una vez alineadas,
+	donde un bajo solapamiento nos indicaría un posible error de alineación, como
+	se observa en la figura~\ref{fig:fitness}.
+
+	\begin{figure}
+		\centering
+			\input{graph/fitness.tex}
+		\caption[Métrica de alineación para el modelo \texttt{dragon stand}]{\label{fig:fitness}Métrica de alineación para el modelo \texttt{dragon stand}. El bajo
+		porcentaje de solapamiento en la captura 12 se corresponde
+		con un error de registración.}
+	\end{figure}
 
 
+	\section{Módulo de fusión}
+	%En la fusión se utilizó una distancia de proximidad de $1.5$ veces la resolución de las nubes,
+	%y un mínimo de confianza de $0.2$.
 
+	Como medida de error de la fusión se utilizó la distancia entre los puntos de la nube reconstruida
+	respecto al punto más cercano en el \emph{ground truth} (cuadro~\ref{tab:fus_error}).
+	Esta medición no se realizó para el modelo \texttt{armadillo} debido a que su reconstrucción
+	se encontraba a una escala distinta a la de las capturas.
+	Nuevamente se destaca el error de \texttt{dragon stand} producto de una mala alineación.
 
+	\input{fusion_error}
 
+	En todos los modelos, se observa, además, una inflación/deflación de los objetos
+	reconstruidos debida a la propagación del error de alineación.  Así, la
+	primera captura coincide casi exactamente, pero el error se incrementa
+	a medida que nos alejamos de ella (figura~\ref{fig:fus_happy}).
 
+	\begin{figure}
+		\Imagen{img/happy_diff}
+		\caption[Medida de error en la fusión]{\label{fig:fus_happy}Diferencia contra el \emph{ground truth} del modelo \texttt{happy}.}
+	\end{figure}
 
-\section{Pruebas parciales del módulo de rellenado de huecos}
-\subsection{Advancing front}
-		%mover a resultados
-		Con este método se pueden rellenar agujeros pequeños, obteniéndose una malla regular (figura~\ref{fig:fill_good}).
+	\section{Módulo de rellenado de huecos}
+		\subsection{Método de advancing front}
+		Al utilizar el método de advancing front sobre la superficie reconstruida de \texttt{bunny},
+		se logró el rellenado de agujeros pequeños, obteniéndose una malla regular (figura~\ref{fig:fill_good}).
 		Sin embargo, debido a la localidad con la que se generan los nuevos
 		puntos, el frente puede diverger o pretender unirse a puntos que no
 		forman parte del contorno del hueco, resultando una malla mal formada,
 		con aristas que corresponden a más de dos caras (figura~\ref{fig:fill_bad}).
-		Para evitar la divergencia es necesario definir una superficie de
-		soporte considerando todo el contorno del hueco, de forma de asegurar
-		que los nuevos puntos no excedan los límites del hueco.
+		Por estas razones, el método no resulta adecuado para el rellenado automático.
 
-	\begin{figure}
-		\Imagen{img/fill_good}
-		\caption[Relleno de un hueco pequeño mediante \emph{advancing front}]{\label{fig:fill_good}Relleno de un hueco pequeño mediante \emph{advancing front}.}
-	\end{figure}
-
-	\begin{figure}
-		\Imagen{img/fill_bad}
-		\caption[Fallo en el algoritmo de \emph{advancing front}]{\label{fig:fill_bad}Fallo en el algoritmo de \emph{advancing front}. Se intentó completar un triángulo con un punto que no pertenecía al borde.}
-		\TODO{cambiar gráfico}
-	\end{figure}
-
-
-	\section{Introducción}
-	En esta etapa se integraron los módulos de registración, fusión y rellenado de huecos,
-	para resolver todas las funcionalidades propuestas por el proyecto.
-	Con el fin de analizar el rendimiento del sistema,
-	se utilizaron los modelos provistos por la base de datos Stanford.
-
-	\section{Integración}
-		El principal problema para la integración fue lograr la comunicación
-		entre los módulos.  Según la metodología incremental elegida para la
-		etapa de desarrollo, el diseño del módulo de fusión se inició luego de
-		que el módulo de registración estuviera implementado, y de la misma
-		manera, el diseño del módulo de rellenado de huecos se inició luego de
-		obtener la implementación del de fusión. 
-		Por esta razón, podría resultar prohibitivamente costoso modificar el diseño de un módulo anterior.
-
-		Este problema se hizo evidente al establecer el formato de nube utilizado en cada módulo.
-		Para la registración fue conveniente, en un primer momento,
-		que la información de posición y normal de cada punto de la nube se encontrase por separado,
-		por lo que al implementar las diversas alternativas se siguió manteniendo este formato.
-		Sin embargo, los algoritmos de fusión y rellenado de huecos requerían
-		que esta información estuviera junta.
-
-		Debido a que ya se contaba con los resultados de la registración, es
-		decir, con las transformaciones de las vistas, se idearon funciones de
-		conversión entre esos dos formatos de nubes.
-		Sin embargo, se planea una posterior modificación del módulo de registración de
-		forma que las conversiones sean transparentes para el usuario de la
-		biblioteca.
-
-		Con respecto al módulo de rellenado de huecos, debido a los algoritmos
-		utilizados, ocurre una pérdida de información de los resultados de la
-		fusión:
-		\begin{itemize}
-			\item El método de \emph{advancing front} descarta todos aquellos
-				puntos que no pertenezcan a la mayor componente conexa de la
-				triangulación. Esto se realiza para evitar la presencia de islas y así
-				simplificar la implementación del método.
-				Una versión futura podría evitar esta pérdida de información.
-
-			\item En el caso del método de \emph{Poisson}, las conectividades entre los
-				puntos es completamente ignorada, lo cual ocasiona uniones erróneas en algunos casos.
-		\end{itemize}
-
-
-	\section{Funcionalidades}
-		A continuación se describirán las funcionalidades que provee el sistema
-		para dar respuesta a los requerimientos identificados en etapas
-		previas.
-
-		\begin{itemize}
-			\item  \NombreItem{Preproceso}
-				Se realizó una reducción de ruido al ajustar los puntos
-				mediante el algoritmo de mínimos cuadrados móviles.
-
-			\item  \NombreItem{Outliers}
-				El ruido y los puntos extremos se consideran en varias etapas de la reconstrucción.
-				Durante el preproceso, una triangulación Delaunay identifica y elimina puntos extremos.
-				Durante la fusión, los puntos sin confirmación o de poca confianza
-				se consideran provenientes del ruido.
-				Antes de realizar el rellenado de huecos, pueden eliminarse
-				componentes que contengan pocos puntos.
-
-			\item  \NombreItem{Registración}
-				Se proveen dos métodos para la alineación inicial en el módulo de registración:
-				uno basado en \emph{sample consensus} de puntos salientes, y el otro basado en
-				búsqueda de clústers según el marco de referencia ISS.
-				Además, se cuenta con un refinamiento posterior mediante ICP.
-
-			\item  \NombreItem{Área solapada}
-				El área solapada  entre dos nubes
-				se definió como aquellos puntos que estén a menos de un umbral de distancia
-				al punto más cercano en la otra nube.
-				Para realizar la búsqueda eficientemente se utilizó un k-d tree.
-
-			\item  \NombreItem{Métricas}
-				Cómo métricas de calidad de la registración se utilizaron
-				la distancia entre las nubes considerando sólo el área solapada,
-				y la razón entre la cantidad de puntos de la nube de entrada con esta área solapada.
-
-			\item  \NombreItem{Corrección de bucle}
-				El error de alineación del bucle se define como la
-				transformación total calculada para ajustar la primer captura a la última
-				una vez completada una vuelta. Debido a que la primer captura definió el
-				marco de referencia, en una registración perfecta esta
-				transformación sería la identidad.
-				Calculando su inversa se obtiene una corrección que será distribuida
-				a las otras registraciones.
-
-			\item  \NombreItem{Combinación de nubes}
-				El módulo de fusión provee esta funcionalidad, utilizando una
-				representación de surfel con visibilidad, confianza y vecindad.
-
-			\item  \NombreItem{Triangulación tridimensional}
-				La triangulación se realiza mediante el método de \emph{Greedy
-				Projection Triangulation} provisto por PCL.
-				Se estableció un umbral en el tamaño de los triángulos considerando la resolución de la nube,
-				así como también límites para sus ángulos.
-
-			\item  \NombreItem{Identificación de huecos}
-				Las conectividades de la malla se almacenan en un grafo de medias aristas.
-				Los huecos se identifican como aquellas aristas que inciden en sólo una cara.
-				Se hizo uso de \texttt{PCL::getBoundBoundary} transformando su resultado para
-				obtener los puntos del contorno del hueco y ordenarlos según su tamaño
-				(cantidad de puntos).
-
-			\item  \NombreItem{Rellenado de huecos}
-				Se da respuesta a esta funcionalidad mediante los algoritmos de \emph{advancing front} y reconstrucción de Poisson.
-		\end{itemize}
-
-
-		Como dependencias externas se tienen:
-		\begin{itemize}
-			\item PCL\footnote{\url{http://www.pointclouds.org/}},
-				para el procesamiento de las nubes de puntos;
-			\item delaunator-cpp\footnote{\url{https://github.com/delfrrr/delaunator-cpp}}, para la triangulación Delaunay;
-			\item DKM\footnote{\url{https://github.com/genbattle/dkm}}, para el algoritmo de k-means.
-		\end{itemize}
-		Debido a que el sistema hace uso únicamente de bibliotecas multiplataforma,
-		se garantiza su funcionamiento tanto en Linux como Windows.
-
-	\section{Pruebas}
-		Para realizar las pruebas se utilizaron los modelos
-			\texttt{armadillo},
-			\texttt{bunny},
-			\texttt{dragon},
-			\texttt{drill} y
-			\texttt{happy} del repositorio de Stanford\footnote{\url{http://graphics.stanford.edu/data/3Dscanrep/}}.
-		Para cada modelo se tienen capturas realizadas sobre una base giratoria
-		a diversos ángulos, en algunos casos en varias posiciones, y
-		algunas capturas de ciertos detalles.
-		Para cada captura se tiene, además, la transformación de alineación que
-		la lleva a un sistema de referencia global.
-		El repositorio cuenta también con los objetos reconstruidos utilizando
-		todas las capturas disponibles.
-		Se estableció entonces el \emph{ground truth} como el conjunto de estas
-		transformaciones de alineación y el objeto reconstruido.
-
-		Para la registración se utilizó el método basado en la búsqueda de clúster,
-		seguido de un refinamiento mediante ICP y una corrección de bucle.
-		En la fusión se utilizó una distancia de proximidad de $1.5$ veces la resolución de las nubes,
-		y un mínimo de confianza de $0.2$.
-		El rellenado de huecos se realizó mediante el método de Poisson.
-
-
-		Durante el proceso de reconstrucción, se observa que la etapa de reconstrucción
-		es responsable de la mayor parte del costo computacional, sobre todo al aumentar
-		la cantidad de puntos en las capturas (cuadro~\ref{tab:reconstr_time}).
-		En el cuadro~\ref{tab:reg_time} se muestran
-		los tiempos de ejecución promedio, discriminados en la alineación
-		inicial y el refinamiento posterior.
-		Graficando estos tiempos se puede apreciar el orden $\bigO(n^2)$ de la alineación inicial,
-		producto de buscar entre todos los pares de puntos para establecer las correspondencias.
-		%Si bien los tiempos no son considerables, pueden reducirse al mejorar
-		%la selección inicial de puntos y realizar la búsqueda de las
-		%correspondencias de forma más eficiente.
-		\input{reconst_time}
-		\TODO{análisis de escabilidad, ver orden $n^2$}
-
-		\input{reg_time}
-
-		\TODO{imagen del proceso}
-		Para comparar las alineaciones contra el \emph{ground truth}, se
-		observó el efecto de las mismas sobre un punto orientado (simulando la
-		cámara). El punto \emph{eye} se ubicó inicialmente en las coordenadas
-		$\{0, -0.1, 0.7\}$ (valores obtenidos de la base de datos), y se
-		orientó el vector \emph{target} hacia $-z$ y el \emph{up} hacia $y$.
-		El error de posicionamiento es la razón entre la distancia al punto
-		de inicio y la distancia al punto obtenido por el \emph{ground truth}.
-		En el caso de \emph{target} y \emph{up}, se midió el ángulo contra los
-		vectores obtenidos por el \emph{ground truth}.
-
-		Los errores de la registración se observan en el
-		cuadro~\ref{tab:reg_error}.  Los errores no superan $1^{\circ}$ en
-		orientación ni $1\%$ en posicionamiento.  Se da una excepción en el
-		caso de \texttt{dragon stand}, debido a una mala alineación en la
-		captura 12 (figura~\ref{fig:fitness}).
-
-		\input{reg_error}
 
 		\begin{figure}
-			\centering
-				\input{graph/fitness.tex}
-			\caption[Métrica de alineación para el modelo \texttt{dragon stand}]{\label{fig:fitness}Métrica de alineación para el modelo \texttt{dragon stand}. El bajo
-			porcentaje de solapamiento en la captura 12 se corresponde
-			con un error de registración.}
+			\Imagen{img/fill_good}
+			\caption[Relleno de un hueco pequeño mediante \emph{advancing front}]
+			{\label{fig:fill_good}Relleno de un hueco pequeño mediante \emph{advancing front}.}
 		\end{figure}
-
-
-
-		Como medida de error de la fusión se utilizó la distancia entre los puntos de la nube reconstruida
-		respecto al punto más cercano en el \emph{ground truth} (cuadro~\ref{tab:fus_error}).
-		Esta medición no se realizó para el modelo \texttt{armadillo} debido a que su reconstrucción
-		se encontraba a una escala distinta a la de las capturas.
-		Nuevamente se destaca el error de \texttt{dragon stand} producto de una mala alineación.
-
-		\input{fusion_error}
-
-		%gráficos drill y front/back
-		%En el caso de \texttt{drill}, 
-
-		%solo front/back
-		Se observa, además, una inflación/deflación de los objetos
-		reconstruidos debida a la propagación del error de alineación.  Así, la
-		primera captura coincide casi exactamente, pero el error se incrementa
-		a medida que nos alejamos de ella (figura~\ref{fig:fus_happy}).
 
 		\begin{figure}
-			\Imagen{img/happy_diff}
-			\caption[Medida de error en la fusión]{\label{fig:fus_happy}Diferencia contra el \emph{ground truth} del modelo \texttt{happy}.}
+			\Imagen{img/fill_bad}
+			\caption[Fallo en el algoritmo de \emph{advancing front}]
+			{\label{fig:fill_bad}Fallo en el algoritmo de \emph{advancing front}.
+			Se intentó completar un triángulo con un punto que no pertenecía al borde.}
 		\end{figure}
 
-
-		%rellenado de huecos poisson
-		Luego de aplicar el método de Poisson para rellenar los huecos, se
-		obtuvieron las reconstrucciones que se observan en la
-		figura~\ref{fig:poiss_all}.
-		Los desperfectos observados en bunny (figura~\ref{fig:bun_ear}) se deben a una mala registración
-		de la captura \texttt{bun180}, que se encontraba aproximadamente a
-		$90^{\circ}$ respecto a sus vecinos.
-		En cuanto a drill (figura~\ref{fig:drill_drops}), se tienen componentes
-		inconexas debido a una mala fusión en una zona de alta curvatura.
-		En todos los casos, la base de apoyo del objeto presenta una
-		deformación hacia abajo (figura~\ref{fig:base}) con un hueco al final.
-		Esto podría solucionarse mediante un preproceso rellenando la base con,
-		por ejemplo, el método de \emph{advancing front}.
+		\subsection{Reconstrucción de Poisson}
+		Como se mencionó anteriormente, la reconstrucción de Poisson nos garantiza el
+		rellenado de todos los huecos (a excepción de la base) mediante una superficie suave.
+		Se procedió, entonces, a una valoración visual de los objetos reconstruidos (figura~\ref{fig:poiss_all}):
+		\begin{itemize}
+			\item En \texttt{bunny} (figura~\ref{fig:bun_ear}) se observan desperfectos debidos a una mala registración de la captura \texttt{bun180},
+				que se encontraba aproximadamente a $90^{\circ}$ respecto a sus vecinos.
+			\item En \texttt{drill} (figura~\ref{fig:drill_drops}) se tienen componentes inconexas debido a una mala fusión en una zona de alta curvatura.
+			\item En \texttt{dragon}(figura~\ref{fig:dragon_belly}) se observa la creación de un puente entre dos regiones.
+				Esta es una de las limitaciones conocidas del método, al no poder incorporar la información de línea de vista de las capturas\cite{Kazhdan:2006:PSR:1281957.1281965}.
+			\item En todos los casos, la base de apoyo del objeto presenta una deformación hacia abajo (figura~\ref{fig:base}) con un hueco al final.
+		\end{itemize}
 
 		\begin{figure}
 			\Imagen{img/models_b}
@@ -281,7 +140,15 @@
 			\centering
 			\includegraphics[max width=.5\linewidth, max height=.25\textheight, keepaspectratio]
 				{img/drill_drops}
-			\caption[Acercamiento a la mecha de \texttt{drill}]{\label{fig:drill_drops}Acercamiento a la mecha de \texttt{drill}. Se observan componentes inconexas con la malla principal.}
+			\caption[Acercamiento a la mecha de \texttt{drill}]{\label{fig:drill_drops}Acercamiento a la mecha de \texttt{drill}.}
+		\end{figure}
+
+		\begin{figure}
+			%\Imagen{img/drill_drops}
+			\centering
+			\includegraphics[max width=.5\linewidth, max height=.25\textheight, keepaspectratio]
+				{img/dragon_belly}
+			\caption[Acercamiento al vientre de \texttt{dragon}]{\label{fig:dragon_belly}Acercamiento al vientre de \texttt{dragon}.}
 		\end{figure}
 
 		\begin{figure}
@@ -292,23 +159,29 @@
 			\caption[Acercamiento a la base de apoyo de \texttt{armadillo}]{\label{fig:base}Acercamiento a la base de apoyo de \texttt{armadillo}. Se observa un estiramiento hacia abajo debido al uso de condiciones de borde Neumann.}
 		\end{figure}
 
+		%trabajo futuro (advancing front)
+		%Para evitar la divergencia es necesario definir una superficie de
+		%soporte considerando todo el contorno del hueco, de forma de asegurar
+		%que los nuevos puntos no excedan los límites del hueco.
 
+	\section{Tiempo de ejecución}
+		Durante el proceso de reconstrucción, se observa que la etapa de reconstrucción
+		es responsable de la mayor parte del costo computacional, sobre todo al aumentar
+		la cantidad de puntos en las capturas (cuadro~\ref{tab:reconstr_time}).
+		En el cuadro~\ref{tab:reg_time} se muestran
+		los tiempos de ejecución promedio, discriminados en la alineación
+		inicial y el refinamiento posterior.
+		El orden $\bigO\left(n^2\right)$ de la alineación inicial se debe a la búsqueda
+		entre todos los pares de puntos para establecer las correspondencias (figura~\ref{fig:registration_order}).
+		%Si bien los tiempos no son considerables, pueden reducirse al mejorar
+		%la selección inicial de puntos y realizar la búsqueda de las
+		%correspondencias de forma más eficiente.
+		\input{reconst_time}
 
-	\section{Conclusiones}
-		Como resultado de esta etapa se obtuvo una biblioteca de software que
-		permite reconstruir un objeto tridimensional a partir de nubes
-		de puntos de vistas parciales sujetas a ciertas restricciones.
-		Debido al uso del método de Poisson en el rellenado, esta
-		reconstrucción no presentará huecos, a excepción de la base de apoyo.
+		\input{reg_time}
 
-		Durante la registración, se obtuvieron resultados aceptables en casi todas las pruebas, 
-		siendo uno de los fallos debido a un ángulo excesivo entre las tomas.
-		Estos fallos pueden detectarse al utilizar la métrica de solapamiento y entonces proceder
-		a ajustar los parámetros del algoritmo de alineación.
-
-		A futuro se pretende desarrollar algoritmos que nos permitan relajar la
-		restricción del eje de giro.
-		De esta forma, se podrán combinar reconstrucciones del mismo objeto
-		sobre la base de giro, con lo que se logrará recuperar la información
-		perdida debido a oclusiones.
-
+		\begin{figure}
+			\centering
+			\input{graph/registration_order.tex}
+			\caption{\label{fig:registration_order}Tiempo de ejecución de la registración, ajustado a una función de orden $\bigO\left(n^2\right)$.}
+		\end{figure}
