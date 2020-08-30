@@ -1,7 +1,7 @@
 %vim: set filetype=tex:
 
 \ProvidesClass{pfc}
-\LoadClass[a4paper,oneside]{book}
+\LoadClass[a4paper,oneside,draft]{book}
 \RequirePackage{polyglossia} %reemplaza a babel
 \setmainlanguage{spanish}
 
