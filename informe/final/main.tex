@@ -7,6 +7,21 @@
 \usepackage{subcaption}
 \usepackage{gnuplot-lua-tikz}
 \usepackage{pstricks}
+\usepackage{minted}
+\usepackage{listings}
+\lstset{
+	literate={~} {$\sim$}{1},
+	language=c++,
+	basicstyle=\ttfamily,
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{red},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4
+}
+
+\usepackage[noabbrev]{cleveref}
 
 \subtitle{Informe final}
 
@@ -75,7 +90,7 @@
 
 \newcommand{\RefImagen}[1]{ (Imagen cortesía de \cite{#1})}
 
-\includeonly{resultados_b}
+\includeonly{resultados}
 \begin{document}
 \frontmatter
 %\TODO{revisar tiempos verbales, ahora en pasado}
@@ -94,7 +109,7 @@
 	\include{diseño}
 	\include{desarrollo}
 
-	\include{resultados_b}
+	\include{resultados}
 	\include{conclusiones}
 	%Resumen
 	%Introducción
@@ -124,4 +139,7 @@
 	%\bibliographystyle{plainnat}
 	\bibliographystyle{alpha}
 	\bibliography{biblio}
+
+	\appendix
+	\include{uso_biblioteca}
 \end{document}
