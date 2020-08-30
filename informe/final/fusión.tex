@@ -23,6 +23,11 @@
 	de la cámara (figura~\ref{fig:confianza_surfel}).
 	%y a su distancia al centro de la captura %terminé usando sólo las normales
 
+	\begin{figure}
+		\Imagen{img/bunny_confianza}
+		\caption[Visualización de los valores de confianza de los súrfeles]{\label{fig:confianza_surfel}Visualización de los valores de confianza de los súrfeles para la captura \texttt{bun000}.}
+	\end{figure}
+
 	El algoritmo~\ref{alg:surfel} describe el agregado de una nueva vista.
 	Por cada punto de la vista se busca qué surfel lo contiene y se actualiza
 	su posición y normal ponderando según el nivel de confianza.
@@ -36,24 +41,6 @@
 	nunca se realizará la actualización ya que todos los puntos serán considerados como nuevos surfels.
 	En cambio, si la distancia es muy grande, se considerarán puntos
 	que deberían haber sido descartados como atípicos.
-
-
-	Al terminar de procesar todas las vistas, habrá surfels que hayan sido
-	observados desde sólo una posición y tengan un nivel de confianza bajo.
-	Estos son considerados como ruido y eliminados de la
-	reconstrucción.
-
-	Finalmente, se procede a la obtención de una triangulación de los surfels.
-	Para esto se empleó el algoritmo de \emph{Greedy Projection Triangulation} que provee PCL,
-	el cual realiza una proyección de la vecindad de un punto en el plano definido por su normal
-	y procede a conectar los puntos de modo que los triángulos resultantes
-	respeten umbrales de longitud y ángulos definidos por el usuario.
-
-	\begin{figure}
-		\Imagen{img/bunny_confianza}
-		\caption[Visualización de los valores de confianza de los súrfeles]{\label{fig:confianza_surfel}Visualización de los valores de confianza de los súrfeles para la captura \texttt{bun000}.}
-	\end{figure}
-
 
 	\begin{algorithm}
 		\begin{algorithmic}[1]
@@ -70,6 +57,17 @@
 		\end{algorithmic}
 		\caption[Actualización de la reconstrucción al agregar una nueva vista]{\label{alg:surfel}Actualización de la reconstrucción al agregar una nueva vista.}
 	\end{algorithm}
+
+	Al terminar de procesar todas las vistas, habrá surfels que hayan sido
+	observados desde sólo una posición y tengan un nivel de confianza bajo.
+	Estos son considerados como ruido y eliminados de la
+	reconstrucción.
+
+	Finalmente, se procede a la obtención de una triangulación de los surfels.
+	Para esto se empleó el algoritmo de \emph{Greedy Projection Triangulation} que provee PCL,
+	el cual realiza una proyección de la vecindad de un punto en el plano definido por su normal
+	y procede a conectar los puntos de modo que los triángulos resultantes
+	respeten umbrales de longitud y ángulos definidos por el usuario (figura~\ref{fig:surface}).
 
 	\begin{figure}
 		\Imagen{img/bun_fusion}
