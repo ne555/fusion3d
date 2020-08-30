@@ -9,7 +9,7 @@ no se hicieron pruebas de impresiones 3D}
 
 \section{Conclusiones del producto}
 %explayarse más
-	En este proyecto se realizó el desarrollo de una biblioteca de software para
+	En este proyecto se realizó el desarrollo de una biblioteca de software para lograr
 	la reconstrucción tridimensional de un objeto a partir de capturas de
 	vistas parciales.
 	Para esto, se dividió el problema en tres módulos: registración, fusión y
@@ -21,14 +21,15 @@ no se hicieron pruebas de impresiones 3D}
 	requeridas fueron planteadas considerando una integración futura con
 	el trabajo realizado por \cite{Pancho}.
 
-	Las registraciones se obtuvieron en tiempos razonables, sin requerir hardware especial.
-	Si bien se observa un efecto de «inflado» debido a la propagación de los errores de registración,
+	Las reconstrucciones fueron obtenidas en tiempos razonables y sin requerir hardware especial.
+	Si bien se observa un efecto de «inflación/deflación» debido a la propagación de los errores de registración,
 	este se encuentra suficientemente acotado respecto al tamaño del objeto.
 
-	Debido a que las capturas se realizaron solamente sobre una base giratoria,
-	no se lograron resolver todas las oclusiones, lo que genera la aparición de huecos de
-	tamaño considerable.
-	Aún así, el resultado es una malla cerrada, y la
+	Debido a que se consideró solamente una posición del objeto sobre la base giratoria,
+	se presenta una gran cantidad de oclusiones,
+	lo que genera la aparición de huecos de tamaño considerable
+	en la superficie reconstruida luego de la fusión.
+	Aún así, el resultado final es una malla cerrada, y la
 	superficie estimada en las zonas sin información se une suavemente al resto de
 	la malla.
 
