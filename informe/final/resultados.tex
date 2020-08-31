@@ -48,8 +48,6 @@
 	donde un bajo solapamiento nos indicaría un posible error de alineación, como
 	se observa en la figura~\ref{fig:fitness}.
 
-	\TODO{explicar que el cambio de la vecindad lo resuelve}
-
 	\begin{figure}
 		\centering
 			\input{graph/fitness.tex}
@@ -115,7 +113,9 @@
 			\item En \texttt{drill} (figura~\ref{fig:drill_drops}) se tienen componentes inconexas debido a una mala fusión en una zona de alta curvatura.
 			\item En \texttt{dragon}(figura~\ref{fig:dragon_belly}) se observa la creación de un puente entre dos regiones.
 				Esta es una de las limitaciones conocidas del método, al no poder incorporar la información de línea de vista de las capturas\cite{Kazhdan:2006:PSR:1281957.1281965}.
-			\item En todos los casos, la base de apoyo del objeto presenta una deformación hacia abajo (figura~\ref{fig:base}) con un hueco al final.
+			\item En todos los casos, la base de apoyo del objeto presenta una deformación hacia abajo (figura~\ref{fig:base}) con un hueco al final, producto de utilizar condiciones de borde Neumann.
+				Debido a que la deformación ocurre en la base de apoyo, ésta puede corregirse al ignorar
+				los puntos que presenten una coordenada $y$ menor a la mínima de la nube de entrada.
 		\end{itemize}
 
 		\begin{figure}
