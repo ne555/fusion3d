@@ -3,7 +3,7 @@ En este apéndice se presenta una reseña de la biblioteca desarrollada.
 Se explica brevemente la instalación, compilación y el uso de las funciones fundamentales
 que provee cada módulo de la misma.
 
-	\section{Instalación}
+	\section{Instalación y compilación}
 	La biblioteca se encuentra contenida en archivos de cabecera, los cuales serán incluidos por los fuentes del proyecto.
 	Se requiere la instalación de las siguientes dependencias:
 	\begin{itemize}
@@ -15,47 +15,60 @@ que provee cada módulo de la misma.
 	Para la compilación se recomienda el uso de la herramienta \texttt{cmake} con el siguiente esqueleto para su archivo de configuración \texttt{CMakeLists.txt}:
 	\inputminted{cmake}{code/CMakeLists.txt}
 
-	\section{Clases principales}
-	\begin{itemize}
-		\item \verb|cloud_with_transformation|: agrupa la nube de puntos y la transformación de alineación.
-		\item \verb|alignment|: realiza la registración de dos nubes mediante el método de búsqueda de clúster.
-		\item \verb|fusion|: 
-	\end{itemize}
+	\section{Representación de las capturas}
+		La clase \verb|cloud_with_transformation|
+			agrupa la información de posición y normales de cada punto,
+			y la transformación de alineación.
+			Durante la registración, las posiciones y normales se mantienen en dos nubes separadas,
+			sin embargo, los módulos de fusión y rellenado de huecos
+			requieren esta información integrada en una sola nube.
+			Para convertir a este segundo formato se provee la función 
+			\mintinline{cpp}{join_cloud_and_normal(nube)}.
+		%\item \verb|alignment|: realiza la registración de dos nubes mediante el método de búsqueda de clústeres.
+		%\item \verb|fusion|: realiza la fusión de las nubes una vez alineadas.
+		%\item \verb|advancing_front|: realiza el rellenado de los huecos mediante el algoritmo basado en advancing front.
 
 	\section{Módulo de preproceso}
-	Carga de una nube desde archivo y su preparación para ser usada por el módulo de registración
+	\begin{itemize}
+		\item Carga la nube desde un archivo de disco y la prepara para ser usada por el módulo de registración
 	\inputminted{cpp}{code/preproceso.cpp}
+	\end{itemize}
 
 	\section{Módulo de registración}
-	Alineación inicial de un par de nubes
-	\inputminted{cpp}{code/pairwise_reg.cpp}
+	\begin{itemize}
+		\item Alineación inicial de dos nubes
+			\inputminted{cpp}{code/pairwise_reg.cpp}
 
-	Hasta este punto, la información de posición y normales se mantenía en dos nubes separadas.
-	Los pasos siguientes requieren que esta información se encuentre integrada por lo que es necesario utilizar la función de conversión:
-	\mintinline{cpp}{join_cloud_and_normal(nube)}.
+		\item Ajuste mediante el algoritmo de ICP
+			\inputminted{cpp}{code/pairwise_icp.cpp}
 
-	Ajuste mediante el algoritmo de ICP
-	\inputminted{cpp}{code/pairwise_icp.cpp}
+		\item Corrección de bucle.
+			Se realiza sobre un vector que contiene todas las capturas realizadas alrededor del objecto.
+			\inputminted{cpp}{code/loop.cpp}
 
-	Corrección de bucle: se realiza sobre un vector que contiene todas las capturas realizadas alrededor del objecto, las cuales fueron alineadas de la forma descripta anteriormente.
-	\inputminted{cpp}{code/loop.cpp}
-
-	Medir la calidad de la registración
-	\inputminted{cpp}{code/fitness.cpp}
+		\item Medición de la calidad de la registración
+			\inputminted{cpp}{code/fitness.cpp}
+	\end{itemize}
 
 	\section{Módulo de fusión}
-	Una vez calculadas todas las transformaciones de alineación, se procede a la fusión de las capturas.
-	\emph{¡Advertencia! No se debe aplicar la transformación a la nube, ya que el algoritmo de fusión se encargará de hacerlo}.
-	\inputminted{cpp}{code/fusion.cpp}
+	\begin{itemize}
+		\item Fusión de las capturas alineadas y triangulación de la nube resultante
+			\inputminted{cpp}{code/fusion.cpp}
+	\end{itemize}
 
 	\section{Rellenado de huecos}
-	Detección de huecos
-	\inputminted{cpp}{code/holes.cpp}
+	\begin{itemize}
+		\item Detección de huecos
+			\inputminted{cpp}{code/holes.cpp}
 
-	Rellenado mediante el método de advancing front.
-	\emph{¡Advertencia! El algoritmo falla excepto en huecos pequeños. No se recomienda su uso}
-	\inputminted{cpp}{code/adv_front.cpp}
+		\item Rellenado mediante el método de advancing front.
+			\emph{¡Advertencia! El algoritmo falla excepto en huecos pequeños o planos.
+			No se recomienda su uso}
+			\inputminted{cpp}{code/adv_front.cpp}
+	\end{itemize}
 
 	\section{Reconstrucción de Poisson}
-	La reconstrucción de Poisson se halla implementada en la biblioteca PCL.
-	\inputminted{cpp}{code/poisson.cpp}
+	\begin{itemize}
+		\item Utilización del algoritmo de reconstrucción de Poisson implementado en la biblioteca PCL
+			\inputminted{cpp}{code/poisson.cpp}
+	\end{itemize}
