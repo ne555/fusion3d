@@ -13,86 +13,102 @@
 %a replacement.
 
 	\section{Justificación}
-	La impresión 3D es un método de fabricación en el cual se deposita el material (como por ejemplo, plástico o metal) en capas para producir un objeto tridimensional.
-	Avances en los materiales utilizados han permitido la creación de objetos de calidad comparable a la de métodos tradicionales, con el potencial de personalizar cada producto.
-	La impresión 3D ya ha demostrado ser viable para muchas aplicaciones médicas, incluyendo la creación de prótesis e implantes dentales\cite{Schubert159}. %\cite{innovations in 3d printing}
-	Sin embargo, para poder realizar estas copias o modificaciones,
-	se requiere del modelo geométrico del objecto, el cual puede no estar disponible.
-	Para poder obtener estos modelos geométricos,
-	se pueden aplicar procesos de ingeniería inversa a objetos ya existentes.
-	%Describir los pasos de la ingeniería inversa: adquisición alineación, encuentro de superficie, descripción, segmentación, modelo CAD
+	La impresión 3D es un método de fabricación en el cual se deposita el material
+	(como por ejemplo, plástico o metal) en capas para producir un objeto tridimensional.
+	Avances en los materiales utilizados han permitido la creación de objetos
+	de calidad comparable a la de métodos tradicionales,
+	demostrando su viabilidad para muchas aplicaciones médicas,
+	incluyendo la creación de prótesis e implantes dentales\cite{Schubert159}. %\cite{innovations in 3d printing}
+	%con el potencial de personalizar cada producto.
+	Los modelos geométricos que desean imprimirse pueden obtenerse aplicando procesos de
+	reconstrucción tridimensional (figura~\ref{fig:ingenieria_inversa}) a objetos ya existentes.
 
+	\begin{figure}
+		\centering
+		\begin{subfigure}{.3\linewidth}
+			\Imagen{img/face-02}
+			\caption{\label{fig:cara}Objeto}
+		\end{subfigure}
+		\begin{subfigure}{.3\linewidth}
+			\Imagen{img/geometric_model}
+			\caption{\label{fig:cara_3d}Modelo geométrico}
+		\end{subfigure}
+		\begin{subfigure}{.3\linewidth}
+			\Imagen{img/print_3d}
+			\caption{\label{fig:cara_print_3d}Impresión 3D}
+		\end{subfigure}
+		\caption{\label{fig:ingenieria_inversa}Reconstrucción tridimensional.
+		A partir de un objeto (\ref{fig:cara}) se obtiene su modelo geométrico (\ref{fig:cara_3d})
+		para lograr su posterior impresión 3D (\ref{fig:cara_print_3d}).}
+	\end{figure}
 
-	Un avance reciente en la adquisición de datos mediante luz estructurada consiste en utilizar el sensor Kinect.
-	Este dispositivo captura una imagen RGB de 32 bits y resolución de $640 \times 480$ píxeles
-	junto con una imagen de profundidad de 16 bits y resolución de $320 \times 240$ píxeles\cite{MatheEstudioKinect}, %\cite{especificaciones kinect}
-	procesando ambas se obtiene una nube de puntos 3D a color. %, también llamada imagen RGB-D.
-	Una alternativa a Kinect para la adquisición de los mapas de profundidad se presenta en~\cite{Pancho}
-	donde se trabajó con un proyector para la emisión de luz estructurada en el espectro visible y cámaras de resolución de $2592 \times 1944$ y $3264 \times 2448$ píxeles,
-	obteniéndose resultados con más de dos millones de puntos.
-
-	Sin embargo, los puntos capturados sólo reflejan una porción de la superficie del objeto,
-	la parte visible desde la cámara.
-	Además, la propia geometría del objeto podría generar obstrucciones, reflejos o sombras
-	que imposibilitan la adquisición de datos en esas zonas («huecos»).
-	Para solventar este problema, es necesario combinar múltiples capturas
-	del objeto en diferentes orientaciones respecto a la cámara, de modo que
-	cada parte de la superficie del objeto esté representada en al menos una captura.
-
-	El principal problema para combinar múltiples vistas es
-	encontrar las transformaciones de rotación y translación que permitan
-	relacionar cada vista parcial, para luego fusionarlas y así reconstruir el objeto.
-
-	%Entre otras investigaciones realizadas en este campo se destacan los siguientes aportes:
-	Podemos nombrar algunas investigaciones realizadas en este campo:
+	Entre las aplicaciones de la reconstrucción tridimensional podemos nombrar:
 	\begin{itemize}
-		\item En~\cite{Hassanpour} %\cite{3d reconstruction faces uncontrolled}
-	se hace uso de características conocidas de los objetos de estudio (caras y cabezas humanas).
-		\item En~\cite{Riegler2017THREEDV} %\cite{learning depth fusion}
-	se presenta un método novedoso utilizando redes convolucionales.
-		\item En~\cite{Zach08fastand} %\cite{fast and high quaality fusion}ll
-	se plantea un método robusto frente a ruido no gaussiano, común en la adquisición.
-		\item En~\cite{automatic-3d-model-construction-for-turn-table-sequences} %\cite{model construction turn table}
-	se limita las posibles transformaciones a rotaciones sobre un eje fijo.
+		\item Reconstrucción de órganos para la planificación de cirugías
+			y la realización de prácticas por parte de estudiantes de ciencias médicas y veterinarias.
+			En particular, la empresa argentina \emph{mirai}\footnote{\url{https://www.modelosmedicos.com/}} realiza estos biomodelos basándose en imágenes de resonancia magnética y tomografía computarizada.
+			%mirai 3d, empresa argentina, adquiere los biomodelos mediante tomografía axial computarizada (TAC)
+			\ImagenInline{img/corazon_1}
+		\item Digitalización de obras de arte para salvaguardar el patrimonio cultural,
+			ayudar en su restauración e incrementar la accesibilidad a las mismas.
+			A este respecto, puede mencionarse el \emph{Digital Michelangelo Project} de la Universidad de Stanford, que tiene como objetivo crear un repositorio de modelos 3D de alta calidad de las esculturas y la arquitectura de Miguel Ángel.
+			\ImagenInline{img/estatua_leon}
+		\item Realización de prototipos y modificaciones a productos.
+			\ImagenInline{img/anteojos}
+		\item Simulación de propiedades físicas sobre los objetos.
+			\ImagenInline{img/bunny_heat}
+		\item Digitalización de ambientes y objetos para utilizarlos en aplicaciones de realidad virtual o de diseño.
+			\ImagenInline{img/room}
 	\end{itemize}
 
-	Sin embargo, cabe destacar el aporte desarrollado por Microsoft mediante
-	KinectFusion, un algoritmo que utiliza el sensor Kinect para reconstruir escenas tridimensionales en tiempo real.
-	El usuario mueve el dispositivo por la escena mientras que el algoritmo realiza un seguimiento de la posición y orientación de la cámara. Esa información se combina con el mapa de profundidad para obtener un modelo 3D.
-	En~\cite{real-time-3d-reconstruction-using-a-kinect-sensor} %\cite{kinect ed reconstruction}
-	se discuten algunas de sus limitaciones:
+	Uno de los métodos para la obtención de los modelos geométricos
+	se basa en la utilización de dispositivos de luz estructurada,
+	como ser el dispositivo Kinect\cite{MatheEstudioKinect},
+	para realizar mediciones sobre el objeto.
+	Debido a que los puntos capturados sólo reflejan la porción de la superficie del objeto visible desde la cámara
+	y a que la propia geometría del objeto podría generar obstrucciones, reflejos o sombras
+	que imposibilitan la adquisición de datos en esas zonas («huecos»),
+	es necesario combinar múltiples capturas
+	del objeto en diferentes orientaciones respecto a la cámara, de modo que
+	cada parte de la superficie del objeto esté representada en al menos una captura (figura~\ref{fig:kinect_reconstruction}).
+
+	\begin{figure}
+		\Imagen{img/loop_multiple_view}
+		\caption{\label{fig:kinect_reconstruction}Medición de las características geométricas de los objetos mediante múltiples capturas utilizando cámaras de profundidad.}
+	\end{figure}
+
+	%Describir los pasos de la ingeniería inversa: adquisición alineación, encuentro de superficie, descripción, segmentación, modelo CAD
+	El principal problema para combinar las múltiples vistas es
+	encontrar las transformaciones de rotación y translación que permitan
+	relacionar cada vista parcial, para luego fusionarlas y así reconstruir el objeto.
+	
+
+	Para esto existen métodos automáticos que requieren que la posición del dispositivo de captura
+	entre las distintas capturas no haya variado de forma significativa\cite{regBesl92},
+	lo cual genera que el proceso de adquisición de datos sea engorroso,
+	requiriendo de una supervisión constante para asegurar que el movimiento del dispositivo de captura no sea excesivo
+	y donde un fallo puede exigir el reinicio del proceso.
+	Este es el caso de \emph{KinectFusion}, un algoritmo desarrollado por Microsoft que utiliza el sensor Kinect para reconstruir escenas tridimensionales en tiempo real,
+	pero que presenta las siguientes limitaciones:
 	\begin{itemize}
 		\item utiliza un alto costo computacional, requiriendo de una poderosa GPU;
 		\item los movimientos de cámara deben ser lentos y pequeños;
 		\item está limitado al dispositivo Kinect;
 		\item algunos objetos podrían no aparecer en el mapa de profundidad debido a que absorben o reflejan demasiada luz infrarroja;
-		\item no utiliza información de color.
+		\item no utiliza información de color.\cite{real-time-3d-reconstruction-using-a-kinect-sensor}
 	\end{itemize}
 
-	Una implementación libre del algoritmo de KinectFusion se observa en el módulo KinFu,
-	parte de la Point Cloud Library (PCL),
-	donde se elimina la dependencia con el dispositivo Kinect,
-	presenta algoritmos para trabajar a una mayor escala
-	%exigiendo solamente compatibilidad con OpenNI,
-	y además se permite la integración de la información de textura a la superficie final reconstruida.
+	Existen, además, métodos manuales o semiautomáticos donde se permiten distancias mayores entre las posiciones del dispositivo de captura.
+	Por ejemplo, el usuario posiciona de forma interactiva las capturas\cite{Turk:1994:ZPM:192161.192241}
+	o selecciona iterativamente puntos coincidentes entre ellas\cite{LocalChapterEvents:ItalChap:ItalianChapConf2008:129-136}.
 
-	El uso de otros dispositivos además del Kinect nos permitirá lograr una reconstrucción de mayor precisión o a distinta escala pero podría traer aparejado un aumento en el costo y tiempo de cada adquisición.
-	Por esto, es necesario disponer de control sobre los algoritmos de reconstrucción para adecuarlos a los dispositivos de captura y a las características del modelo 3D resultante deseado.
-
-	En este proyecto se analizarán técnicas de fusión de mallas,
-	planteando además la posibilidad de utilizar información de textura,
+	Con el fin de evitar o limitar el uso de los recursos humanos,
+	en este proyecto se analizarán técnicas de fusión de mallas,
+	obtenidas permitiendo mayor distancia entre capturas,
 	para lograr un modelo tridimensional de un objeto que permita su posterior replicación
 	mediante una impresora 3D.
-	Se contará entonces con una herramienta que permitirá el desarrollo de aplicaciones para:
-	\begin{itemize}
-		\item Reproducción de biomodelos para que estudiantes de medicina y veterinaria realicen prácticas sobre los mismos.
-			A este respecto, la Facultad de Ciencias Médicas de la Universidad Nacional del Litoral expresó un interés particular.
-			%mirai 3d, empresa argentina, adquiere los biomodelos mediante tomografía axial computarizada (TAC)
-		\item Digitalización de esculturas, lo que permitirá salvaguardarlas y facilitará el acceso, aunque indirecto, a las mismas.
-			Puede mencionarse el \emph{Digital Michelangelo Project} de la Universidad de Stanford, que tiene como objetivo crear un repositorio de modelos 3D de alta calidad de las esculturas y la arquitectura de Miguel Ángel.
-			%catedral de Notre-Dame, escultura de Néstor
-		\item Digitalización de ambientes y objetos para utilizarlos en aplicaciones de realidad virtual o de diseño.
-	\end{itemize}
+
+
 
 	\section{Objetivos}
 		\subsection{General}
@@ -108,19 +124,11 @@
 		\end{itemize}
 
 	\section{Alcance}
-		\subsection{Alcances Funcionales}
-		\begin{itemize}
-			\item La herramienta deberá generar una malla 3D cerrada (\emph{watertight}).
-		\end{itemize}
-		\subsection{Alcances No Funcionales}
-		\begin{itemize}
-			\item La herramienta deberá ser robusta frente al ruido producido por los sensores.
-			\item La herramienta no impondrá topologías específicas para los objetos a reconstruirse.
-			\item No se pretenderá el funcionamiento de los algoritmos en tiempo real.
-			\item La herramienta será de código libre.
-			\item La herramienta será multiplataforma.
-		\end{itemize}
-		\subsection{Supuestos}
-		\begin{itemize}
-			\item Se contará con un repositorio de mallas tridimensionales con información de textura.
-		\end{itemize}
+	\begin{itemize}
+		\item Para posibilitar la posterior impresión 3D,
+			la malla resultante deberá ser una malla cerrada (\emph{watertight}).
+		\item No se impondrán topologías específicas a los objetos a reconstruir.
+		\item Los algoritmos desarrollados deberán ser robustos frente al ruido producido por los sensores.
+		\item No se pretenderá el funcionamiento de los algoritmos en tiempo real.
+		\item La biblioteca será de código libre y multiplataforma.
+	\end{itemize}

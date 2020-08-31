@@ -44,6 +44,7 @@ Ingeniería en Informática\\
 \clubpenalty 10000
 
 \newcommand{\Imagen}[1]{\centering\includegraphics[max width=.9\linewidth, max height=.9\textheight, keepaspectratio]{#1}}
+\newcommand{\ImagenInline}[1]{\par\includegraphics[max width=.3\linewidth, max height=.2\textheight, keepaspectratio, center]{#1}}
 
 \synctex=1
 \endinput

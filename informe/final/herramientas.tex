@@ -83,8 +83,8 @@ y supuestos establecidos para el producto.
 
 	\subsection{KinectFusion}
 	%algoritmo, incluido en la sdk de kinect v2
-El algoritmo de KinectFusion fue desarrollado por Microsoft
-para lograr reconstrucciones tridimensionales utilizando el dispositivo Kinect.
+	El algoritmo de KinectFusion fue desarrollado por Microsoft
+	para lograr reconstrucciones tridimensionales utilizando el dispositivo Kinect.
 
 	%kinectfusion_real-time_3d_reconstruction_and_interaction_using_a_moving_depth_camera
 	Debido a que uno de sus objetivos era lograr una implementación en tiempo
@@ -117,7 +117,11 @@ para lograr reconstrucciones tridimensionales utilizando el dispositivo Kinect.
 	imágenes 2D/3D y nubes de puntos.
 	Provee numerosos algoritmos modernos para reducción de ruido, extracción de
 	puntos salientes, cálculo de descriptores, registración, reconstrucción de
-	superficies, entre otros.
+	superficies, entre otros\cite{5980567}.
+	Además, contiene el módulo KinFu, el cual es una implementación libre del algoritmo KinectFusion
+	donde se elimina la dependencia con el dispositivo Kinect,
+	se presentan algoritmos para trabajar a una mayor escala
+	y se permite la integración de la información de textura a la superficie final reconstruida\cite{real-time-3d-reconstruction-using-a-kinect-sensor}.
 
 	La documentación incluye tutoriales para cada módulo de la biblioteca y
 	además se cuenta con listas de correos y canales de IRC para brindar
@@ -134,7 +138,7 @@ para lograr reconstrucciones tridimensionales utilizando el dispositivo Kinect.
 	herramientas de registración semiautomática (a partir de puntos
 	seleccionados por el usuario), y cuentan con una implementación del
 	algoritmo \emph{Poisson Surface Reconstruction} para reconstrucción de
-	superficies.
+	superficies\cite{\cite{LocalChapterEvents:ItalChap:ItalianChapConf2008:129-136}}.
 	%\Nota{En particular, CloudCompare permite definir condiciones de borde Dirichlet}
 
 	Se utilizaron especialmente para visualización y comparación de resultados.
