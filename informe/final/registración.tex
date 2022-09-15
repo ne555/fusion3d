@@ -5,18 +5,17 @@
 	que lleven cada vista a un sistema global de forma
 	que las zonas comunes encajen perfectamente.
 
-	%para evitar que se corte en el quotation
-	%\clearpage
-	Debido a que
-	«el algoritmo de \emph{Iterative Closest Point} (ICP) se ha convertido en el
+	Aunque
+	el algoritmo de \emph{Iterative Closest Point} (ICP) se ha convertido en el
 	método dominante para realizar la registración de modelos tridimensionales
-	utilizando únicamente la información de geometría de los mismos\cite{Rusinkiewicz02real-time3d}»
-	y a que a pesar de que existe garantía de convergencia del método
-	hacia un mínimo local este puede no ser el mínimo global buscado,
+	utilizando únicamente la información de geometría de los mismos\cite{Rusinkiewicz02real-time3d},
+	y a pesar que existe garantía de convergencia del método
+	hacia un mínimo local, éste puede no ser el mínimo global buscado.
+	Por esta razón,
 	es necesario proveer una alineación inicial
 	lo suficientemente cercana para obtener una registración correcta\cite{regBesl92}.
 
-	Por esto, y considerando que la distancia entre capturas sucesivas es considerable,
+	Debido a esto, y considerando que la distancia entre capturas sucesivas es considerable,
 	se desarrollaron algoritmos para obtener una alineación inicial
 	con cada par de capturas para luego refinar la registración mediante ICP.
 	Estos algoritmos constan de los siguientes pasos:
@@ -146,6 +145,11 @@
 					presentan zonas suaves en la base, vientre y espalda.
 				\item Los ángulos entre las capturas de \texttt{bunny} son más variados y espaciados, yendo desde $35^{\circ}$ hasta $90^{\circ}$,
 				y se observa una superficie más irregular por todo el cuerpo (figura~\ref{fig:stanford_models}).
+				%FIXME: aclaración de ángulo de 90
+				% o ignorar el de 90 (ver cuánto era) 35-55: se ignoran alineaciones 3-4, 4-5
+				% sí, ignorar, ver ángulos, y decir que se descartó captura 4
+				% se descarta en la búsqueda de parámetros, pero se realiza la prueba
+				%FIXME: figura bunny solo (o de sus capturas)
 			\end{itemize}
 
 			Primero se trabajó sobre el modelo \texttt{happy stand}.
@@ -159,6 +163,7 @@
 			el algoritmo de registración establecía correspondencias completamente erróneas (figura~\ref{fig:align_sac}).
 			Por esta razón, no se continuó con el desarrollo de este algoritmo.
 
+			%FIXME: nunca se definió ground truth
 			\begin{figure}
 				\input{graph/dif_rot_happy_sac.tex}
 				\caption[Diferencias en la rotación estimada para el objeto \texttt{happy stand} (SAC-IA)]

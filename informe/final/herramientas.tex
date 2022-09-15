@@ -44,7 +44,7 @@ La base de datos provee un archivo de configuración con las transformaciones de
 alineación requeridas por cada captura.
 Estas transformaciones fueron obtenidas realizando la registración de cada captura
 contra un escaneo cilíndrico del objeto mediante un método semiautomático, donde el usuario
-usuario establece una alineación inicial que luego es ajustada mediante un algoritmo
+establece una alineación inicial que luego es ajustada mediante un algoritmo
 basado en ICP\cite{Turk:1994:ZPM:192161.192241}.
 
 De esta base de datos se escogieron los modelos
@@ -53,8 +53,7 @@ De esta base de datos se escogieron los modelos
 	\texttt{dragon},
 	\texttt{drill} y
 	\texttt{happy},
-los cuales presentan distintos niveles de detalles, cantidad de escaneos y niveles de ruido.
-
+los cuales presentan distintos niveles de detalles, cantidad de escaneos y niveles de ruido (figura~\ref{fig:stanford_models}).
 
 \begin{figure}
 	\Imagen{img/stanford_models}
@@ -78,8 +77,9 @@ artificialmente valores de color para los puntos.
 	%Intro
 Las siguientes tecnologías fueron consideradas y evaluadas
 para el diseño y desarrollo de las funcionalidades de la biblioteca,
+%FIXME
 si bien algunas debieron ser descartadas por no ajustarse a las restricciones
-y supuestos establecidos para el producto.
+y supuestos establecidos.
 
 	\subsection{KinectFusion}
 	%algoritmo, incluido en la sdk de kinect v2
@@ -113,10 +113,10 @@ y supuestos establecidos para el producto.
 	no se podrán aprovechar las funcionalidades de esta biblioteca.
 
 	\subsection{\emph{The Point Cloud Library} (PCL)}
-	Es un framework de código abierto multiplataforma para el procesado de
+	Es un framework de código abierto multiplataforma para el procesamiento de
 	imágenes 2D/3D y nubes de puntos.
 	Provee numerosos algoritmos modernos para reducción de ruido, extracción de
-	puntos salientes, cálculo de descriptores, registración, reconstrucción de
+	puntos salientes, cálculo de descriptores, registración y reconstrucción de
 	superficies, entre otros\cite{5980567}.
 	Además, contiene el módulo KinFu, el cual es una implementación libre del algoritmo KinectFusion
 	donde se elimina la dependencia con el dispositivo Kinect,
@@ -147,3 +147,8 @@ y supuestos establecidos para el producto.
 	Para aquellas funcionalidades no provistas por la biblioteca PCL se buscaron herramientas de software libre multiplataforma.
 	En particular, se escogió \emph{delaunator-cpp}\footnote{\url{https://github.com/delfrrr/delaunator-cpp}} para realizar triangulaciones Delaunay 2D,
 	y \emph{DKM}\footnote{\url{https://github.com/genbattle/dkm}} para la búsqueda de clústeres mediante el algoritmo de k-means.
+	%FIXME
+		%se menciona recién en la descripción de la registración
+		%el mismo problema ocurre con Delaunay
+		%vale, buscar dónde se usa y agregarlos en el marco teórico
+		%(al menos como referencia a esto existe)

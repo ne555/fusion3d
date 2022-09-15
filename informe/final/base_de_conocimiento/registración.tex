@@ -47,7 +47,7 @@ cuyos detalles pueden consultarse en \cite{Horn87closed-formsolution}.
 
 Sin embargo, estas suposiciones son demasiado fuertes.
 Al trabajar con dos capturas realizadas desde distintas vistas, el solapamiento no será total,
-ya que habrá puntos que serán observables en tan sólo uno de las vistas.
+ya que habrá puntos que serán observables en tan sólo una de las vistas.
 Por lo tanto, primero es necesario determinar cuáles son los puntos comunes a ambas capturas,
 y, además, definir las relaciones de origen-destino entre esos puntos comunes.
 El algoritmo iterativo del punto más cercano (ICP) supone que las nubes se encuentran
@@ -103,7 +103,7 @@ Un buen descriptor deberá poseer las siguientes características:
 \begin{itemize}
 	\item Ser discriminante, es decir, la distancia entre los descriptores debe reflejar
 		la distancia entre las superficies de las vecindades.
-		Esto implica que superficies similares localmente produces descriptores parecidos y
+		Esto implica que superficies similares localmente producen descriptores parecidos, y
 		en superficies diferentes la distancia entre descriptores será grande (figura~\ref{fig:descriptor_matriz_confusion}).
 	\item Ser invariante respecto a translaciones y rotaciones.
 	\item Ser robusto respecto al ruido de muestreo.
@@ -124,6 +124,10 @@ que se encuentran dentro de una esfera de radio $r$ centrada en $p$:
 \[ |p - q| \leq r \]
 Si el valor de $r$ es demasiado pequeño, el descriptor perderá su poder discriminante
 o incluso no podrá calcularse al no contar con la cantidad de vecinos mínimos necesarios.
+% FIXME:
+%sobrecarga significado «superficie»
+%el riesgo al incrementar la vecindad es que sea «otra cara» de la superficie
+%no sé, hablar de continuidad o de localidad
 En cambio, si el valor de $r$ es demasiado grande, se corre el riesgo de considerar
 dentro de la vecindad puntos pertenecientes a otra superficie, distorsionando el valor del descriptor.
 La determinación de un valor adecuado de $r$ limita la posibilidad de obtener un método completamente
@@ -138,8 +142,8 @@ que han mostrado buenos resultados en problemas de registración\cite{Rusu:2009:
 Para poder describir la geometría de una superficie,
 primero debe estimarse su orientación en el sistema de coordenadas, es decir, estimar su normal.
 Una opción es aproximar la normal mediante la estimación de un plano tangente a la superficie,
-lo que transforma el problema a ajustar un plano a la vecindad de $p$
-mediante el método de mínimos cuadrados. 
+lo que transforma el problema en ajustar un plano a la vecindad de $p$
+mediante el método de mínimos cuadrados.
 Representando el plano mediante un punto $x_j$ y un vector normal $n_j$,
 la distancia de un punto $q$ de la vecindad a este plano queda definida como
 $d = (q_j - x_j) n_j$.
@@ -163,15 +167,17 @@ invirtiendo el signo de $n_j$ en caso de ser necesario.
 \subsubsection{Histograma de características del punto (PFH)}
 Dado que las normales no son invariantes a rotaciones y no capturan mucho
 detalle de la superficie, no presentan un gran poder discriminante.
-Por esta razón, no resulta adecuado utilizarlas como único descriptor. 
+Por esta razón, no resulta adecuado utilizarlas como único descriptor.
 Sin embargo, al representar las relaciones entre todos los puntos de la vecindad y sus normales,
 pueden capturarse con más detalle las variaciones de la superficie,
-aumentando la representatividad del descriptor. 
+aumentando la representatividad del descriptor.
 Esta es la idea principal del histograma de características del punto (PFH) presentado en \cite{RusuDoctoralDissertation}.
 
 El vector de características de PFH es un histograma de los valores de tres ángulos
 y una distancia calculados para cada par de puntos y sus normales en la vecindad de $p$.
 Para asegurar la replicabilidad del descriptor, se define un marco de referencia de Darboux
+%FIXME: dónde poner la referencia
+(figura~\ref{fig:pfh_marco_referencia})
 determinado unívocamente de la siguiente manera:
 \begin{itemize}
 	\item Dado el par de puntos $p_j$ y $p_k$, se determina el origen $p_s$ del marco de referencia como:
@@ -250,6 +256,8 @@ El cálculo de este nuevo descriptor se realiza de la siguiente manera:
 		\]
 		donde $w_j$ es una medida de distancia entre $p$ y su vecino.
 \end{enumerate}
+%FIXME: fpfh para un punto toma sus vecinos, pfh coma todos los pares
+% no quedó bien explicado
 Las principales diferencias respecto a PFH son:
 \begin{itemize}
 	\item FPFH no interconecta todos los vecinos de $p$.
@@ -269,7 +277,7 @@ todos los puntos presentarán descriptores parecidos.
 Surgen problemas al intentar establecer una correspondencia entre estos puntos
 y los presentes en la otra nube, ya que todos son candidatos igualmente válidos.
 
-Para solucionar este problema, es necesario identificar puntos salientes (\emph{keypoints}) 
+Para solucionar este problema, es necesario identificar puntos salientes (\emph{keypoints})
 en la nube, para entonces establecer las correspondencias entre los descriptores de estos keypoints.
 Si bien un punto cualquiera será considerado como saliente o no dependiendo del detector utilizado,
 un buen detector presentará las siguientes características:
