@@ -36,7 +36,7 @@ el siguiente algoritmo para el preproceso de cada nube de entrada:
 \end{algorithm}
 
 	\item Para reducir las pequeñas perturbaciones en las posiciones de los puntos,
-		se los proyecta a una superficie estimada mediante el método de mínimos cuadrados móviles.
+        se los proyecta a una superficie estimada mediante el método de mínimos cuadrados móviles. %TODO: gráfico explicativo (para las diapos)
 		Para construir esta superficie se utiliza la clase
 		\texttt{pcl::Moving\-Least\-Squares}, definiendo una vecindad de seis veces la
 		resolución de la nube con el fin de obtener aproximadamente 100 puntos para
@@ -54,18 +54,25 @@ el siguiente algoritmo para el preproceso de cada nube de entrada:
 
 	\item Para evitar las distorsiones debidas al ángulo de incidencia excesivo,
 		se estiman las normales en cada punto mediante la técnica de covarianza propuesta en \cite{10.1109/34.334391}.
-		Luego se eliminan los puntos cuyas normales se encontraban a más de $80^{\circ}$ del eje $z$.
+		Luego se eliminan los puntos cuyas normales se encontraban a más de $80^{\circ}$ del eje $z$. %TODO: gráfico explicativo (para las diapos)
 
-	\item Se eliminan aquellos puntos que pueden ser producto de distorsiones debidas al reflejo parcial.
+	\item Se eliminan aquellos puntos que puedan ser producto de distorsiones debidas al reflejo parcial,
+        es decir, puntos con diferencias abruptas de profundidad respecto a sus vecinos.
 		Estos puntos se identifican de la siguiente manera:
 		\begin{itemize}
-			\item Considerando que la captura se encuentra en 2.5D,
-				se proyecta la nube al plano $z=0$ para realizar una triangulación Delaunay y así
-				trasladar estas conexiones a los puntos en el espacio.
+            \item Valiéndose de al característica 2.5D de la captura,
+                se proyecta la nube de puntos al plano $z=0$
+                donde se realizará una triangulación que conecte cada punto proyectado
+                con su par más cercano.
+                En particular, la triangulación de Delaunay respeta esta propiedad\cite{Dickerson96algorithmsfor}.
+
+            \item Se trasladan las conexiones entre los puntos proyectados
+                a sus correspondientes puntos en el espacio.
+
 			\item Se eliminan aquellas aristas cuya longitud supera un umbral.
 				Estas aristas corresponden a saltos excesivos de profundidad
 				o a regiones en las que no se registraron puntos.
-			\item Los puntos buscados son aquellos que delimitan bordes en la malla o se encuentran aislados.
+			\item Los puntos buscados son aquellos que delimitan bordes en la malla o se encuentran aislados.   %TODO: gráfico explicativo (para las diapos)
 		\end{itemize}
 \end{itemize}
 
