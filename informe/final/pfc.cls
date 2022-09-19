@@ -19,13 +19,13 @@
 \RequirePackage{tikz}
 
 \RequirePackage{titlesec}
-\titleformat{\chapter}
-	{}
-	{}
+\titleformat{\chapter}[display]
+    {\bfseries\Large}
+    {\chaptertitlename\space\thechapter}
 	{0pt}
-	{\centering\bfseries\LARGE}
-\renewcommand{\thesection}{\arabic{section}}
-\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+	{\bfseries\LARGE}
+%\renewcommand{\thesection}{\thechapter.\arabic{section}}
+%\renewcommand{\thesubsection}{\thechapter.\thesection.\arabic{subsection}}
 
 \RequirePackage{caratula}
 
