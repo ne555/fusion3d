@@ -11,9 +11,11 @@
 
 	A pesar de que las capturas no contenían información de textura,
 	el algoritmo de registración fue exitoso en casi todos los casos sin requerir
-	ajustes a su conjunto de parámetros. 
+	ajustes a su conjunto de parámetros.
 	Además, se cuenta con medidas de la calidad de la alineación,
 	que permiten detectar fallas durante esta etapa sin requerir de una inspección visual.
+	Sin embargo, debe destacarse que la base de datos presenta pocos modelos
+	y que todos estos fueron relevados con el mismo dispositivo de captura.
 
 	%Al trabajar directamente con las nubes de puntos no se restringió el
 	%dispositivo de captura a un hardware en particular.  Sin embargo, las
@@ -77,7 +79,6 @@ se requirió de un largo proceso de configuración para instalar la biblioteca P
 %Meshlab: no se logró instalarlo en el nuevo equipo, se cambió a CloudCompare
 
 
-
 \section{Trabajos futuros}
 %\TODO{fusión, mejora de la confianza. Confianza según cercanía al borde, promedio de confianza}
 
@@ -95,6 +96,7 @@ y podrían ser abordadas en una etapa posterior.
 		Es necesario analizar la robustez del algoritmo al submuestreo de la entrada,
 		realizar una selección de keypoints de las nubes de entrada
 		y utilizar un método más eficiente para la búsqueda de correspondencias.
+    \item Analizar la tolerancia al ruido de los algoritmos.
 	\item Paralelizar los algoritmos utilizados en el módulo de registración,
 		en particular la obtención de descriptores y la determinación de correspondencias.
 	\item Utilizar la métrica de fitness para el ajuste automático de los parámetros utilizados en la registración.

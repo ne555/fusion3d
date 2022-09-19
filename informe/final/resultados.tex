@@ -67,6 +67,8 @@
 
 	Como medida de error de la fusión se utilizó la distancia entre los puntos de la nube reconstruida
 	respecto al punto más cercano en el \emph{ground truth} (cuadro~\ref{tab:fus_error}).
+    Para independizarse del tamaño de los modelos, se normalizó respecto a la resolución de la nube,
+    definida en el algoritmo~\ref{alg:resolución_de_nube} (página~\pageref{alg:resolución_de_nube}).
 	Esta medición no se realizó para el modelo \texttt{armadillo} debido a que su reconstrucción
 	se encontraba a una escala distinta a la de las capturas.
 	Nuevamente se destaca el error de \texttt{dragon stand} producto de una mala alineación.
@@ -77,6 +79,7 @@
 	reconstruidos debida a la propagación del error de alineación.  Así, la
 	primera captura coincide casi exactamente, pero el error se incrementa
 	a medida que nos alejamos de ella (figura~\ref{fig:fus_happy}).
+
 
 	\begin{figure}
 		\Imagen{img/happy_diff}
