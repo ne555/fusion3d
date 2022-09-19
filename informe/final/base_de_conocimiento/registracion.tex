@@ -128,8 +128,9 @@ o incluso no podrá calcularse al no contar con la cantidad de vecinos mínimos 
 %sobrecarga significado «superficie»
 %el riesgo al incrementar la vecindad es que sea «otra cara» de la superficie
 %no sé, hablar de continuidad o de localidad
-En cambio, si el valor de $r$ es demasiado grande, se corre el riesgo de considerar
-dentro de la vecindad puntos pertenecientes a otra superficie, distorsionando el valor del descriptor.
+En cambio, si el valor de $r$ es demasiado grande,
+se corre el riesgo de considerar dentro de la vecindad
+una cantidad excesiva de puntos que distorsionen el valor del descriptor o suavicen detalles de la región.
 La determinación de un valor adecuado de $r$ limita la posibilidad de obtener un método completamente
 automático para el cálculo de los descriptores\cite{RusuDoctoralDissertation}.
  %This issue is of extreme importance and constitutes a limiting factor in the automatic estimation (i.e., without user given thresholds) of a point feature representation.
@@ -260,8 +261,9 @@ El cálculo de este nuevo descriptor se realiza de la siguiente manera:
 % no quedó bien explicado
 Las principales diferencias respecto a PFH son:
 \begin{itemize}
-	\item FPFH no interconecta todos los vecinos de $p$.
-	\item FPFH puede incluir puntos fuera del radio $r$ de vecindad, pero a no más de $2r$.
+    \item $\text{PFH}(p)$ interconecta todo los pares de puntos $\{q_j, q_k\}$ dentro de la vecindad de $p$.
+        En cambio, $\text{FPFH}(p)$ interconecta solamente $p$ con sus vecinos.
+    \item $\text{FPFH}(p)$ puede incluir puntos fuera del radio $r$ de vecindad, pero a no más de $2r$.
 \end{itemize}
 
 
