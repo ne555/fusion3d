@@ -143,14 +143,22 @@
 			\begin{itemize}
 				\item Las capturas de \texttt{happy stand} se realizaron a intervalos de ángulos equiespaciados (cercanos a $24^{\circ}$) y
 					presentan zonas suaves en la base, vientre y espalda.
-				\item Los ángulos entre las capturas de \texttt{bunny} son más variados y espaciados, yendo desde $35^{\circ}$ hasta $90^{\circ}$,
-				y se observa una superficie más irregular por todo el cuerpo (figura~\ref{fig:stanford_models}).
-				%FIXME: aclaración de ángulo de 90
-				% o ignorar el de 90 (ver cuánto era) 35-55: se ignoran alineaciones 3-4, 4-5
-				% sí, ignorar, ver ángulos, y decir que se descartó captura 4
-				% se descarta en la búsqueda de parámetros, pero se realiza la prueba
-				%FIXME: figura bunny solo (o de sus capturas)
+				\item Los ángulos entre las capturas de \texttt{bunny} son más variados y espaciados,
+                    yendo desde $35^{\circ}$ hasta casi $95^{\circ}$,
+                    y se observa una superficie más irregular por todo el cuerpo (figura~\ref{fig:bunny_stanford}).
+                    Debido a que las distancias de giro entre las capturas \{090, 180\} y \{180, 270\}
+                    superan el supuesto de giro máximo de $60^{\circ}$,
+                    no fueron consideradas para la estimación de parámetros.
 			\end{itemize}
+
+            \begin{figure}
+                \Imagen{img/bunny_captures}
+                \caption[Capturas del modelo \texttt{bunny}]{\label{fig:bunny_stanford}Capturas del modelo \texttt{bunny} de la base de datos Stanford.
+                Las rotaciones  entre capturas son de aproximadamente
+                $35^{\circ}$, $55^{\circ}$, $90^{\circ}$, $90^{\circ}$, $45^{\circ}$ y $45^{\circ}$
+                sobre el eje $y$.
+                }
+            \end{figure}
 
 			Primero se trabajó sobre el modelo \texttt{happy stand}.
 			Se observó que una selección de keypoints demasiado agresiva no permitía la convergencia del algoritmo de SAC-IA,
